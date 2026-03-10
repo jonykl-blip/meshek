@@ -1,0 +1,77 @@
+import { setRequestLocale } from "next-intl/server";
+import { getTranslations } from "next-intl/server";
+import { createClient } from "@/lib/supabase/server";
+import { redirect } from "next/navigation";
+import { WorkersTable } from "./workers-table";
+
+export function generateStaticParams() {
+  return [{ locale: "he" }, { locale: "th" }];
+}
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ locale: string }>;
+}) {
+  const { locale } = await params;
+  setRequestLocale(locale);
+  const t = await getTranslations("admin.workers");
+  return { title: t("title") };
+}
+
+export default async function WorkersPage({
+  params,
+}: {
+  params: Promise<{ locale: string }>;
+}) {
+  const { locale } = await params;
+  setRequestLocale(locale);
+  const t = await getTranslations("admin.workers");
+
+  const supabase = await createClient();
+
+  // Verify admin/owner role
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    redirect(`/${locale}/auth/login`);
+  }
+
+  const { data: callerProfile } = await supabase
+    .from("profiles")
+    .select("role")
+    .eq("id", user.id)
+    .single();
+
+  if (!callerProfile || !["owner", "admin"].includes(callerProfile.role)) {
+    redirect(`/${locale}/dashboard`);
+  }
+
+  // Fetch all active profiles
+  const { data: profiles } = await supabase
+    .from("profiles")
+    .select("id, full_name, role, language_pref, telegram_id, is_active")
+    .eq("is_active", true)
+    .order("full_name");
+
+  return (
+    <main className="mx-auto max-w-4xl p-6">
+      <h1 className="mb-6 text-2xl font-bold">{t("title")}</h1>
+      <WorkersTable
+        profiles={profiles ?? []}
+        labels={{
+          name: t("name"),
+          role: t("role"),
+          language: t("language"),
+          telegramId: t("telegramId"),
+          save: t("save"),
+          saving: t("saving"),
+          noTelegramId: t("noTelegramId"),
+          saved: t("saved"),
+        }}
+      />
+    </main>
+  );
+}

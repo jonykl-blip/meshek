@@ -1,0 +1,72 @@
+{
+  "common": {
+    "appName": "משק",
+    "loading": "טוען...",
+    "error": "שגיאה",
+    "poweredBy": "מופעל על ידי",
+    "envVarRequired": "משתני סביבה של Supabase נדרשים"
+  },
+  "home": {
+    "heroTitle": "משק - ניהול חקלאי",
+    "nextSteps": "שלבים הבאים"
+  },
+  "auth": {
+    "signUpSuccess": {
+      "title": "תודה על ההרשמה!",
+      "description": "בדוק את המייל שלך לאישור",
+      "content": "נרשמת בהצלחה. אנא בדוק את המייל שלך לאישור החשבון לפני ההתחברות."
+    },
+    "error": {
+      "title": "מצטערים, משהו השתבש.",
+      "codeError": "שגיאת קוד:",
+      "unspecified": "אירעה שגיאה לא מזוהה.",
+      "no_user": "האימות נכשל. נסה שוב.",
+      "no_profile": "לא נמצא פרופיל משתמש. פנה למנהל.",
+      "worker_not_allowed": "עובדים אינם יכולים לגשת למערכת דרך הדפדפן. השתמש בבוט בטלגרם.",
+      "auth_failed": "ההתחברות נכשלה. נסה שוב.",
+      "invalid_link": "קישור לא תקין. בקש קישור חדש."
+    },
+    "signIn": "כניסה",
+    "signUp": "הרשמה",
+    "logout": "יציאה",
+    "greeting": "שלום, {email}!",
+    "loginTitle": "כניסה",
+    "loginDescription": "הזן את האימייל שלך להתחברות לחשבון",
+    "emailLabel": "אימייל",
+    "passwordLabel": "סיסמה",
+    "forgotPassword": "שכחת את הסיסמה?",
+    "loggingIn": "מתחבר...",
+    "noAccount": "אין לך חשבון?",
+    "signUpTitle": "הרשמה",
+    "signUpDescription": "צור חשבון חדש",
+    "repeatPasswordLabel": "חזור על הסיסמה",
+    "passwordMismatch": "הסיסמאות אינן תואמות",
+    "creatingAccount": "יוצר חשבון...",
+    "hasAccount": "כבר יש לך חשבון?",
+    "anErrorOccurred": "אירעה שגיאה"
+  },
+  "dashboard": {
+    "title": "לוח הבקרה",
+    "emptyState": "ברוך הבא למשק"
+  },
+  "admin": {
+    "title": "ניהול מערכת",
+    "emptyState": "לוח ניהול",
+    "workers": {
+      "title": "ניהול עובדים",
+      "name": "שם",
+      "role": "תפקיד",
+      "language": "שפה",
+      "telegramId": "מזהה טלגרם",
+      "save": "שמור",
+      "saving": "שומר...",
+      "noTelegramId": "לא משויך",
+      "saved": "נשמר"
+    }
+  },
+  "protected": {
+    "notice": "זהו דף מוגן שניתן לראות רק כמשתמש מאומת",
+    "userDetails": "פרטי המשתמש שלך",
+    "nextSteps": "שלבים הבאים"
+  }
+}

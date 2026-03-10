@@ -47,15 +47,23 @@ export async function updateSession(request: NextRequest) {
   const { data } = await supabase.auth.getClaims();
   const user = data?.claims;
 
+  // Strip locale prefix (e.g. "/th") to normalize path checks.
+  // Default locale "he" has no prefix (localePrefix: "as-needed").
+  const pathname = request.nextUrl.pathname;
+  const pathnameWithoutLocale = pathname.replace(/^\/th(?=\/|$)/, "") || "/";
+
   if (
-    request.nextUrl.pathname !== "/" &&
+    pathnameWithoutLocale !== "/" &&
     !user &&
-    !request.nextUrl.pathname.startsWith("/login") &&
-    !request.nextUrl.pathname.startsWith("/auth")
+    !pathnameWithoutLocale.startsWith("/login") &&
+    !pathnameWithoutLocale.startsWith("/auth")
   ) {
-    // no user, potentially respond by redirecting the user to the login page
+    // Preserve locale prefix so non-default locale users stay in their locale
+    const localePrefix = pathname !== pathnameWithoutLocale
+      ? pathname.slice(0, pathname.length - pathnameWithoutLocale.length)
+      : "";
     const url = request.nextUrl.clone();
-    url.pathname = "/auth/login";
+    url.pathname = `${localePrefix}/auth/login`;
     return NextResponse.redirect(url);
   }
 

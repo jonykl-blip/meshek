@@ -1,0 +1,208 @@
+{
+  "name": "Meshek Daily Cutoff Alert",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "triggerAtHour": 20,
+              "triggerAtMinute": 0
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [0, 300],
+      "id": "cutoff-0001-sched-trig-0001-000000000001",
+      "name": "Schedule Trigger"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Check if today is a rest day (configurable)\n// Default rest day: Saturday (day 6 in JS Date)\n// Configurable via REST_DAYS array below\n\nconst REST_DAYS = [6]; // 0=Sunday, 1=Monday, ..., 6=Saturday\n\n// Get current day in Asia/Jerusalem timezone\nconst now = new Date();\nconst jerusalemTime = new Date(now.toLocaleString('en-US', { timeZone: 'Asia/Jerusalem' }));\nconst dayOfWeek = jerusalemTime.getDay();\n\nif (REST_DAYS.includes(dayOfWeek)) {\n  console.log('Today is a rest day (day ' + dayOfWeek + ') — skipping cutoff alert');\n  return [{ json: { skip: true, reason: 'rest_day', day_of_week: dayOfWeek } }];\n}\n\nreturn [{ json: { skip: false, day_of_week: dayOfWeek } }];",
+        "mode": "runOnceForAllItems"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [220, 300],
+      "id": "cutoff-0002-check-day-0001-000000000002",
+      "name": "Check Rest Day"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "cutoff-cond-skip-false",
+              "leftValue": "={{ $json.skip }}",
+              "rightValue": false,
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [440, 300],
+      "id": "cutoff-0003-if-not-rest-0001-000000000003",
+      "name": "If Not Rest Day"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Check Today's Records — query Supabase for attendance_logs count today\n// Uses Asia/Jerusalem timezone to determine 'today'\n// AC4: check if zero records written for current calendar day\n\nconst SUPABASE_URL = 'https://jnsfklshpabogzvolzct.supabase.co/rest/v1/attendance_logs';\nconst SERVICE_KEY = '<SUPABASE_SERVICE_ROLE_KEY>';\n\n// Get today's date in Asia/Jerusalem timezone\nconst now = new Date();\nconst jerusalemDate = now.toLocaleDateString('en-CA', { timeZone: 'Asia/Jerusalem' }); // YYYY-MM-DD format\n\ntry {\n  const response = await this.helpers.httpRequest({\n    method: 'GET',\n    url: SUPABASE_URL + '?select=id&work_date=eq.' + jerusalemDate,\n    headers: {\n      'apikey': SERVICE_KEY,\n      'Authorization': 'Bearer ' + SERVICE_KEY,\n      'Prefer': 'count=exact',\n    },\n    returnFullResponse: true,\n    json: true,\n  });\n\n  // PostgREST returns count in content-range header when Prefer: count=exact is set\n  const contentRange = response.headers['content-range'] || '';\n  const countMatch = contentRange.match(/\\/(\\d+)$/);\n  const count = countMatch ? parseInt(countMatch[1], 10) : (Array.isArray(response.body) ? response.body.length : 0);\n\n  console.log('Attendance records for ' + jerusalemDate + ': ' + count);\n  return [{ json: { count: count, date: jerusalemDate } }];\n} catch (error) {\n  console.log('Failed to check attendance records: ' + error.message);\n  // On error, send the alert anyway — better a false positive than missing a real empty day\n  return [{ json: { count: 0, date: jerusalemDate, check_error: error.message } }];\n}",
+        "mode": "runOnceForAllItems"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [660, 200],
+      "id": "cutoff-0004-check-recs-0001-000000000004",
+      "name": "Check Today's Records"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "cutoff-cond-count-zero",
+              "leftValue": "={{ $json.count }}",
+              "rightValue": 0,
+              "operator": {
+                "type": "number",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [880, 200],
+      "id": "cutoff-0005-if-zero-0001-000000000005",
+      "name": "If Zero Records"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Send Cutoff Alert — notify Sigal that no attendance records arrived today\n// AC4: Telegram alert in Hebrew: \"לא התקבלו רשומות נוכחות היום ⚠️\"\n\nconst TELEGRAM_BOT_TOKEN = '<TELEGRAM_BOT_TOKEN>';\nconst ADMIN_CHAT_ID = '1867642206'; // Jonny (temporary — replace with Sigal's chat_id)\n\nconst date = items[0].json.date || 'unknown';\n\ntry {\n  const response = await this.helpers.httpRequest({\n    method: 'POST',\n    url: `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`,\n    body: {\n      chat_id: ADMIN_CHAT_ID,\n      text: 'לא התקבלו רשומות נוכחות היום ⚠️',\n    },\n    json: true,\n  });\n\n  console.log('Cutoff alert sent for date: ' + date);\n  return [{ json: { alert_sent: true, date: date } }];\n} catch (error) {\n  console.log('Failed to send cutoff alert: ' + error.message);\n  return [{ json: { alert_sent: false, error: error.message, date: date } }];\n}",
+        "mode": "runOnceForAllItems"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1100, 100],
+      "id": "cutoff-0006-send-alert-0001-000000000006",
+      "name": "Send Cutoff Alert"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [1100, 300],
+      "id": "cutoff-0007-no-op-0001-000000000007",
+      "name": "Records Exist - Skip"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [660, 400],
+      "id": "cutoff-0008-no-op-rest-0001-000000000008",
+      "name": "Rest Day - Skip"
+    }
+  ],
+  "connections": {
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "Check Rest Day",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Rest Day": {
+      "main": [
+        [
+          {
+            "node": "If Not Rest Day",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If Not Rest Day": {
+      "main": [
+        [
+          {
+            "node": "Check Today's Records",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Rest Day - Skip",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Today's Records": {
+      "main": [
+        [
+          {
+            "node": "If Zero Records",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If Zero Records": {
+      "main": [
+        [
+          {
+            "node": "Send Cutoff Alert",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Records Exist - Skip",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "timezone": "Asia/Jerusalem"
+  },
+  "active": false,
+  "id": "meshek-daily-cutoff-alert",
+  "tags": [],
+  "pinData": {}
+}
