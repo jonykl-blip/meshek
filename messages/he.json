@@ -61,7 +61,32 @@
       "save": "שמור",
       "saving": "שומר...",
       "noTelegramId": "לא משויך",
-      "saved": "נשמר"
+      "saved": "נשמר",
+      "addWorker": "הוסף עובד",
+      "editWorker": "עריכה",
+      "archiveWorker": "גנוז",
+      "hourlyRate": "תעריף לשעה",
+      "cancel": "ביטול",
+      "archiveConfirm": "האם לגנוז את {name}?",
+      "archiveDescription": "רשומות הנוכחות שלו יישמרו",
+      "confirm": "אישור",
+      "created": "נוצר בהצלחה",
+      "updated": "עודכן בהצלחה",
+      "archived": "גונז בהצלחה",
+      "actions": "פעולות",
+      "roleWorker": "עובד",
+      "roleManager": "מנהל",
+      "roleAdmin": "מנהל מערכת",
+      "roleOwner": "בעלים",
+      "langHe": "עברית",
+      "langTh": "תאילנדית",
+      "langEn": "אנגלית",
+      "validation": {
+        "nameRequired": "שם הוא שדה חובה",
+        "rateRequired": "תעריף הוא שדה חובה",
+        "ratePositive": "תעריף חייב להיות חיובי",
+        "telegramNumeric": "מזהה טלגרם חייב להיות מספרי"
+      }
     }
   },
   "protected": {

@@ -52,7 +52,7 @@ export default async function WorkersPage({
   // Fetch all active profiles
   const { data: profiles } = await supabase
     .from("profiles")
-    .select("id, full_name, role, language_pref, telegram_id, is_active")
+    .select("id, full_name, role, language_pref, telegram_id, hourly_rate, is_active")
     .eq("is_active", true)
     .order("full_name");
 
@@ -70,6 +70,25 @@ export default async function WorkersPage({
           saving: t("saving"),
           noTelegramId: t("noTelegramId"),
           saved: t("saved"),
+          addWorker: t("addWorker"),
+          editWorker: t("editWorker"),
+          archiveWorker: t("archiveWorker"),
+          hourlyRate: t("hourlyRate"),
+          cancel: t("cancel"),
+          archiveConfirm: t("archiveConfirm", { name: "__NAME__" }),
+          archiveDescription: t("archiveDescription"),
+          confirm: t("confirm"),
+          created: t("created"),
+          updated: t("updated"),
+          archived: t("archived"),
+          actions: t("actions"),
+          roleWorker: t("roleWorker"),
+          roleManager: t("roleManager"),
+          roleAdmin: t("roleAdmin"),
+          roleOwner: t("roleOwner"),
+          langHe: t("langHe"),
+          langTh: t("langTh"),
+          langEn: t("langEn"),
         }}
       />
     </main>

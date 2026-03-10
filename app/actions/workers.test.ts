@@ -8,51 +8,37 @@ const mockSupabase = {
   from: vi.fn(),
 };
 
+const mockAdminClient = {
+  auth: {
+    admin: {
+      createUser: vi.fn(),
+    },
+  },
+};
+
 vi.mock("@/lib/supabase/server", () => ({
   createClient: vi.fn(() => Promise.resolve(mockSupabase)),
+}));
+
+vi.mock("@/lib/supabase/admin", () => ({
+  createAdminClient: vi.fn(() => mockAdminClient),
 }));
 
 vi.mock("@/lib/audit", () => ({
   logAudit: vi.fn(() => Promise.resolve()),
 }));
 
-// Must import after mocks are set up
-const { bindTelegramId } = await import("./workers");
+vi.mock("next/cache", () => ({
+  revalidatePath: vi.fn(),
+}));
 
-// Helper to chain Supabase query builder methods
-function mockQuery(returnValue: { data: unknown; error: unknown }) {
-  const chain: Record<string, unknown> = {};
-  const handler = () =>
-    new Proxy(chain, {
-      get(_, prop) {
-        if (prop === "then") return undefined; // not a promise
-        if (
-          ["select", "eq", "neq", "single", "maybeSingle", "update", "insert"]
-            .includes(prop as string)
-        ) {
-          return (..._args: unknown[]) =>
-            new Proxy(chain, {
-              get(_, innerProp) {
-                if (innerProp === "then") return undefined;
-                if (innerProp === "single" || innerProp === "maybeSingle") {
-                  return () => Promise.resolve(returnValue);
-                }
-                if (
-                  ["select", "eq", "neq", "update", "insert"].includes(
-                    innerProp as string,
-                  )
-                ) {
-                  return handler();
-                }
-                return Promise.resolve(returnValue);
-              },
-            });
-        }
-        return Promise.resolve(returnValue);
-      },
-    });
-  return handler;
-}
+// Must import after mocks are set up
+const {
+  bindTelegramId,
+  createWorkerProfile,
+  updateWorkerProfile,
+  archiveWorkerProfile,
+} = await import("./workers");
 
 // Simpler approach: mock .from() per call sequence
 function setupMockChain(results: { data: unknown; error: unknown }[]) {
@@ -70,6 +56,12 @@ function setupMockChain(results: { data: unknown; error: unknown }[]) {
       maybeSingle: () => Promise.resolve(result),
     };
     return builder;
+  });
+}
+
+function mockAuthenticatedAdmin() {
+  mockSupabase.auth.getUser.mockResolvedValue({
+    data: { user: { id: "admin-1" } },
   });
 }
 
@@ -182,5 +174,209 @@ describe("bindTelegramId", () => {
     const result = await bindTelegramId("profile-1", "");
 
     expect(result).toEqual({ success: true, data: updatedProfile });
+  });
+});
+
+describe("createWorkerProfile", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("returns error when user is not authenticated", async () => {
+    mockSupabase.auth.getUser.mockResolvedValue({
+      data: { user: null },
+    });
+
+    const result = await createWorkerProfile({
+      full_name: "טסט",
+      hourly_rate: 35,
+      language_pref: "he",
+      role: "worker",
+    });
+
+    expect(result).toEqual({ success: false, error: "לא מאומת" });
+  });
+
+  it("returns error when caller is not admin/owner", async () => {
+    mockSupabase.auth.getUser.mockResolvedValue({
+      data: { user: { id: "user-1" } },
+    });
+    setupMockChain([{ data: { role: "worker" }, error: null }]);
+
+    const result = await createWorkerProfile({
+      full_name: "טסט",
+      hourly_rate: 35,
+      language_pref: "he",
+      role: "worker",
+    });
+
+    expect(result).toEqual({ success: false, error: "אין הרשאה" });
+  });
+
+  it("returns validation error for missing name", async () => {
+    mockAuthenticatedAdmin();
+    setupMockChain([{ data: { role: "admin" }, error: null }]);
+
+    const result = await createWorkerProfile({
+      full_name: "",
+      hourly_rate: 35,
+      language_pref: "he",
+      role: "worker",
+    });
+
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      expect(result.error).toContain("שם");
+    }
+  });
+
+  it("returns error for duplicate telegram ID", async () => {
+    mockAuthenticatedAdmin();
+    setupMockChain([
+      { data: { role: "admin" }, error: null },
+      { data: { id: "other", full_name: "דני" }, error: null }, // existing telegram_id
+    ]);
+
+    const result = await createWorkerProfile({
+      full_name: "טסט",
+      telegram_id: "12345",
+      hourly_rate: 35,
+      language_pref: "he",
+      role: "worker",
+    });
+
+    expect(result).toEqual({
+      success: false,
+      error: "מזהה טלגרם כבר משויך ל-דני",
+    });
+  });
+
+  it("creates auth user and profile on success", async () => {
+    const newProfile = {
+      id: "new-user-id",
+      full_name: "עובד חדש",
+      role: "worker",
+      language_pref: "he",
+      telegram_id: null,
+      hourly_rate: 35,
+      is_active: true,
+    };
+
+    mockAuthenticatedAdmin();
+    setupMockChain([
+      { data: { role: "admin" }, error: null }, // caller check
+      { data: newProfile, error: null }, // insert result
+    ]);
+
+    mockAdminClient.auth.admin.createUser.mockResolvedValue({
+      data: { user: { id: "new-user-id" } },
+      error: null,
+    });
+
+    const result = await createWorkerProfile({
+      full_name: "עובד חדש",
+      hourly_rate: 35,
+      language_pref: "he",
+      role: "worker",
+    });
+
+    expect(result).toEqual({ success: true, data: newProfile });
+    expect(mockAdminClient.auth.admin.createUser).toHaveBeenCalledOnce();
+  });
+});
+
+describe("updateWorkerProfile", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("returns error when profile not found", async () => {
+    mockAuthenticatedAdmin();
+    setupMockChain([
+      { data: { role: "admin" }, error: null }, // caller check
+      { data: null, error: null }, // profile not found
+    ]);
+
+    const result = await updateWorkerProfile("missing-id", {
+      full_name: "שם חדש",
+    });
+
+    expect(result).toEqual({ success: false, error: "פרופיל לא נמצא" });
+  });
+
+  it("updates profile and creates audit log on success", async () => {
+    const beforeProfile = {
+      id: "profile-1",
+      full_name: "שם ישן",
+      role: "worker",
+      language_pref: "he",
+      telegram_id: null,
+      hourly_rate: 30,
+      is_active: true,
+    };
+
+    const updatedProfile = {
+      ...beforeProfile,
+      hourly_rate: 40,
+    };
+
+    mockAuthenticatedAdmin();
+    setupMockChain([
+      { data: { role: "admin" }, error: null }, // caller check
+      { data: beforeProfile, error: null }, // before state
+      { data: updatedProfile, error: null }, // update result
+    ]);
+
+    const result = await updateWorkerProfile("profile-1", {
+      hourly_rate: 40,
+    });
+
+    expect(result).toEqual({ success: true, data: updatedProfile });
+  });
+});
+
+describe("archiveWorkerProfile", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("archives profile and creates audit log", async () => {
+    const beforeProfile = {
+      id: "profile-1",
+      full_name: "עובד",
+      role: "worker",
+      language_pref: "he",
+      telegram_id: null,
+      hourly_rate: 30,
+      is_active: true,
+    };
+
+    const archivedProfile = {
+      ...beforeProfile,
+      is_active: false,
+    };
+
+    mockAuthenticatedAdmin();
+    setupMockChain([
+      { data: { role: "admin" }, error: null }, // caller check
+      { data: beforeProfile, error: null }, // before state
+      { data: archivedProfile, error: null }, // update result
+    ]);
+
+    const result = await archiveWorkerProfile("profile-1");
+
+    expect(result).toEqual({ success: true, data: archivedProfile });
+  });
+
+  it("returns error when profile not found", async () => {
+    mockAuthenticatedAdmin();
+    setupMockChain([
+      { data: { role: "admin" }, error: null }, // caller check
+      { data: null, error: null }, // not found
+    ]);
+
+    const result = await archiveWorkerProfile("missing-id");
+
+    expect(result).toEqual({ success: false, error: "פרופיל לא נמצא" });
   });
 });

@@ -1,10 +1,31 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { bindTelegramId } from "@/app/actions/workers";
+import { useRouter } from "next/navigation";
+import {
+  createWorkerProfile,
+  updateWorkerProfile,
+  archiveWorkerProfile,
+} from "@/app/actions/workers";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 interface Profile {
   id: string;
@@ -12,49 +33,252 @@ interface Profile {
   role: string;
   language_pref: string;
   telegram_id: string | null;
+  hourly_rate: number | null;
   is_active: boolean;
 }
 
-interface WorkersTableProps {
-  profiles: Profile[];
-  labels: {
-    name: string;
-    role: string;
-    language: string;
-    telegramId: string;
-    save: string;
-    saving: string;
-    noTelegramId: string;
-    saved: string;
-  };
+interface Labels {
+  name: string;
+  role: string;
+  language: string;
+  telegramId: string;
+  save: string;
+  saving: string;
+  noTelegramId: string;
+  saved: string;
+  addWorker: string;
+  editWorker: string;
+  archiveWorker: string;
+  hourlyRate: string;
+  cancel: string;
+  archiveConfirm: string;
+  archiveDescription: string;
+  confirm: string;
+  created: string;
+  updated: string;
+  archived: string;
+  actions: string;
+  roleWorker: string;
+  roleManager: string;
+  roleAdmin: string;
+  roleOwner: string;
+  langHe: string;
+  langTh: string;
+  langEn: string;
 }
 
-export function WorkersTable({ profiles, labels }: WorkersTableProps) {
+const ROLE_MAP: Record<string, keyof Labels> = {
+  worker: "roleWorker",
+  manager: "roleManager",
+  admin: "roleAdmin",
+  owner: "roleOwner",
+};
+
+const LANG_MAP: Record<string, keyof Labels> = {
+  he: "langHe",
+  th: "langTh",
+  en: "langEn",
+};
+
+export function WorkersTable({
+  profiles,
+  labels,
+}: {
+  profiles: Profile[];
+  labels: Labels;
+}) {
+  const [showCreateForm, setShowCreateForm] = useState(false);
+  const [feedbackMsg, setFeedbackMsg] = useState("");
+  const router = useRouter();
+
+  function getRoleLabel(role: string) {
+    const key = ROLE_MAP[role];
+    return key ? (labels[key] as string) : role;
+  }
+
+  function getLangLabel(lang: string) {
+    const key = LANG_MAP[lang];
+    return key ? (labels[key] as string) : lang;
+  }
+
   return (
-    <div className="overflow-x-auto rounded-lg border">
-      <table className="w-full text-sm">
-        <thead>
-          <tr className="border-b bg-muted/50">
-            <th className="px-4 py-3 text-start font-medium">{labels.name}</th>
-            <th className="px-4 py-3 text-start font-medium">{labels.role}</th>
-            <th className="px-4 py-3 text-start font-medium">
-              {labels.language}
-            </th>
-            <th className="px-4 py-3 text-start font-medium">
-              {labels.telegramId}
-            </th>
-          </tr>
-        </thead>
-        <tbody>
-          {profiles.map((profile) => (
-            <WorkerRow
-              key={profile.id}
-              profile={profile}
-              labels={labels}
-            />
-          ))}
-        </tbody>
-      </table>
+    <div>
+      <div className="mb-4 flex items-center justify-between">
+        <Button onClick={() => setShowCreateForm(true)} disabled={showCreateForm}>
+          {labels.addWorker}
+        </Button>
+        {feedbackMsg && (
+          <span className="text-sm text-green-600">{feedbackMsg}</span>
+        )}
+      </div>
+
+      {showCreateForm && (
+        <CreateWorkerForm
+          labels={labels}
+          onClose={() => setShowCreateForm(false)}
+          onSuccess={(msg) => {
+            setShowCreateForm(false);
+            setFeedbackMsg(msg);
+            router.refresh();
+            setTimeout(() => setFeedbackMsg(""), 3000);
+          }}
+        />
+      )}
+
+      <div className="overflow-x-auto rounded-lg border">
+        <table className="w-full text-sm">
+          <thead>
+            <tr className="border-b bg-muted/50">
+              <th className="px-4 py-3 text-start font-medium">{labels.name}</th>
+              <th className="px-4 py-3 text-start font-medium">{labels.role}</th>
+              <th className="px-4 py-3 text-start font-medium">{labels.hourlyRate}</th>
+              <th className="px-4 py-3 text-start font-medium">{labels.language}</th>
+              <th className="px-4 py-3 text-start font-medium">{labels.telegramId}</th>
+              <th className="px-4 py-3 text-start font-medium">{labels.actions}</th>
+            </tr>
+          </thead>
+          <tbody>
+            {profiles.map((profile) => (
+              <WorkerRow
+                key={profile.id}
+                profile={profile}
+                labels={labels}
+                getRoleLabel={getRoleLabel}
+                getLangLabel={getLangLabel}
+                onUpdated={() => {
+                  setFeedbackMsg(labels.updated);
+                  router.refresh();
+                  setTimeout(() => setFeedbackMsg(""), 3000);
+                }}
+                onArchived={() => {
+                  setFeedbackMsg(labels.archived);
+                  router.refresh();
+                  setTimeout(() => setFeedbackMsg(""), 3000);
+                }}
+              />
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
+
+function CreateWorkerForm({
+  labels,
+  onClose,
+  onSuccess,
+}: {
+  labels: Labels;
+  onClose: () => void;
+  onSuccess: (msg: string) => void;
+}) {
+  const [name, setName] = useState("");
+  const [telegramId, setTelegramId] = useState("");
+  const [hourlyRate, setHourlyRate] = useState("");
+  const [languagePref, setLanguagePref] = useState("he");
+  const [role, setRole] = useState("worker");
+  const [error, setError] = useState("");
+  const [isPending, startTransition] = useTransition();
+
+  function handleSubmit() {
+    setError("");
+    const rate = parseFloat(hourlyRate);
+    if (!name.trim()) {
+      setError(labels.name);
+      return;
+    }
+    if (isNaN(rate) || rate <= 0) {
+      setError(labels.hourlyRate);
+      return;
+    }
+    startTransition(async () => {
+      const result = await createWorkerProfile({
+        full_name: name.trim(),
+        telegram_id: telegramId.trim() || undefined,
+        hourly_rate: rate,
+        language_pref: languagePref,
+        role,
+      });
+      if (result.success) {
+        onSuccess(labels.created);
+      } else {
+        setError(result.error);
+      }
+    });
+  }
+
+  return (
+    <div className="mb-6 rounded-lg border p-4" style={{ maxWidth: 400 }}>
+      <div className="space-y-4">
+        <div>
+          <Label>{labels.name} *</Label>
+          <Input
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            className="mt-1"
+          />
+        </div>
+        <div>
+          <Label>{labels.telegramId}</Label>
+          <Input
+            value={telegramId}
+            onChange={(e) => setTelegramId(e.target.value)}
+            placeholder={labels.noTelegramId}
+            className="mt-1 font-mono"
+            dir="ltr"
+          />
+        </div>
+        <div>
+          <Label>{labels.hourlyRate} *</Label>
+          <Input
+            type="number"
+            step="0.01"
+            min="0"
+            value={hourlyRate}
+            onChange={(e) => setHourlyRate(e.target.value)}
+            className="mt-1"
+            dir="ltr"
+          />
+        </div>
+        <div>
+          <Label>{labels.language}</Label>
+          <Select value={languagePref} onValueChange={setLanguagePref}>
+            <SelectTrigger className="mt-1">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="he">{labels.langHe}</SelectItem>
+              <SelectItem value="th">{labels.langTh}</SelectItem>
+              <SelectItem value="en">{labels.langEn}</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        <div>
+          <Label>{labels.role}</Label>
+          <Select value={role} onValueChange={setRole}>
+            <SelectTrigger className="mt-1">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="worker">{labels.roleWorker}</SelectItem>
+              <SelectItem value="manager">{labels.roleManager}</SelectItem>
+              <SelectItem value="admin">{labels.roleAdmin}</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
+        {error && <p className="text-sm text-red-600">{error}</p>}
+
+        <div className="flex gap-2">
+          <Button onClick={handleSubmit} disabled={isPending}>
+            {isPending ? labels.saving : labels.save}
+          </Button>
+          <Button variant="outline" onClick={onClose} disabled={isPending}>
+            {labels.cancel}
+          </Button>
+        </div>
+      </div>
     </div>
   );
 }
@@ -62,70 +286,237 @@ export function WorkersTable({ profiles, labels }: WorkersTableProps) {
 function WorkerRow({
   profile,
   labels,
+  getRoleLabel,
+  getLangLabel,
+  onUpdated,
+  onArchived,
 }: {
   profile: Profile;
-  labels: WorkersTableProps["labels"];
+  labels: Labels;
+  getRoleLabel: (role: string) => string;
+  getLangLabel: (lang: string) => string;
+  onUpdated: () => void;
+  onArchived: () => void;
 }) {
-  const [telegramId, setTelegramId] = useState(profile.telegram_id ?? "");
-  const [savedTelegramId, setSavedTelegramId] = useState(profile.telegram_id ?? "");
-  const [status, setStatus] = useState<"idle" | "saved" | "error">("idle");
-  const [errorMsg, setErrorMsg] = useState("");
+  const [isEditing, setIsEditing] = useState(false);
+  const [showArchiveDialog, setShowArchiveDialog] = useState(false);
+  const [editData, setEditData] = useState({
+    full_name: profile.full_name,
+    telegram_id: profile.telegram_id ?? "",
+    hourly_rate: String(profile.hourly_rate ?? ""),
+    language_pref: profile.language_pref,
+    role: profile.role,
+  });
+  const [error, setError] = useState("");
   const [isPending, startTransition] = useTransition();
 
-  const hasChanged = telegramId !== savedTelegramId;
-
   function handleSave() {
+    setError("");
+    const rate = parseFloat(editData.hourly_rate);
     startTransition(async () => {
-      const result = await bindTelegramId(profile.id, telegramId);
+      const result = await updateWorkerProfile(profile.id, {
+        full_name: editData.full_name,
+        telegram_id: editData.telegram_id,
+        hourly_rate: isNaN(rate) ? undefined : rate,
+        language_pref: editData.language_pref,
+        role: editData.role,
+      });
       if (result.success) {
-        setSavedTelegramId(telegramId);
-        setStatus("saved");
-        setErrorMsg("");
-        setTimeout(() => setStatus("idle"), 2000);
+        setIsEditing(false);
+        onUpdated();
       } else {
-        setStatus("error");
-        setErrorMsg(result.error);
+        setError(result.error);
       }
     });
   }
 
-  return (
-    <tr className="border-b last:border-b-0">
-      <td className="px-4 py-3 font-medium">{profile.full_name}</td>
-      <td className="px-4 py-3">
-        <Badge variant="outline">{profile.role}</Badge>
-      </td>
-      <td className="px-4 py-3">{profile.language_pref}</td>
-      <td className="px-4 py-3">
-        <div className="flex items-center gap-2">
+  function handleCancelEdit() {
+    setEditData({
+      full_name: profile.full_name,
+      telegram_id: profile.telegram_id ?? "",
+      hourly_rate: String(profile.hourly_rate ?? ""),
+      language_pref: profile.language_pref,
+      role: profile.role,
+    });
+    setError("");
+    setIsEditing(false);
+  }
+
+  function handleArchive() {
+    startTransition(async () => {
+      const result = await archiveWorkerProfile(profile.id);
+      if (result.success) {
+        setShowArchiveDialog(false);
+        onArchived();
+      } else {
+        setError(result.error);
+        setShowArchiveDialog(false);
+      }
+    });
+  }
+
+  if (isEditing) {
+    return (
+      <tr className="border-b last:border-b-0 bg-muted/20">
+        <td className="px-4 py-3">
           <Input
-            value={telegramId}
-            onChange={(e) => {
-              setTelegramId(e.target.value);
-              setStatus("idle");
-              setErrorMsg("");
-            }}
-            placeholder={labels.noTelegramId}
-            className="max-w-[180px] font-mono text-sm"
+            value={editData.full_name}
+            onChange={(e) => setEditData({ ...editData, full_name: e.target.value })}
+            className="max-w-[200px]"
+          />
+        </td>
+        <td className="px-4 py-3">
+          <Select
+            value={editData.role}
+            onValueChange={(v) => setEditData({ ...editData, role: v })}
+          >
+            <SelectTrigger className="max-w-[140px]">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="worker">{labels.roleWorker}</SelectItem>
+              <SelectItem value="manager">{labels.roleManager}</SelectItem>
+              <SelectItem value="admin">{labels.roleAdmin}</SelectItem>
+            </SelectContent>
+          </Select>
+        </td>
+        <td className="px-4 py-3">
+          <Input
+            type="number"
+            step="0.01"
+            min="0"
+            value={editData.hourly_rate}
+            onChange={(e) => setEditData({ ...editData, hourly_rate: e.target.value })}
+            className="max-w-[100px]"
             dir="ltr"
           />
-          {hasChanged && (
+        </td>
+        <td className="px-4 py-3">
+          <Select
+            value={editData.language_pref}
+            onValueChange={(v) => setEditData({ ...editData, language_pref: v })}
+          >
+            <SelectTrigger className="max-w-[120px]">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="he">{labels.langHe}</SelectItem>
+              <SelectItem value="th">{labels.langTh}</SelectItem>
+              <SelectItem value="en">{labels.langEn}</SelectItem>
+            </SelectContent>
+          </Select>
+        </td>
+        <td className="px-4 py-3">
+          <Input
+            value={editData.telegram_id}
+            onChange={(e) =>
+              setEditData({ ...editData, telegram_id: e.target.value })
+            }
+            placeholder={labels.noTelegramId}
+            className="max-w-[150px] font-mono text-sm"
+            dir="ltr"
+          />
+        </td>
+        <td className="px-4 py-3">
+          <div className="flex flex-col gap-1">
+            <div className="flex gap-2">
+              <Button size="sm" onClick={handleSave} disabled={isPending}>
+                {isPending ? labels.saving : labels.save}
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={handleCancelEdit}
+                disabled={isPending}
+              >
+                {labels.cancel}
+              </Button>
+            </div>
+            {error && <span className="text-sm text-red-600">{error}</span>}
+          </div>
+        </td>
+      </tr>
+    );
+  }
+
+  return (
+    <>
+      <tr className="border-b last:border-b-0">
+        <td className="px-4 py-3 text-lg font-bold">{profile.full_name}</td>
+        <td className="px-4 py-3">
+          <Badge variant="outline">{getRoleLabel(profile.role)}</Badge>
+        </td>
+        <td className="px-4 py-3" dir="ltr">
+          {profile.hourly_rate != null ? `₪${profile.hourly_rate}` : "—"}
+        </td>
+        <td className="px-4 py-3">{getLangLabel(profile.language_pref)}</td>
+        <td className="px-4 py-3 font-mono text-sm" dir="ltr">
+          {profile.telegram_id ?? labels.noTelegramId}
+        </td>
+        <td className="px-4 py-3">
+          <div className="flex gap-2">
+            <Button size="sm" variant="outline" onClick={() => setIsEditing(true)}>
+              {labels.editWorker}
+            </Button>
             <Button
               size="sm"
-              onClick={handleSave}
-              disabled={isPending}
+              variant="destructive"
+              onClick={() => setShowArchiveDialog(true)}
             >
-              {isPending ? labels.saving : labels.save}
+              {labels.archiveWorker}
             </Button>
-          )}
-          {status === "saved" && (
-            <span className="text-sm text-green-600">{labels.saved}</span>
-          )}
-          {status === "error" && (
-            <span className="text-sm text-red-600">{errorMsg}</span>
-          )}
-        </div>
-      </td>
-    </tr>
+          </div>
+        </td>
+      </tr>
+      <ArchiveDialog
+        open={showArchiveDialog}
+        onOpenChange={setShowArchiveDialog}
+        workerName={profile.full_name}
+        labels={labels}
+        isPending={isPending}
+        onConfirm={handleArchive}
+      />
+    </>
+  );
+}
+
+function ArchiveDialog({
+  open,
+  onOpenChange,
+  workerName,
+  labels,
+  isPending,
+  onConfirm,
+}: {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  workerName: string;
+  labels: Labels;
+  isPending: boolean;
+  onConfirm: () => void;
+}) {
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>
+            {labels.archiveConfirm.replace("__NAME__", workerName)}
+          </DialogTitle>
+          <DialogDescription>{labels.archiveDescription}</DialogDescription>
+        </DialogHeader>
+        <DialogFooter>
+          <Button
+            variant="outline"
+            onClick={() => onOpenChange(false)}
+            disabled={isPending}
+          >
+            {labels.cancel}
+          </Button>
+          <Button variant="destructive" onClick={onConfirm} disabled={isPending}>
+            {isPending ? labels.saving : labels.confirm}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }

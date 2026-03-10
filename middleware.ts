@@ -1,24 +1,67 @@
+import { createServerClient } from "@supabase/ssr";
 import createMiddleware from "next-intl/middleware";
-import { type NextRequest } from "next/server";
-import { updateSession } from "@/lib/supabase/middleware";
+import { NextResponse, type NextRequest } from "next/server";
+import { hasEnvVars } from "@/lib/utils";
 import { routing } from "@/i18n/routing";
 
 const intlMiddleware = createMiddleware(routing);
 
 export async function middleware(request: NextRequest) {
-  // Run locale middleware — handles locale detection and redirects
-  const intlResponse = intlMiddleware(request);
+  // Run locale middleware — handles locale detection and rewrites
+  const response = intlMiddleware(request);
 
   // If next-intl is redirecting (locale normalization), return immediately
-  if (
-    intlResponse.headers.get("x-middleware-rewrite") === null &&
-    intlResponse.status !== 200
-  ) {
-    return intlResponse;
+  if (response.status !== 200) {
+    return response;
   }
 
-  // Pass the request through Supabase auth session refresh on every non-redirect request
-  return await updateSession(request);
+  // Apply Supabase auth session refresh onto the intl response
+  // (preserves next-intl's internal rewrite of / → /[defaultLocale])
+  if (!hasEnvVars) return response;
+
+  const supabase = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!,
+    {
+      cookies: {
+        getAll() {
+          return request.cookies.getAll();
+        },
+        setAll(cookiesToSet) {
+          cookiesToSet.forEach(({ name, value }) =>
+            request.cookies.set(name, value),
+          );
+          cookiesToSet.forEach(({ name, value, options }) =>
+            response.cookies.set(name, value, options),
+          );
+        },
+      },
+    },
+  );
+
+  const { data } = await supabase.auth.getClaims();
+  const user = data?.claims;
+
+  // Strip locale prefix to normalize path checks.
+  // Default locale "he" has no prefix (localePrefix: "as-needed").
+  const pathname = request.nextUrl.pathname;
+  const pathnameWithoutLocale = pathname.replace(/^\/th(?=\/|$)/, "") || "/";
+
+  if (
+    pathnameWithoutLocale !== "/" &&
+    !user &&
+    !pathnameWithoutLocale.startsWith("/login") &&
+    !pathnameWithoutLocale.startsWith("/auth")
+  ) {
+    const localePrefix = pathname !== pathnameWithoutLocale
+      ? pathname.slice(0, pathname.length - pathnameWithoutLocale.length)
+      : "";
+    const url = request.nextUrl.clone();
+    url.pathname = `${localePrefix}/auth/login`;
+    return NextResponse.redirect(url);
+  }
+
+  return response;
 }
 
 export const config = {
