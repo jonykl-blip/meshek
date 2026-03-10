@@ -65,6 +65,10 @@ interface Labels {
   langHe: string;
   langTh: string;
   langEn: string;
+  noWorkers: string;
+  validationNameRequired: string;
+  validationRatePositive: string;
+  validationTelegramNumeric: string;
 }
 
 const ROLE_MAP: Record<string, keyof Labels> = {
@@ -138,25 +142,33 @@ export function WorkersTable({
             </tr>
           </thead>
           <tbody>
-            {profiles.map((profile) => (
-              <WorkerRow
-                key={profile.id}
-                profile={profile}
-                labels={labels}
-                getRoleLabel={getRoleLabel}
-                getLangLabel={getLangLabel}
-                onUpdated={() => {
-                  setFeedbackMsg(labels.updated);
-                  router.refresh();
-                  setTimeout(() => setFeedbackMsg(""), 3000);
-                }}
-                onArchived={() => {
-                  setFeedbackMsg(labels.archived);
-                  router.refresh();
-                  setTimeout(() => setFeedbackMsg(""), 3000);
-                }}
-              />
-            ))}
+            {profiles.length === 0 ? (
+              <tr>
+                <td colSpan={6} className="px-4 py-8 text-center text-muted-foreground">
+                  {labels.noWorkers}
+                </td>
+              </tr>
+            ) : (
+              profiles.map((profile) => (
+                <WorkerRow
+                  key={profile.id}
+                  profile={profile}
+                  labels={labels}
+                  getRoleLabel={getRoleLabel}
+                  getLangLabel={getLangLabel}
+                  onUpdated={() => {
+                    setFeedbackMsg(labels.updated);
+                    router.refresh();
+                    setTimeout(() => setFeedbackMsg(""), 3000);
+                  }}
+                  onArchived={() => {
+                    setFeedbackMsg(labels.archived);
+                    router.refresh();
+                    setTimeout(() => setFeedbackMsg(""), 3000);
+                  }}
+                />
+              ))
+            )}
           </tbody>
         </table>
       </div>
@@ -183,13 +195,13 @@ function CreateWorkerForm({
 
   function handleSubmit() {
     setError("");
-    const rate = parseFloat(hourlyRate);
+    const rate = hourlyRate.trim() ? parseFloat(hourlyRate) : undefined;
     if (!name.trim()) {
-      setError(labels.name);
+      setError(labels.validationNameRequired);
       return;
     }
-    if (isNaN(rate) || rate <= 0) {
-      setError(labels.hourlyRate);
+    if (rate !== undefined && (isNaN(rate) || rate <= 0)) {
+      setError(labels.validationRatePositive);
       return;
     }
     startTransition(async () => {
@@ -212,7 +224,7 @@ function CreateWorkerForm({
     <div className="mb-6 rounded-lg border p-4" style={{ maxWidth: 400 }}>
       <div className="space-y-4">
         <div>
-          <Label>{labels.name} *</Label>
+          <Label>{labels.name}</Label>
           <Input
             value={name}
             onChange={(e) => setName(e.target.value)}
@@ -230,7 +242,7 @@ function CreateWorkerForm({
           />
         </div>
         <div>
-          <Label>{labels.hourlyRate} *</Label>
+          <Label>{labels.hourlyRate}</Label>
           <Input
             type="number"
             step="0.01"
@@ -447,7 +459,7 @@ function WorkerRow({
           <Badge variant="outline">{getRoleLabel(profile.role)}</Badge>
         </td>
         <td className="px-4 py-3" dir="ltr">
-          {profile.hourly_rate != null ? `₪${profile.hourly_rate}` : "—"}
+          {profile.hourly_rate != null ? `₪${Number(profile.hourly_rate).toFixed(2)}` : "—"}
         </td>
         <td className="px-4 py-3">{getLangLabel(profile.language_pref)}</td>
         <td className="px-4 py-3 font-mono text-sm" dir="ltr">

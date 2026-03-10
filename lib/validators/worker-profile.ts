@@ -13,7 +13,9 @@ export const workerProfileSchema = z.object({
   hourly_rate: z
     .number()
     .positive("תעריף חייב להיות חיובי")
-    .multipleOf(0.01),
+    .multipleOf(0.01)
+    .optional()
+    .nullable(),
   language_pref: z.enum(["he", "th", "en"]),
   role: z.enum(["worker", "manager", "admin"]),
 });

@@ -143,11 +143,13 @@ Runs at 20:00 Jerusalem time (Saturday skip). Checks if any attendance records e
 After every n8n workflow change: export JSON from n8n UI, strip secrets, commit sanitized copy to `n8n/`. Placeholders used: `<SUPABASE_SERVICE_ROLE_KEY>`, `<TELEGRAM_BOT_TOKEN>`.
 
 ### Known n8n Technical Debt
-- `service_role` key hardcoded in 7 Code nodes (should use n8n credentials)
-- Bot token hardcoded in 5 Code nodes
-- `ADMIN_CHAT_ID` points to Jonny (1867642206), not Sigal
-- `$today.toLocaleString()` is locale-dependent — fragile date formatting
+- `service_role` key hardcoded in 8 Code nodes (7 bot + 1 cutoff) — should use `$env.SUPABASE_SERVICE_ROLE_KEY`
+- Bot token hardcoded in 7 Code nodes (6 bot + 1 cutoff) — should use `$env.TELEGRAM_BOT_TOKEN`
+- `ADMIN_CHAT_ID` hardcoded in 4 nodes (3 bot + 1 cutoff) — points to Jonny (1867642206), should point to Sigal via `$env.ADMIN_CHAT_ID`
+- `$today.toLocaleString()` is locale-dependent in 3 active nodes — should use Luxon `DateTime.now().setZone('Asia/Jerusalem').toFormat()`
 - Pinned test data in workflow JSON
+- **Remediation guide:** `_bmad-output/implementation-artifacts/n8n-secret-externalization-guide.md`
+- **Status:** Deferred to post-Epic 4 (requires n8n self-hosted migration for `.env` access)
 
 ## BMad Method (`_bmad/`)
 

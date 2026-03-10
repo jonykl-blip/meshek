@@ -3,13 +3,10 @@
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { logAudit } from "@/lib/audit";
+import { verifyAdminCaller, type ActionResult } from "@/lib/auth-helpers";
 import { workerProfileSchema } from "@/lib/validators/worker-profile";
 import { revalidatePath } from "next/cache";
 import crypto from "crypto";
-
-export type ActionResult<T> =
-  | { success: true; data: T }
-  | { success: false; error: string };
 
 interface Profile {
   id: string;
@@ -26,24 +23,8 @@ export async function bindTelegramId(
   telegramId: string,
 ): Promise<ActionResult<Profile>> {
   const supabase = await createClient();
-
-  // Verify the caller is authenticated and has admin/owner role
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) {
-    return { success: false, error: "לא מאומת" };
-  }
-
-  const { data: callerProfile } = await supabase
-    .from("profiles")
-    .select("role")
-    .eq("id", user.id)
-    .single();
-
-  if (!callerProfile || !["owner", "admin"].includes(callerProfile.role)) {
-    return { success: false, error: "אין הרשאה" };
-  }
+  const { user, error: authError } = await verifyAdminCaller(supabase);
+  if (!user) return { success: false, error: authError };
 
   // Validate telegram_id — allow empty to unbind, otherwise must be numeric
   const trimmedId = telegramId.trim();
@@ -80,7 +61,8 @@ export async function bindTelegramId(
   }
 
   // Update telegram_id (null if clearing)
-  const { data: updated, error } = await supabase
+  const adminClient = createAdminClient();
+  const { data: updated, error } = await adminClient
     .from("profiles")
     .update({ telegram_id: trimmedId || null })
     .eq("id", profileId)
@@ -104,32 +86,12 @@ export async function bindTelegramId(
   return { success: true, data: updated };
 }
 
-async function verifyAdminCaller(supabase: Awaited<ReturnType<typeof createClient>>) {
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) {
-    return { user: null, error: "לא מאומת" } as const;
-  }
-
-  const { data: callerProfile } = await supabase
-    .from("profiles")
-    .select("role")
-    .eq("id", user.id)
-    .single();
-
-  if (!callerProfile || !["owner", "admin"].includes(callerProfile.role)) {
-    return { user: null, error: "אין הרשאה" } as const;
-  }
-
-  return { user, error: null } as const;
-}
 
 export async function createWorkerProfile(
   input: {
     full_name: string;
     telegram_id?: string;
-    hourly_rate: number;
+    hourly_rate?: number;
     language_pref: string;
     role: string;
   },
@@ -177,15 +139,14 @@ export async function createWorkerProfile(
 
   const newUserId = authData.user.id;
 
-  // Insert profile using the admin client (bypasses RLS — needed because
-  // the caller's RLS policies don't allow INSERT on profiles)
+  // Insert profile via admin client (RLS doesn't allow cross-user INSERT)
   const { data: newProfile, error: insertError } = await adminClient
     .from("profiles")
     .insert({
       id: newUserId,
       full_name,
       telegram_id: telegram_id || null,
-      hourly_rate,
+      hourly_rate: hourly_rate ?? null,
       language_pref,
       role,
     })
@@ -231,7 +192,7 @@ export async function updateWorkerProfile(
 
   const adminClient = createAdminClient();
 
-  // Fetch before state
+  // Fetch before state via admin client (RLS doesn't allow cross-user SELECT on all fields)
   const { data: beforeProfile } = await adminClient
     .from("profiles")
     .select("id, full_name, role, language_pref, telegram_id, hourly_rate, is_active")
@@ -301,7 +262,7 @@ export async function archiveWorkerProfile(
 
   const adminClient = createAdminClient();
 
-  // Fetch before state
+  // Fetch before state via admin client (RLS doesn't allow cross-user SELECT on all fields)
   const { data: beforeProfile } = await adminClient
     .from("profiles")
     .select("id, full_name, role, language_pref, telegram_id, hourly_rate, is_active")
@@ -310,6 +271,10 @@ export async function archiveWorkerProfile(
 
   if (!beforeProfile) {
     return { success: false, error: "פרופיל לא נמצא" };
+  }
+
+  if (!beforeProfile.is_active) {
+    return { success: false, error: "העובד כבר גונז" };
   }
 
   const { data: updated, error } = await adminClient
@@ -328,8 +293,8 @@ export async function archiveWorkerProfile(
     tableName: "profiles",
     recordId: profileId,
     action: "archive",
-    before: { is_active: true },
-    after: { is_active: false },
+    before: beforeProfile,
+    after: updated,
   });
 
   revalidatePath("/admin/workers");

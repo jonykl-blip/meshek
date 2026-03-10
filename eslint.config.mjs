@@ -20,13 +20,27 @@ const eslintConfig = [
     },
     rules: {
       "react/jsx-no-literals": [
-        "warn",
+        "error",
         {
           noStrings: true,
-          allowedStrings: [],
+          allowedStrings: ["×", "+", ":", "%", "/", "·", "—", "h", "Supabase"],
           ignoreProps: true,
         },
       ],
+    },
+  },
+  {
+    files: [
+      "components/hero.tsx",
+      "components/deploy-button.tsx",
+      "components/theme-switcher.tsx",
+      "components/forgot-password-form.tsx",
+      "components/update-password-form.tsx",
+      "components/tutorial/**",
+      "components/ui/**",
+    ],
+    rules: {
+      "react/jsx-no-literals": "off",
     },
   },
 ];

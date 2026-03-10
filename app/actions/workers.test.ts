@@ -14,6 +14,7 @@ const mockAdminClient = {
       createUser: vi.fn(),
     },
   },
+  from: vi.fn(),
 };
 
 vi.mock("@/lib/supabase/server", () => ({
@@ -40,10 +41,28 @@ const {
   archiveWorkerProfile,
 } = await import("./workers");
 
-// Simpler approach: mock .from() per call sequence
+// Mock .from() per call sequence for a given client
 function setupMockChain(results: { data: unknown; error: unknown }[]) {
   let callIndex = 0;
   mockSupabase.from.mockImplementation(() => {
+    const result = results[callIndex] ?? { data: null, error: null };
+    callIndex++;
+    const builder = {
+      select: () => builder,
+      eq: () => builder,
+      neq: () => builder,
+      update: () => builder,
+      insert: () => builder,
+      single: () => Promise.resolve(result),
+      maybeSingle: () => Promise.resolve(result),
+    };
+    return builder;
+  });
+}
+
+function setupAdminMockChain(results: { data: unknown; error: unknown }[]) {
+  let callIndex = 0;
+  mockAdminClient.from.mockImplementation(() => {
     const result = results[callIndex] ?? { data: null, error: null };
     callIndex++;
     const builder = {
@@ -143,6 +162,8 @@ describe("bindTelegramId", () => {
       { data: { role: "admin" }, error: null }, // caller profile
       { data: null, error: null }, // no existing binding (maybeSingle)
       { data: { id: "profile-1", full_name: "אורי", telegram_id: null }, error: null }, // before state
+    ]);
+    setupAdminMockChain([
       { data: updatedProfile, error: null }, // update result
     ]);
 
@@ -164,10 +185,12 @@ describe("bindTelegramId", () => {
     mockSupabase.auth.getUser.mockResolvedValue({
       data: { user: { id: "user-1" } },
     });
-    // When clearing (empty string), uniqueness check is skipped — only 3 .from() calls
+    // When clearing (empty string), uniqueness check is skipped — only 2 supabase .from() calls
     setupMockChain([
       { data: { role: "owner" }, error: null }, // caller profile
       { data: { id: "profile-1", full_name: "אורי", telegram_id: "12345" }, error: null }, // before state
+    ]);
+    setupAdminMockChain([
       { data: updatedProfile, error: null }, // update result
     ]);
 
@@ -265,6 +288,8 @@ describe("createWorkerProfile", () => {
     mockAuthenticatedAdmin();
     setupMockChain([
       { data: { role: "admin" }, error: null }, // caller check
+    ]);
+    setupAdminMockChain([
       { data: newProfile, error: null }, // insert result
     ]);
 
@@ -294,6 +319,8 @@ describe("updateWorkerProfile", () => {
     mockAuthenticatedAdmin();
     setupMockChain([
       { data: { role: "admin" }, error: null }, // caller check
+    ]);
+    setupAdminMockChain([
       { data: null, error: null }, // profile not found
     ]);
 
@@ -323,6 +350,8 @@ describe("updateWorkerProfile", () => {
     mockAuthenticatedAdmin();
     setupMockChain([
       { data: { role: "admin" }, error: null }, // caller check
+    ]);
+    setupAdminMockChain([
       { data: beforeProfile, error: null }, // before state
       { data: updatedProfile, error: null }, // update result
     ]);
@@ -359,6 +388,8 @@ describe("archiveWorkerProfile", () => {
     mockAuthenticatedAdmin();
     setupMockChain([
       { data: { role: "admin" }, error: null }, // caller check
+    ]);
+    setupAdminMockChain([
       { data: beforeProfile, error: null }, // before state
       { data: archivedProfile, error: null }, // update result
     ]);
@@ -372,11 +403,38 @@ describe("archiveWorkerProfile", () => {
     mockAuthenticatedAdmin();
     setupMockChain([
       { data: { role: "admin" }, error: null }, // caller check
+    ]);
+    setupAdminMockChain([
       { data: null, error: null }, // not found
     ]);
 
     const result = await archiveWorkerProfile("missing-id");
 
     expect(result).toEqual({ success: false, error: "פרופיל לא נמצא" });
+  });
+
+  it("returns error when worker is already archived", async () => {
+    mockAuthenticatedAdmin();
+    setupMockChain([
+      { data: { role: "admin" }, error: null }, // caller check
+    ]);
+    setupAdminMockChain([
+      {
+        data: {
+          id: "profile-1",
+          full_name: "עובד",
+          role: "worker",
+          language_pref: "he",
+          telegram_id: null,
+          hourly_rate: 30,
+          is_active: false,
+        },
+        error: null,
+      }, // already archived
+    ]);
+
+    const result = await archiveWorkerProfile("profile-1");
+
+    expect(result).toEqual({ success: false, error: "העובד כבר גונז" });
   });
 });

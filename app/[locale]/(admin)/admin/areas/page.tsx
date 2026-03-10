@@ -2,7 +2,8 @@ import { setRequestLocale } from "next-intl/server";
 import { getTranslations } from "next-intl/server";
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
-import { WorkersTable } from "./workers-table";
+import { getAreasWithAliases, getCrops } from "@/app/actions/areas";
+import { AreasTable } from "./areas-table";
 
 export function generateStaticParams() {
   return [{ locale: "he" }, { locale: "th" }];
@@ -15,22 +16,21 @@ export async function generateMetadata({
 }) {
   const { locale } = await params;
   setRequestLocale(locale);
-  const t = await getTranslations("admin.workers");
+  const t = await getTranslations("admin.areas");
   return { title: t("title") };
 }
 
-export default async function WorkersPage({
+export default async function AreasPage({
   params,
 }: {
   params: Promise<{ locale: string }>;
 }) {
   const { locale } = await params;
   setRequestLocale(locale);
-  const t = await getTranslations("admin.workers");
+  const t = await getTranslations("admin.areas");
 
   const supabase = await createClient();
 
-  // Verify admin/owner role
   const {
     data: { user },
   } = await supabase.auth.getUser();
@@ -49,50 +49,47 @@ export default async function WorkersPage({
     redirect(`/${locale}/dashboard`);
   }
 
-  // Fetch all active profiles
-  const { data: profiles } = await supabase
-    .from("profiles")
-    .select("id, full_name, role, language_pref, telegram_id, hourly_rate, is_active")
-    .eq("is_active", true)
-    .order("full_name");
+  const [areas, crops] = await Promise.all([
+    getAreasWithAliases(),
+    getCrops(),
+  ]);
 
   return (
     <main className="mx-auto max-w-4xl p-6">
       <h1 className="mb-6 text-2xl font-bold">{t("title")}</h1>
-      <WorkersTable
-        profiles={profiles ?? []}
+      <AreasTable
+        areas={areas}
+        crops={crops}
         labels={{
+          addArea: t("addArea"),
+          editArea: t("editArea"),
+          archiveArea: t("archiveArea"),
           name: t("name"),
-          role: t("role"),
-          language: t("language"),
-          telegramId: t("telegramId"),
-          save: t("save"),
-          saving: t("saving"),
-          noTelegramId: t("noTelegramId"),
-          saved: t("saved"),
-          addWorker: t("addWorker"),
-          editWorker: t("editWorker"),
-          archiveWorker: t("archiveWorker"),
-          hourlyRate: t("hourlyRate"),
-          cancel: t("cancel"),
+          crop: t("crop"),
+          aliases: t("aliases"),
+          addAlias: t("addAlias"),
+          removeAlias: t("removeAlias"),
+          photo: t("photo"),
+          uploadPhoto: t("uploadPhoto"),
+          noPhoto: t("noPhoto"),
           archiveConfirm: t("archiveConfirm", { name: "__NAME__" }),
           archiveDescription: t("archiveDescription"),
           confirm: t("confirm"),
+          cancel: t("cancel"),
+          save: t("save"),
+          saving: t("saving"),
           created: t("created"),
           updated: t("updated"),
           archived: t("archived"),
+          aliasAdded: t("aliasAdded"),
+          aliasRemoved: t("aliasRemoved"),
+          noAreas: t("noAreas"),
           actions: t("actions"),
-          roleWorker: t("roleWorker"),
-          roleManager: t("roleManager"),
-          roleAdmin: t("roleAdmin"),
-          roleOwner: t("roleOwner"),
-          langHe: t("langHe"),
-          langTh: t("langTh"),
-          langEn: t("langEn"),
-          noWorkers: t("noWorkers"),
+          createCrop: t("createCrop"),
+          cropName: t("cropName"),
+          noCrops: t("noCrops"),
           validationNameRequired: t("validation.nameRequired"),
-          validationRatePositive: t("validation.ratePositive"),
-          validationTelegramNumeric: t("validation.telegramNumeric"),
+          validationCropRequired: t("validation.cropRequired"),
         }}
       />
     </main>
