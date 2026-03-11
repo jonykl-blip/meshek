@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useTransition } from "react";
 import { Link } from "@/i18n/navigation";
 import { Button } from "@/components/ui/button";
 import {
@@ -12,6 +12,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import type { AnomalyRecord } from "@/app/actions/payroll";
+import { exportPayrollCsv } from "@/app/actions/payroll";
 
 export interface ExportGateLabels {
   exportCsv: string;
@@ -24,6 +25,8 @@ export interface ExportGateLabels {
   exportGateDate: string;
   exportGateArea: string;
   exportGateHours: string;
+  exportError: string;
+  exporting: string;
 }
 
 interface PayrollExportGateProps {
@@ -40,13 +43,28 @@ export function PayrollExportGate({
   toDate,
 }: PayrollExportGateProps) {
   const [open, setOpen] = useState(false);
+  const [exportError, setExportError] = useState<string | null>(null);
+  const [isPending, startTransition] = useTransition();
 
   function handleExport() {
     setOpen(false);
-    // Story 5.3 will replace this with actual CSV download
-    console.log("CSV export stub — Story 5.3 will implement download", {
-      fromDate,
-      toDate,
+    setExportError(null);
+    startTransition(async () => {
+      const result = await exportPayrollCsv({ fromDate, toDate });
+      if (!result.success) {
+        setExportError(result.error);
+        return;
+      }
+      // Trigger browser download
+      const blob = new Blob([result.data.csvContent], {
+        type: "text/csv;charset=utf-8",
+      });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = result.data.filename;
+      a.click();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
     });
   }
 
@@ -61,9 +79,16 @@ export function PayrollExportGate({
           }
         }}
         variant="default"
+        disabled={isPending}
       >
-        {labels.exportCsv}
+        {isPending ? labels.exporting : labels.exportCsv}
       </Button>
+
+      {exportError && (
+        <p className="text-sm text-destructive text-start mt-2">
+          {labels.exportError}: {exportError}
+        </p>
+      )}
 
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="max-w-2xl">
@@ -129,7 +154,9 @@ export function PayrollExportGate({
             <Button variant="outline" onClick={() => setOpen(false)}>
               {labels.exportGateCancel}
             </Button>
-            <Button onClick={handleExport}>{labels.exportGateConfirm}</Button>
+            <Button onClick={handleExport} disabled={isPending}>
+              {labels.exportGateConfirm}
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

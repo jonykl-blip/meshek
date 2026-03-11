@@ -259,8 +259,27 @@
       "exportGateDate": "תאריך",
       "exportGateArea": "אזור",
       "exportGateHours": "שעות",
-      "exportGateNoAnomalies": "אין חריגות — ניתן לייצא",
-      "exportGateStubToast": "ייצוא CSV יתווסף בסיפור 5.3"
+      "exportError": "שגיאה בייצוא",
+      "exporting": "מייצא..."
+    }
+  },
+  "sidebar": {
+    "sections": {
+      "management": "การจัดการ",
+      "finance": "การเงิน",
+      "reportsOps": "รายงานและปฏิบัติการ"
+    }
+  },
+  "bot": {
+    "clockin": {
+      "success": "เริ่มกะ ✅ — {worker}, {area}",
+      "alreadyClockedIn": "คุณมีกะที่เปิดอยู่ — ส่ง /clockout เพื่อสิ้นสุด",
+      "unknownArea": "ไม่พบพื้นที่ พื้นที่ที่ใช้ได้: {areas}",
+      "usage": "ส่ง /clockin [ชื่อพื้นที่] — ตัวอย่าง: /clockin אבוקדו"
+    },
+    "clockout": {
+      "success": "สิ้นสุดกะ ✅ — {worker}, {area}, {hours} ชั่วโมง",
+      "noOpenShift": "ไม่มีกะที่เปิดอยู่ — ส่ง /clockin [พื้นที่] เพื่อเริ่ม"
     }
   },
   "protected": {

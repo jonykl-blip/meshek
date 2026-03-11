@@ -96,6 +96,8 @@ export default async function PayrollPage({
     exportGateDate: t("exportGateDate"),
     exportGateArea: t("exportGateArea"),
     exportGateHours: t("exportGateHours"),
+    exportError: t("exportError"),
+    exporting: t("exporting"),
   };
 
   return (

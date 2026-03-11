@@ -11,7 +11,7 @@ vi.mock("@/lib/supabase/server", () => ({
   createClient: vi.fn(() => Promise.resolve(mockSupabase)),
 }));
 
-const { getPayrollAggregation, getPayrollAnomalies } = await import("./payroll");
+const { getPayrollAggregation, getPayrollAnomalies, exportPayrollCsv } = await import("./payroll");
 
 function mockAuthenticatedAdmin() {
   mockSupabase.auth.getUser.mockResolvedValue({
@@ -396,14 +396,25 @@ describe("getPayrollAnomalies", () => {
     }
   });
 
-  it("returns empty array when total_hours = 12 (strictly greater than 12 threshold)", async () => {
+  it("uses strict gt(total_hours, 12) — record at exactly 12 is excluded, record at 12.1 is included", async () => {
     mockAuthenticatedAdmin();
     let callIndex = 0;
+    // Simulate Supabase correctly applying .gt("total_hours", 12): 12.1 passes, 12.0 does not
     mockSupabase.from.mockImplementation(() => {
       callIndex++;
       if (callIndex === 1) return mockAdminRoleCheck();
-      // Supabase .gt("total_hours", 12) already filters this out — mock returns empty
-      return makeAnomalyQueryBuilder({ data: [], error: null });
+      return makeAnomalyQueryBuilder({
+        data: [
+          {
+            id: "log-2",
+            total_hours: 12.1,
+            work_date: "2026-03-05",
+            profiles: { full_name: "עידן" },
+            areas: { name: "שדה ב" },
+          },
+        ],
+        error: null,
+      });
     });
 
     const result = await getPayrollAnomalies({
@@ -411,7 +422,11 @@ describe("getPayrollAnomalies", () => {
       toDate: "2026-03-31",
     });
 
-    expect(result).toEqual({ success: true, data: [] });
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data).toHaveLength(1);
+      expect(result.data[0].total_hours).toBe(12.1);
+    }
   });
 
   it("returns error for invalid date format", async () => {
@@ -453,5 +468,265 @@ describe("getPayrollAnomalies", () => {
     });
 
     expect(result).toEqual({ success: false, error: "אין הרשאה" });
+  });
+
+  it("returns error when Supabase query fails", async () => {
+    mockAuthenticatedAdmin();
+    let callIndex = 0;
+    mockSupabase.from.mockImplementation(() => {
+      callIndex++;
+      if (callIndex === 1) return mockAdminRoleCheck();
+      return makeAnomalyQueryBuilder({
+        data: null,
+        error: { message: "connection error" },
+      });
+    });
+
+    const result = await getPayrollAnomalies({
+      fromDate: "2026-03-01",
+      toDate: "2026-03-31",
+    });
+
+    expect(result).toEqual({ success: false, error: "connection error" });
+  });
+});
+
+function makeAuditInsertBuilder(error: { message: string } | null = null) {
+  return { insert: vi.fn().mockResolvedValue({ error }) };
+}
+
+describe("exportPayrollCsv", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("returns error when caller is not admin/owner", async () => {
+    mockSupabase.auth.getUser.mockResolvedValue({
+      data: { user: { id: "u1" } },
+    });
+    mockSupabase.from.mockImplementation(() => mockRoleCheck("worker"));
+
+    const result = await exportPayrollCsv({
+      fromDate: "2026-03-01",
+      toDate: "2026-03-31",
+    });
+
+    expect(result).toEqual({ success: false, error: "אין הרשאה" });
+  });
+
+  it("returns error for invalid date format", async () => {
+    mockAuthenticatedAdmin();
+    mockSupabase.from.mockImplementation(() => mockAdminRoleCheck());
+
+    const result = await exportPayrollCsv({ fromDate: "bad", toDate: "2026-03-31" });
+
+    expect(result).toEqual({ success: false, error: "תאריך לא תקין" });
+  });
+
+  it("returns error for inverted date range", async () => {
+    mockAuthenticatedAdmin();
+    mockSupabase.from.mockImplementation(() => mockAdminRoleCheck());
+
+    const result = await exportPayrollCsv({
+      fromDate: "2026-03-31",
+      toDate: "2026-03-01",
+    });
+
+    expect(result).toEqual({
+      success: false,
+      error: "תאריך התחלה לא יכול להיות אחרי תאריך הסיום",
+    });
+  });
+
+  it("returns error when Supabase query fails", async () => {
+    mockAuthenticatedAdmin();
+    let callIndex = 0;
+    mockSupabase.from.mockImplementation(() => {
+      callIndex++;
+      if (callIndex === 1) return mockAdminRoleCheck();
+      return makePayrollQueryBuilder({
+        data: null,
+        error: { message: "connection error" },
+      });
+    });
+
+    const result = await exportPayrollCsv({
+      fromDate: "2026-03-01",
+      toDate: "2026-03-31",
+    });
+
+    expect(result).toEqual({ success: false, error: "connection error" });
+  });
+
+  it("exports two workers — CSV contains BOM, metadata row, header, two data rows", async () => {
+    mockAuthenticatedAdmin();
+    let callIndex = 0;
+    mockSupabase.from.mockImplementation(() => {
+      callIndex++;
+      if (callIndex === 1) return mockAdminRoleCheck();
+      if (callIndex === 2)
+        return makePayrollQueryBuilder({
+          data: [
+            {
+              profile_id: "w1",
+              total_hours: 160,
+              profiles: { full_name: "אבי", hourly_rate: 40 },
+            },
+            {
+              profile_id: "w2",
+              total_hours: 120,
+              profiles: { full_name: "תמר", hourly_rate: 35 },
+            },
+          ],
+          error: null,
+        });
+      return makeAuditInsertBuilder(null);
+    });
+
+    const result = await exportPayrollCsv({
+      fromDate: "2026-03-01",
+      toDate: "2026-03-31",
+    });
+
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data.csvContent.startsWith("\uFEFF")).toBe(true);
+      expect(result.data.csvContent).toContain("2026-03-01 - 2026-03-31");
+      expect(result.data.filename).toBe("payroll-2026-03-01-to-2026-03-31.csv");
+
+      // Verify row count: meta + header + 2 data rows
+      const lines = result.data.csvContent.replace("\uFEFF", "").split("\r\n");
+      expect(lines).toHaveLength(4);
+
+      // Verify computed values: אבי = 160 * 40 = 6400, תמר = 120 * 35 = 4200
+      expect(result.data.csvContent).toContain("אבי,160.0,40.00,6400.00");
+      expect(result.data.csvContent).toContain("תמר,120.0,35.00,4200.00");
+    }
+  });
+
+  it("worker with null hourly_rate — rate and gross pay fields are empty string in CSV", async () => {
+    mockAuthenticatedAdmin();
+    let callIndex = 0;
+    mockSupabase.from.mockImplementation(() => {
+      callIndex++;
+      if (callIndex === 1) return mockAdminRoleCheck();
+      if (callIndex === 2)
+        return makePayrollQueryBuilder({
+          data: [
+            {
+              profile_id: "w1",
+              total_hours: 80,
+              profiles: { full_name: "אחמד", hourly_rate: null },
+            },
+          ],
+          error: null,
+        });
+      return makeAuditInsertBuilder(null);
+    });
+
+    const result = await exportPayrollCsv({
+      fromDate: "2026-03-01",
+      toDate: "2026-03-31",
+    });
+
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data.csvContent).not.toContain("null");
+      // Verify exact row format: name, hours, empty rate, empty gross
+      expect(result.data.csvContent).toContain("אחמד,80.0,,");
+    }
+  });
+
+  it("audit log failure causes action to throw", async () => {
+    mockAuthenticatedAdmin();
+    let callIndex = 0;
+    mockSupabase.from.mockImplementation(() => {
+      callIndex++;
+      if (callIndex === 1) return mockAdminRoleCheck();
+      if (callIndex === 2)
+        return makePayrollQueryBuilder({
+          data: [
+            {
+              profile_id: "w1",
+              total_hours: 8,
+              profiles: { full_name: "עידן", hourly_rate: 50 },
+            },
+          ],
+          error: null,
+        });
+      return makeAuditInsertBuilder({ message: "audit fail" });
+    });
+
+    await expect(
+      exportPayrollCsv({ fromDate: "2026-03-01", toDate: "2026-03-31" })
+    ).rejects.toThrow("audit fail");
+  });
+
+  it("exports empty CSV with only metadata and header when no records match", async () => {
+    mockAuthenticatedAdmin();
+    let callIndex = 0;
+    mockSupabase.from.mockImplementation(() => {
+      callIndex++;
+      if (callIndex === 1) return mockAdminRoleCheck();
+      if (callIndex === 2)
+        return makePayrollQueryBuilder({ data: [], error: null });
+      return makeAuditInsertBuilder(null);
+    });
+
+    const result = await exportPayrollCsv({
+      fromDate: "2026-03-01",
+      toDate: "2026-03-31",
+    });
+
+    expect(result.success).toBe(true);
+    if (result.success) {
+      const lines = result.data.csvContent.replace("\uFEFF", "").split("\r\n");
+      expect(lines).toHaveLength(2); // meta + header only
+      expect(result.data.csvContent).toContain("תקופה:");
+      expect(result.data.csvContent).toContain("שם עובד");
+    }
+  });
+
+  it("writes correct audit payload on successful export", async () => {
+    mockAuthenticatedAdmin();
+    let callIndex = 0;
+    const auditBuilder = makeAuditInsertBuilder(null);
+    mockSupabase.from.mockImplementation(() => {
+      callIndex++;
+      if (callIndex === 1) return mockAdminRoleCheck();
+      if (callIndex === 2)
+        return makePayrollQueryBuilder({
+          data: [
+            {
+              profile_id: "w1",
+              total_hours: 10,
+              profiles: { full_name: "עידן", hourly_rate: 50 },
+            },
+          ],
+          error: null,
+        });
+      return auditBuilder;
+    });
+
+    const result = await exportPayrollCsv({
+      fromDate: "2026-03-01",
+      toDate: "2026-03-31",
+    });
+
+    expect(result.success).toBe(true);
+    expect(auditBuilder.insert).toHaveBeenCalledWith({
+      actor_id: "admin-1",
+      table_name: "payroll_export",
+      record_id: expect.any(String),
+      action: "create",
+      before_json: null,
+      after_json: {
+        from: "2026-03-01",
+        to: "2026-03-31",
+        worker_count: 1,
+        total_hours: 10,
+        total_gross_pay: 500,
+      },
+    });
   });
 });

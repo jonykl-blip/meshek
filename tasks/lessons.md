@@ -29,3 +29,11 @@ Recurring mistakes and corrective rules. Review during retrospectives.
 **Root cause:** Using `.update().select("..., area_aliases(id, alias)").single()` — the embedded one-to-many join with `area_aliases` can cause PostgREST to fail to coerce the result.
 **Fix:** Separate the mutation (`.update().select("flat columns").single()`) from the joined fetch (`.select("..., relations(...)").eq("id", id)` without `.single()`, then take `[0]`).
 **Rule:** For Supabase mutations (insert/update) that need to return related data, do the mutation with flat columns + `.single()`, then fetch relations separately without `.single()`.
+
+### `audit_log.record_id` is UUID — never pass arbitrary strings
+
+**Date:** 2026-03-11
+**Symptom:** `invalid input syntax for type uuid: "2026-03-01--2026-03-11"` when exporting payroll CSV.
+**Root cause:** `exportPayrollCsv` passed a date-range string as `recordId` to `logAudit()`, but `audit_log.record_id` is a UUID column. Unit tests mocked the audit insert and never hit a real DB, so the type mismatch was invisible.
+**Fix:** Use `crypto.randomUUID()` for audit events that don't reference an existing DB record. The contextual data (date range, worker count, etc.) goes in `after_json`.
+**Rule:** `logAudit({ recordId })` must always be a valid UUID. For events without a natural record ID (exports, bulk operations), generate one with `crypto.randomUUID()`.

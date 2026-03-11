@@ -30,15 +30,21 @@ export function AudioPlayer({ src, playLabel, pauseLabel }: AudioPlayerProps) {
     const onTimeUpdate = () => setCurrentTime(audio.currentTime);
     const onLoadedMetadata = () => setDuration(audio.duration);
     const onEnded = () => setIsPlaying(false);
+    const onError = () => {
+      const err = audio.error;
+      console.error("[AudioPlayer] error:", err?.code, err?.message, "src:", audio.src?.substring(0, 80));
+    };
 
     audio.addEventListener("timeupdate", onTimeUpdate);
     audio.addEventListener("loadedmetadata", onLoadedMetadata);
     audio.addEventListener("ended", onEnded);
+    audio.addEventListener("error", onError);
 
     return () => {
       audio.removeEventListener("timeupdate", onTimeUpdate);
       audio.removeEventListener("loadedmetadata", onLoadedMetadata);
       audio.removeEventListener("ended", onEnded);
+      audio.removeEventListener("error", onError);
     };
   }, []);
 
@@ -77,6 +83,8 @@ export function AudioPlayer({ src, playLabel, pauseLabel }: AudioPlayerProps) {
   return (
     <div dir="ltr" className="flex items-center gap-3">
       <audio ref={audioRef} src={src} preload="metadata" />
+      {/* DEBUG: native controls without crossOrigin */}
+      <audio controls src={src} preload="auto" style={{ height: 32 }} />
       <Button
         variant="ghost"
         size="icon"

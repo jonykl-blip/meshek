@@ -259,8 +259,27 @@
       "exportGateDate": "תאריך",
       "exportGateArea": "אזור",
       "exportGateHours": "שעות",
-      "exportGateNoAnomalies": "אין חריגות — ניתן לייצא",
-      "exportGateStubToast": "ייצוא CSV יתווסף בסיפור 5.3"
+      "exportError": "שגיאה בייצוא",
+      "exporting": "מייצא..."
+    }
+  },
+  "sidebar": {
+    "sections": {
+      "management": "ניהול",
+      "finance": "כספים",
+      "reportsOps": "דוחות ותפעול"
+    }
+  },
+  "bot": {
+    "clockin": {
+      "success": "התחלת שיפט ✅ — {worker}, {area}",
+      "alreadyClockedIn": "יש לך שיפט פתוח — שלח /clockout לסיום",
+      "unknownArea": "שטח לא מזוהה. שטחים זמינים: {areas}",
+      "usage": "שלח /clockin [שם שטח] — לדוגמה: /clockin אבוקדו"
+    },
+    "clockout": {
+      "success": "סיום שיפט ✅ — {worker}, {area}, {hours} שעות",
+      "noOpenShift": "אין שיפט פתוח — שלח /clockin [שטח] להתחלה"
     }
   },
   "protected": {

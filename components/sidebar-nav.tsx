@@ -1,7 +1,9 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import Image from "next/image";
 import { Link, usePathname } from "@/i18n/navigation";
+import { useTranslations } from "next-intl";
 import {
   Tooltip,
   TooltipContent,
@@ -27,42 +29,32 @@ interface NavItem {
   disabled?: boolean;
 }
 
-const navItems: NavItem[] = [
+interface NavSection {
+  labelKey: string;
+  items: NavItem[];
+}
+
+const navSections: NavSection[] = [
   {
-    label: "תור ביקורת",
-    icon: ClipboardList,
-    href: "/admin/review",
-    roles: ["owner", "admin"],
+    labelKey: "management",
+    items: [
+      { label: "עובדים", icon: Users, href: "/admin/workers", roles: ["owner", "admin"] },
+      { label: "שטחים", icon: MapPin, href: "/admin/areas", roles: ["owner", "admin"] },
+      { label: "ציוד", icon: Wrench, href: "/admin/equipment", roles: ["owner", "admin"] },
+    ],
   },
   {
-    label: "נוכחות",
-    icon: CalendarCheck,
-    href: "/dashboard",
-    roles: ["owner", "admin", "manager"],
+    labelKey: "finance",
+    items: [
+      { label: "שכר", icon: Banknote, href: "/admin/payroll", roles: ["owner", "admin"] },
+    ],
   },
   {
-    label: "שכר",
-    icon: Banknote,
-    href: "/admin/payroll",
-    roles: ["owner", "admin"],
-  },
-  {
-    label: "עובדים",
-    icon: Users,
-    href: "/admin/workers",
-    roles: ["owner", "admin"],
-  },
-  {
-    label: "שטחים",
-    icon: MapPin,
-    href: "/admin/areas",
-    roles: ["owner", "admin"],
-  },
-  {
-    label: "ציוד",
-    icon: Wrench,
-    href: "/admin/equipment",
-    roles: ["owner", "admin"],
+    labelKey: "reportsOps",
+    items: [
+      { label: "נוכחות", icon: CalendarCheck, href: "/dashboard", roles: ["owner", "admin", "manager"] },
+      { label: "תור ביקורת", icon: ClipboardList, href: "/admin/review", roles: ["owner", "admin"] },
+    ],
   },
 ];
 
@@ -73,6 +65,7 @@ interface SidebarNavProps {
 
 export default function SidebarNav({ role, kpis }: SidebarNavProps) {
   const pathname = usePathname();
+  const t = useTranslations("sidebar");
   const [collapsed, setCollapsed] = useState(false);
 
   useEffect(() => {
@@ -86,7 +79,12 @@ export default function SidebarNav({ role, kpis }: SidebarNavProps) {
     localStorage.setItem("meshek-sidebar-collapsed", String(next));
   }
 
-  const visibleItems = navItems.filter((item) => item.roles.includes(role));
+  const visibleSections = navSections
+    .map((section) => ({
+      ...section,
+      items: section.items.filter((item) => item.roles.includes(role)),
+    }))
+    .filter((section) => section.items.length > 0);
 
   return (
     <aside
@@ -95,12 +93,21 @@ export default function SidebarNav({ role, kpis }: SidebarNavProps) {
       }`}
     >
       {/* Logo / brand */}
-      <div className="flex items-center justify-center h-14 border-b border-white/10">
-        {collapsed ? (
-          <span className="text-lg font-bold">מ</span>
-        ) : (
-          <span className="text-base font-bold px-4">מֶשֶׁק</span>
-        )}
+      <div className="flex items-center justify-center h-20 border-b border-white/10">
+        <Link href="/">
+          {collapsed ? (
+            <span className="text-lg font-bold">מ</span>
+          ) : (
+            <Image
+              src="/images/meshek-logo.jpeg"
+              alt="משק פילצביץ'"
+              width={225}
+              height={225}
+              className="h-16 w-auto mix-blend-multiply brightness-110"
+              priority
+            />
+          )}
+        </Link>
       </div>
 
       {/* KPI block */}
@@ -122,50 +129,83 @@ export default function SidebarNav({ role, kpis }: SidebarNavProps) {
 
       {/* Nav links */}
       <nav className="flex-1 py-2">
-        {visibleItems.map((item) => {
-          const isActive = item.href
-            ? pathname.startsWith(item.href)
-            : false;
-          const Icon = item.icon;
-
-          const itemClasses = [
-            "flex items-center gap-3 px-3 py-2.5 w-full text-start transition-colors",
-            isActive
-              ? "border-r-2 border-white font-semibold bg-white/10"
-              : "hover:bg-white/10",
-            item.disabled
-              ? "opacity-50 pointer-events-none cursor-not-allowed"
-              : "",
-          ]
-            .filter(Boolean)
-            .join(" ");
-
-          const content = item.disabled ? (
-            <span className={itemClasses}>
-              <Icon size={18} className="shrink-0" />
-              {!collapsed && (
-                <span className="text-sm truncate">{item.label}</span>
-              )}
-            </span>
-          ) : (
-            <Link href={item.href!} className={itemClasses}>
-              <Icon size={18} className="shrink-0" />
-              {!collapsed && (
-                <span className="text-sm truncate">{item.label}</span>
-              )}
-            </Link>
+        {visibleSections.map((section, sectionIdx) => {
+          const sectionHasActive = section.items.some(
+            (item) => item.href && pathname.startsWith(item.href)
           );
 
-          if (collapsed) {
-            return (
-              <Tooltip key={item.label} delayDuration={100}>
-                <TooltipTrigger asChild>{content}</TooltipTrigger>
-                <TooltipContent side="right">{item.label}</TooltipContent>
-              </Tooltip>
-            );
-          }
+          const sectionLabelId = `nav-section-${section.labelKey}`;
 
-          return <div key={item.label}>{content}</div>;
+          return (
+            <div
+              key={section.labelKey}
+              role="group"
+              aria-labelledby={collapsed ? undefined : sectionLabelId}
+              className={
+                sectionIdx > 0
+                  ? collapsed
+                    ? "mt-2 border-t border-white/10 pt-2"
+                    : "mt-4"
+                  : ""
+              }
+            >
+              {!collapsed && (
+                <span
+                  id={sectionLabelId}
+                  className={`block px-3 pb-1 text-xs tracking-wider ${
+                    sectionHasActive ? "text-white/80" : "text-white/50"
+                  }`}
+                >
+                  {t(`sections.${section.labelKey}`)}
+                </span>
+              )}
+              {section.items.map((item) => {
+                const isActive = item.href
+                  ? pathname.startsWith(item.href)
+                  : false;
+                const Icon = item.icon;
+
+                const itemClasses = [
+                  "flex items-center gap-3 px-3 py-2.5 w-full text-start transition-colors",
+                  isActive
+                    ? "border-r-2 border-white font-semibold bg-white/10"
+                    : "hover:bg-white/10",
+                  item.disabled
+                    ? "opacity-50 pointer-events-none cursor-not-allowed"
+                    : "",
+                ]
+                  .filter(Boolean)
+                  .join(" ");
+
+                const content = item.disabled ? (
+                  <span className={itemClasses}>
+                    <Icon size={18} className="shrink-0" />
+                    {!collapsed && (
+                      <span className="text-sm truncate">{item.label}</span>
+                    )}
+                  </span>
+                ) : (
+                  <Link href={item.href!} className={itemClasses}>
+                    <Icon size={18} className="shrink-0" />
+                    {!collapsed && (
+                      <span className="text-sm truncate">{item.label}</span>
+                    )}
+                  </Link>
+                );
+
+                if (collapsed) {
+                  return (
+                    <Tooltip key={item.label} delayDuration={100}>
+                      <TooltipTrigger asChild>{content}</TooltipTrigger>
+                      <TooltipContent side="right">{item.label}</TooltipContent>
+                    </Tooltip>
+                  );
+                }
+
+                return <div key={item.label}>{content}</div>;
+              })}
+            </div>
+          );
         })}
       </nav>
 

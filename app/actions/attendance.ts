@@ -22,6 +22,19 @@ export interface PendingRecord {
   area_name: string | null;
 }
 
+function extractVoiceStoragePath(voiceRefUrl: string): string | null {
+  if (!voiceRefUrl.startsWith("http")) {
+    return voiceRefUrl;
+  }
+  try {
+    const url = new URL(voiceRefUrl);
+    const match = url.pathname.match(/\/voice-recordings\/(.+)$/);
+    return match ? match[1] : null;
+  } catch {
+    return null;
+  }
+}
+
 export async function getPendingRecords(): Promise<
   ActionResult<PendingRecord[]>
 > {
@@ -57,18 +70,23 @@ export async function getPendingRecords(): Promise<
       let voiceSignedUrl: string | null = null;
 
       if (row.voice_ref_url) {
-        // n8n stores voice_ref_url as a full pre-signed URL (1-year expiry).
-        // If already a URL, pass through directly. If a storage path, generate a new signed URL.
-        if (row.voice_ref_url.startsWith("http")) {
-          voiceSignedUrl = row.voice_ref_url;
-        } else {
-          const { data: signedUrlData } = await supabase.storage
-            .from("voice-recordings")
-            .createSignedUrl(row.voice_ref_url, 3600);
+        try {
+          const storagePath = extractVoiceStoragePath(row.voice_ref_url);
+          console.log("[getPendingRecords] voice_ref_url:", row.voice_ref_url, "→ storagePath:", storagePath);
+          if (storagePath) {
+            const { data: signedUrlData, error: signError } = await supabase.storage
+              .from("voice-recordings")
+              .createSignedUrl(storagePath, 3600);
 
-          if (signedUrlData?.signedUrl) {
-            voiceSignedUrl = signedUrlData.signedUrl;
+            console.log("[getPendingRecords] createSignedUrl result:", signedUrlData?.signedUrl ?? "NO URL", signError?.message ?? "no error");
+            if (signedUrlData?.signedUrl) {
+              voiceSignedUrl = signedUrlData.signedUrl;
+            } else if (signError) {
+              console.error("[getPendingRecords] Signed URL failed:", storagePath, signError.message);
+            }
           }
+        } catch (err) {
+          console.error("[getPendingRecords] Unexpected error generating signed URL:", err);
         }
       }
 

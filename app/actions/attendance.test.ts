@@ -413,7 +413,7 @@ describe("getPendingRecords", () => {
     });
   });
 
-  it("passes through HTTP voice_ref_url without generating signed URL", async () => {
+  it("extracts path from full HTTP voice_ref_url and generates fresh signed URL", async () => {
     mockAuthenticatedAdmin();
     let callIndex = 0;
     mockSupabase.from.mockImplementation(() => {
@@ -435,10 +435,68 @@ describe("getPendingRecords", () => {
                       work_date: "2026-03-10",
                       total_hours: 7,
                       voice_ref_url:
-                        "https://supabase.storage.com/already-signed-url",
-                      raw_transcript: "test http passthrough",
+                        "https://abc123.supabase.co/storage/v1/object/sign/voice-recordings/2026/03/voice6.ogg?token=eyJhbGciOi",
+                      raw_transcript: "test http url extraction",
                       status: "pending",
                       created_at: "2026-03-10T17:00:00Z",
+                      profiles: { full_name: "עידן" },
+                      areas: { name: "תפוזים" },
+                    },
+                  ],
+                  error: null,
+                }),
+            }),
+          }),
+        }),
+      };
+    });
+
+    const mockCreateSignedUrl = vi.fn().mockResolvedValue({
+      data: { signedUrl: "https://storage.example.com/fresh-signed" },
+      error: null,
+    });
+    mockSupabase.storage.from.mockReturnValue({
+      createSignedUrl: mockCreateSignedUrl,
+    });
+
+    const result = await getPendingRecords();
+
+    expect(mockSupabase.storage.from).toHaveBeenCalledWith("voice-recordings");
+    expect(mockCreateSignedUrl).toHaveBeenCalledWith("2026/03/voice6.ogg", 3600);
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data[0].voice_signed_url).toBe(
+        "https://storage.example.com/fresh-signed"
+      );
+    }
+  });
+
+  it("returns voice_signed_url null for malformed voice_ref_url", async () => {
+    mockAuthenticatedAdmin();
+    let callIndex = 0;
+    mockSupabase.from.mockImplementation(() => {
+      callIndex++;
+      if (callIndex === 1) {
+        return mockAdminRoleCheck();
+      }
+      return {
+        select: () => ({
+          eq: () => ({
+            order: () => ({
+              order: () =>
+                Promise.resolve({
+                  data: [
+                    {
+                      id: "rec-7",
+                      profile_id: "worker-1",
+                      area_id: "area-1",
+                      work_date: "2026-03-10",
+                      total_hours: 5,
+                      voice_ref_url:
+                        "https://example.com/no-voice-recordings-in-path",
+                      raw_transcript: "test malformed url",
+                      status: "pending",
+                      created_at: "2026-03-10T18:00:00Z",
                       profiles: { full_name: "עידן" },
                       areas: { name: "תפוזים" },
                     },
@@ -455,11 +513,67 @@ describe("getPendingRecords", () => {
 
     expect(result.success).toBe(true);
     if (result.success) {
-      expect(result.data[0].voice_signed_url).toBe(
-        "https://supabase.storage.com/already-signed-url"
-      );
+      expect(result.data[0].voice_signed_url).toBeNull();
     }
     expect(mockSupabase.storage.from).not.toHaveBeenCalled();
+  });
+
+  it("returns voice_signed_url null when createSignedUrl returns an error", async () => {
+    mockAuthenticatedAdmin();
+    let callIndex = 0;
+    mockSupabase.from.mockImplementation(() => {
+      callIndex++;
+      if (callIndex === 1) {
+        return mockAdminRoleCheck();
+      }
+      return {
+        select: () => ({
+          eq: () => ({
+            order: () => ({
+              order: () =>
+                Promise.resolve({
+                  data: [
+                    {
+                      id: "rec-8",
+                      profile_id: "worker-1",
+                      area_id: "area-1",
+                      work_date: "2026-03-10",
+                      total_hours: 6,
+                      voice_ref_url: "2026/03/voice-fail.ogg",
+                      raw_transcript: "test signed url error",
+                      status: "pending",
+                      created_at: "2026-03-10T19:00:00Z",
+                      profiles: { full_name: "עידן" },
+                      areas: { name: "תפוזים" },
+                    },
+                  ],
+                  error: null,
+                }),
+            }),
+          }),
+        }),
+      };
+    });
+
+    const mockCreateSignedUrl = vi.fn().mockResolvedValue({
+      data: null,
+      error: { message: "Bucket not found" },
+    });
+    mockSupabase.storage.from.mockReturnValue({
+      createSignedUrl: mockCreateSignedUrl,
+    });
+
+    const result = await getPendingRecords();
+
+    expect(mockSupabase.storage.from).toHaveBeenCalledWith("voice-recordings");
+    expect(mockCreateSignedUrl).toHaveBeenCalledWith(
+      "2026/03/voice-fail.ogg",
+      3600
+    );
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data[0].voice_signed_url).toBeNull();
+    }
   });
 });
 
