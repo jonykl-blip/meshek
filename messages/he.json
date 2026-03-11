@@ -47,7 +47,36 @@
   },
   "dashboard": {
     "title": "לוח הבקרה",
-    "emptyState": "ברוך הבא למשק"
+    "emptyState": "ברוך הבא למשק",
+    "attendance": {
+      "title": "נוכחות יומית",
+      "worker": "עובד",
+      "area": "שטח",
+      "hours": "שעות",
+      "status": "סטטוס",
+      "totalHours": "סה\"כ שעות",
+      "emptyState": "אין רשומות נוכחות ליום זה",
+      "approved": "מאושר",
+      "imported": "ייבוא",
+      "noArea": "לא צוין",
+      "loadError": "שגיאה בטעינת נתוני הנוכחות"
+    },
+    "filters": {
+      "fromDate": "מתאריך",
+      "toDate": "עד תאריך",
+      "allWorkers": "כל העובדים",
+      "allAreas": "כל השטחים",
+      "filterLabel": "סינון",
+      "clearAll": "נקה הכל",
+      "activeFilters": "סינון ({count})"
+    },
+    "anomalies": {
+      "allClear": "אין חריגות ✅",
+      "excessiveHoursHeading": "שעות חריגות (מעל 12)",
+      "stalePendingHeading": "ממתין לאישור — מעל 24 שעות",
+      "unknownWorker": "לא מזוהה",
+      "unknownArea": "לא צוין"
+    }
   },
   "admin": {
     "title": "ניהול מערכת",

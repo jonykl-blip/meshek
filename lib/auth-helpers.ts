@@ -24,3 +24,24 @@ export async function verifyAdminCaller(supabase: Awaited<ReturnType<typeof crea
 
   return { user, error: null } as const;
 }
+
+export async function verifyDashboardCaller(supabase: Awaited<ReturnType<typeof createClient>>) {
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) {
+    return { user: null, error: "לא מחובר" } as const;
+  }
+
+  const { data: callerProfile } = await supabase
+    .from("profiles")
+    .select("role")
+    .eq("id", user.id)
+    .single();
+
+  if (!callerProfile || !["owner", "admin", "manager"].includes(callerProfile.role)) {
+    return { user: null, error: "אין הרשאות צפייה" } as const;
+  }
+
+  return { user, error: null } as const;
+}

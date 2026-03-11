@@ -1,4 +1,5 @@
 import { setRequestLocale } from "next-intl/server";
+import AppSidebar from "@/components/app-sidebar";
 
 export default async function DashboardLayout({
   children,
@@ -9,5 +10,10 @@ export default async function DashboardLayout({
 }) {
   const { locale } = await params;
   setRequestLocale(locale);
-  return <>{children}</>;
+  return (
+    <div className="flex min-h-screen">
+      <AppSidebar locale={locale} />
+      <main className="flex-1 overflow-auto">{children}</main>
+    </div>
+  );
 }

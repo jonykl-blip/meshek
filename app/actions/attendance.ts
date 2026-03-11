@@ -3,7 +3,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { logAudit } from "@/lib/audit";
-import { verifyAdminCaller, type ActionResult } from "@/lib/auth-helpers";
+import { verifyAdminCaller, verifyDashboardCaller, type ActionResult } from "@/lib/auth-helpers";
 import { workerProfileSchema } from "@/lib/validators/worker-profile";
 import { revalidatePath } from "next/cache";
 import crypto from "crypto";
@@ -191,7 +191,7 @@ export async function getActiveWorkers(): Promise<
   ActionResult<{ id: string; full_name: string }[]>
 > {
   const supabase = await createClient();
-  const { user, error: authError } = await verifyAdminCaller(supabase);
+  const { user, error: authError } = await verifyDashboardCaller(supabase);
   if (!user) return { success: false, error: authError };
 
   const { data, error } = await supabase
@@ -210,7 +210,7 @@ export async function getActiveAreas(): Promise<
   ActionResult<{ id: string; name: string }[]>
 > {
   const supabase = await createClient();
-  const { user, error: authError } = await verifyAdminCaller(supabase);
+  const { user, error: authError } = await verifyDashboardCaller(supabase);
   if (!user) return { success: false, error: authError };
 
   const { data, error } = await supabase
@@ -423,6 +423,186 @@ export async function rejectRecord(
 
   revalidatePath("/admin/review");
   return { success: true, data: { id: recordId } };
+}
+
+export interface DailyAttendanceRecord {
+  id: string;
+  worker_name: string;
+  area_name: string | null;
+  work_date: string;
+  total_hours: number;
+  status: "approved" | "imported";
+  source: string;
+}
+
+export async function getDailyAttendance(params?: {
+  fromDate?: string;
+  toDate?: string;
+  workerId?: string;
+  areaId?: string;
+}): Promise<ActionResult<DailyAttendanceRecord[]>> {
+  const supabase = await createClient();
+  const { user, error: authError } = await verifyDashboardCaller(supabase);
+  if (!user) return { success: false, error: authError };
+
+  const todayJerusalem = new Date().toLocaleDateString("en-CA", {
+    timeZone: "Asia/Jerusalem",
+  });
+  const fromDate = params?.fromDate ?? todayJerusalem;
+  const toDate = params?.toDate ?? todayJerusalem;
+
+  const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
+  if (!dateRegex.test(fromDate) || !dateRegex.test(toDate)) {
+    return { success: false, error: "תאריך לא תקין" };
+  }
+
+  const daysDiff =
+    (new Date(toDate).getTime() - new Date(fromDate).getTime()) / 86_400_000;
+  if (daysDiff < 0) {
+    return { success: false, error: "תאריך התחלה לא יכול להיות אחרי תאריך הסיום" };
+  }
+  if (daysDiff > 31) {
+    return {
+      success: false,
+      error: "טווח תאריכים לא יכול לעלות על 31 יום",
+    };
+  }
+
+  let query = supabase
+    .from("attendance_logs")
+    .select(
+      "id, work_date, total_hours, status, source, profiles(full_name), areas(name)"
+    )
+    .in("status", ["approved", "imported"]);
+
+  if (fromDate === toDate) {
+    query = query.eq("work_date", fromDate);
+  } else {
+    query = query.gte("work_date", fromDate).lte("work_date", toDate);
+  }
+
+  if (params?.workerId) {
+    query = query.eq("profile_id", params.workerId);
+  }
+  if (params?.areaId) {
+    query = query.eq("area_id", params.areaId);
+  }
+
+  const { data, error } = await query
+    .order("work_date", { ascending: false })
+    .order("full_name", { referencedTable: "profiles", ascending: true });
+
+  if (error) return { success: false, error: error.message };
+
+  const records: DailyAttendanceRecord[] = (data ?? []).map((row) => ({
+    id: row.id,
+    worker_name:
+      (row.profiles as unknown as { full_name: string } | null)?.full_name ??
+      "לא ידוע",
+    area_name:
+      (row.areas as unknown as { name: string } | null)?.name ?? null,
+    work_date: row.work_date,
+    total_hours: row.total_hours,
+    status: row.status as "approved" | "imported",
+    source: row.source,
+  }));
+
+  return { success: true, data: records };
+}
+
+const EXCESSIVE_HOURS_THRESHOLD = 12;
+const PENDING_STALE_HOURS = 24;
+
+export interface AnomalyRecord {
+  id: string;
+  worker_name: string | null;
+  area_name: string | null;
+  work_date: string;
+  total_hours: number | null;
+}
+
+export interface AnomalyResult {
+  excessiveHours: AnomalyRecord[];
+  stalePending: AnomalyRecord[];
+}
+
+export async function getAnomalies(params?: {
+  fromDate?: string;
+  toDate?: string;
+}): Promise<ActionResult<AnomalyResult>> {
+  const supabase = await createClient();
+  const { user, error: authError } = await verifyDashboardCaller(supabase);
+  if (!user) return { success: false, error: authError };
+
+  const todayJerusalem = new Date().toLocaleDateString("en-CA", {
+    timeZone: "Asia/Jerusalem",
+  });
+  const fromDate = params?.fromDate ?? todayJerusalem;
+  const toDate = params?.toDate ?? todayJerusalem;
+
+  const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
+  if (!dateRegex.test(fromDate) || !dateRegex.test(toDate)) {
+    return { success: false, error: "תאריך לא תקין" };
+  }
+
+  const daysDiff =
+    (new Date(toDate).getTime() - new Date(fromDate).getTime()) / 86_400_000;
+  if (daysDiff < 0) {
+    return { success: false, error: "תאריך התחלה לא יכול להיות אחרי תאריך הסיום" };
+  }
+
+  // Excessive hours: date-range aware, approved/imported only, total_hours > 12
+  let excessQuery = supabase
+    .from("attendance_logs")
+    .select("id, work_date, total_hours, profiles(full_name), areas(name)")
+    .in("status", ["approved", "imported"])
+    .gt("total_hours", EXCESSIVE_HOURS_THRESHOLD);
+
+  if (fromDate === toDate) {
+    excessQuery = excessQuery.eq("work_date", fromDate);
+  } else {
+    excessQuery = excessQuery.gte("work_date", fromDate).lte("work_date", toDate);
+  }
+  excessQuery = excessQuery.order("work_date", { ascending: false });
+
+  // Stale pending: date-independent, all pending records older than 24h
+  const staleThreshold = new Date(
+    Date.now() - PENDING_STALE_HOURS * 60 * 60 * 1000
+  ).toISOString();
+
+  const staleQuery = supabase
+    .from("attendance_logs")
+    .select("id, work_date, total_hours, profiles(full_name), areas(name)")
+    .eq("status", "pending")
+    .lt("created_at", staleThreshold)
+    .order("created_at", { ascending: true });
+
+  const [excessResult, staleResult] = await Promise.all([excessQuery, staleQuery]);
+
+  if (excessResult.error) return { success: false, error: excessResult.error.message };
+  if (staleResult.error) return { success: false, error: staleResult.error.message };
+
+  const toAnomalyRecord = (row: {
+    id: string;
+    work_date: string;
+    total_hours: number | null;
+    profiles: unknown;
+    areas: unknown;
+  }): AnomalyRecord => ({
+    id: row.id,
+    worker_name: (row.profiles as { full_name: string } | null)?.full_name ?? null,
+    area_name: (row.areas as { name: string } | null)?.name ?? null,
+    work_date: row.work_date,
+    total_hours: row.total_hours,
+  });
+
+  return {
+    success: true,
+    data: {
+      excessiveHours: (excessResult.data ?? []).map(toAnomalyRecord),
+      stalePending: (staleResult.data ?? []).map(toAnomalyRecord),
+    },
+  };
 }
 
 export async function editRecord(

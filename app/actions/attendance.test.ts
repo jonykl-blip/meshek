@@ -47,7 +47,11 @@ const {
   approveRecord,
   rejectRecord,
   editRecord,
+  getDailyAttendance,
+  getAnomalies,
 } = await import("./attendance");
+
+const { verifyDashboardCaller } = await import("@/lib/auth-helpers");
 
 function mockAuthenticatedAdmin() {
   mockSupabase.auth.getUser.mockResolvedValue({
@@ -61,6 +65,17 @@ function mockAdminRoleCheck() {
       eq: () => ({
         single: () =>
           Promise.resolve({ data: { role: "admin" }, error: null }),
+      }),
+    }),
+  };
+}
+
+function mockRoleCheck(role: string) {
+  return {
+    select: () => ({
+      eq: () => ({
+        single: () =>
+          Promise.resolve({ data: { role }, error: null }),
       }),
     }),
   };
@@ -650,7 +665,7 @@ describe("getActiveWorkers", () => {
 
     const result = await getActiveWorkers();
 
-    expect(result).toEqual({ success: false, error: "לא מאומת" });
+    expect(result).toEqual({ success: false, error: "לא מחובר" });
   });
 
   it("returns active workers with id and full_name", async () => {
@@ -685,6 +700,30 @@ describe("getActiveWorkers", () => {
       expect(result.data[0]).toEqual({ id: "w-1", full_name: "עידן" });
     }
   });
+
+  it("allows manager role to get active workers", async () => {
+    mockSupabase.auth.getUser.mockResolvedValue({
+      data: { user: { id: "manager-1" } },
+    });
+    let callIndex = 0;
+    mockSupabase.from.mockImplementation(() => {
+      callIndex++;
+      if (callIndex === 1) return mockRoleCheck("manager");
+      return {
+        select: () => ({
+          eq: () => ({
+            eq: () => ({
+              order: () => Promise.resolve({ data: [], error: null }),
+            }),
+          }),
+        }),
+      };
+    });
+
+    const result = await getActiveWorkers();
+
+    expect(result.success).toBe(true);
+  });
 });
 
 describe("getActiveAreas", () => {
@@ -697,7 +736,7 @@ describe("getActiveAreas", () => {
 
     const result = await getActiveAreas();
 
-    expect(result).toEqual({ success: false, error: "לא מאומת" });
+    expect(result).toEqual({ success: false, error: "לא מחובר" });
   });
 
   it("returns active areas with id and name", async () => {
@@ -729,6 +768,28 @@ describe("getActiveAreas", () => {
       expect(result.data).toHaveLength(2);
       expect(result.data[0]).toEqual({ id: "a-1", name: "תפוזים" });
     }
+  });
+
+  it("allows manager role to get active areas", async () => {
+    mockSupabase.auth.getUser.mockResolvedValue({
+      data: { user: { id: "manager-1" } },
+    });
+    let callIndex = 0;
+    mockSupabase.from.mockImplementation(() => {
+      callIndex++;
+      if (callIndex === 1) return mockRoleCheck("manager");
+      return {
+        select: () => ({
+          eq: () => ({
+            order: () => Promise.resolve({ data: [], error: null }),
+          }),
+        }),
+      };
+    });
+
+    const result = await getActiveAreas();
+
+    expect(result.success).toBe(true);
   });
 });
 
@@ -1237,6 +1298,624 @@ describe("editRecord", () => {
     expect(result).toEqual({
       success: false,
       error: "הפעולה בוצעה אך תיעוד הביקורת נכשל",
+    });
+  });
+});
+
+describe("getDailyAttendance", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  // Fluent query builder for attendance_logs queries.
+  // select→in→(eq|gte+lte)→(eq)?→(eq)?→order→order
+  // First order() returns builder; second order() resolves the Promise.
+  function makeAttendanceQueryBuilder(result: {
+    data: unknown[] | null;
+    error: { message: string } | null;
+  }) {
+    let orderCallCount = 0;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const builder: any = {
+      select: vi.fn().mockReturnThis(),
+      in: vi.fn().mockReturnThis(),
+      eq: vi.fn().mockReturnThis(),
+      gte: vi.fn().mockReturnThis(),
+      lte: vi.fn().mockReturnThis(),
+      order: vi.fn().mockImplementation(() => {
+        orderCallCount++;
+        return orderCallCount >= 2 ? Promise.resolve(result) : builder;
+      }),
+    };
+    return builder;
+  }
+
+  it("returns error when user is not authenticated", async () => {
+    mockSupabase.auth.getUser.mockResolvedValue({ data: { user: null } });
+
+    const result = await getDailyAttendance();
+
+    expect(result).toEqual({ success: false, error: "לא מחובר" });
+  });
+
+  it("returns error when caller is worker role", async () => {
+    mockSupabase.auth.getUser.mockResolvedValue({
+      data: { user: { id: "user-1" } },
+    });
+    mockSupabase.from.mockImplementation(() => mockRoleCheck("worker"));
+
+    const result = await getDailyAttendance();
+
+    expect(result).toEqual({ success: false, error: "אין הרשאות צפייה" });
+  });
+
+  it("returns records when caller is manager", async () => {
+    mockAuthenticatedAdmin();
+    let callIndex = 0;
+    mockSupabase.from.mockImplementation(() => {
+      callIndex++;
+      if (callIndex === 1) return mockRoleCheck("manager");
+      return makeAttendanceQueryBuilder({
+        data: [
+          {
+            id: "rec-1",
+            work_date: "2026-03-11",
+            total_hours: 8.5,
+            status: "approved",
+            source: "bot",
+            profiles: { full_name: "עידן" },
+            areas: { name: "תפוזים" },
+          },
+        ],
+        error: null,
+      });
+    });
+
+    const result = await getDailyAttendance();
+
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data).toHaveLength(1);
+      expect(result.data[0].worker_name).toBe("עידן");
+      expect(result.data[0].area_name).toBe("תפוזים");
+      expect(result.data[0].total_hours).toBe(8.5);
+      expect(result.data[0].status).toBe("approved");
+    }
+  });
+
+  it("returns only approved/imported records (not pending/rejected)", async () => {
+    mockAuthenticatedAdmin();
+    let callIndex = 0;
+    let capturedBuilder: ReturnType<typeof makeAttendanceQueryBuilder>;
+    mockSupabase.from.mockImplementation(() => {
+      callIndex++;
+      if (callIndex === 1) return mockRoleCheck("owner");
+      capturedBuilder = makeAttendanceQueryBuilder({
+        data: [
+          {
+            id: "rec-1",
+            work_date: "2026-03-11",
+            total_hours: 8,
+            status: "approved",
+            source: "bot",
+            profiles: { full_name: "עידן" },
+            areas: { name: "תפוזים" },
+          },
+        ],
+        error: null,
+      });
+      return capturedBuilder;
+    });
+
+    const result = await getDailyAttendance();
+
+    expect(result.success).toBe(true);
+    expect(capturedBuilder!.in).toHaveBeenCalledWith("status", [
+      "approved",
+      "imported",
+    ]);
+  });
+
+  it("returns records for today by default", async () => {
+    mockAuthenticatedAdmin();
+    let callIndex = 0;
+    let capturedBuilder: ReturnType<typeof makeAttendanceQueryBuilder>;
+    mockSupabase.from.mockImplementation(() => {
+      callIndex++;
+      if (callIndex === 1) return mockRoleCheck("admin");
+      capturedBuilder = makeAttendanceQueryBuilder({ data: [], error: null });
+      return capturedBuilder;
+    });
+
+    await getDailyAttendance();
+
+    expect(capturedBuilder!.eq).toHaveBeenCalledWith(
+      "work_date",
+      expect.stringMatching(/^\d{4}-\d{2}-\d{2}$/)
+    );
+  });
+
+  it("accepts fromDate/toDate params (same date uses eq)", async () => {
+    mockAuthenticatedAdmin();
+    let callIndex = 0;
+    let capturedBuilder: ReturnType<typeof makeAttendanceQueryBuilder>;
+    mockSupabase.from.mockImplementation(() => {
+      callIndex++;
+      if (callIndex === 1) return mockRoleCheck("admin");
+      capturedBuilder = makeAttendanceQueryBuilder({ data: [], error: null });
+      return capturedBuilder;
+    });
+
+    await getDailyAttendance({ fromDate: "2026-01-15", toDate: "2026-01-15" });
+
+    expect(capturedBuilder!.eq).toHaveBeenCalledWith("work_date", "2026-01-15");
+  });
+
+  it("returns error when Supabase query fails", async () => {
+    mockAuthenticatedAdmin();
+    let callIndex = 0;
+    mockSupabase.from.mockImplementation(() => {
+      callIndex++;
+      if (callIndex === 1) return mockRoleCheck("owner");
+      return makeAttendanceQueryBuilder({
+        data: null,
+        error: { message: "connection error" },
+      });
+    });
+
+    const result = await getDailyAttendance();
+
+    expect(result).toEqual({ success: false, error: "connection error" });
+  });
+
+  it("handles null area_name in records", async () => {
+    mockAuthenticatedAdmin();
+    let callIndex = 0;
+    mockSupabase.from.mockImplementation(() => {
+      callIndex++;
+      if (callIndex === 1) return mockRoleCheck("owner");
+      return makeAttendanceQueryBuilder({
+        data: [
+          {
+            id: "rec-1",
+            work_date: "2026-03-11",
+            total_hours: 6,
+            status: "approved",
+            source: "bot",
+            profiles: { full_name: "עידן" },
+            areas: null,
+          },
+        ],
+        error: null,
+      });
+    });
+
+    const result = await getDailyAttendance();
+
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data[0].area_name).toBeNull();
+      expect(result.data[0].worker_name).toBe("עידן");
+    }
+  });
+
+  it("returns empty array when no records exist for the day", async () => {
+    mockAuthenticatedAdmin();
+    let callIndex = 0;
+    mockSupabase.from.mockImplementation(() => {
+      callIndex++;
+      if (callIndex === 1) return mockRoleCheck("admin");
+      return makeAttendanceQueryBuilder({ data: [], error: null });
+    });
+
+    const result = await getDailyAttendance();
+
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data).toEqual([]);
+    }
+  });
+
+  // --- Task 7 new tests: filter params ---
+
+  it("7.1 same fromDate/toDate range uses eq (single-date behaviour)", async () => {
+    mockAuthenticatedAdmin();
+    let callIndex = 0;
+    let capturedBuilder: ReturnType<typeof makeAttendanceQueryBuilder>;
+    mockSupabase.from.mockImplementation(() => {
+      callIndex++;
+      if (callIndex === 1) return mockRoleCheck("admin");
+      capturedBuilder = makeAttendanceQueryBuilder({ data: [], error: null });
+      return capturedBuilder;
+    });
+
+    await getDailyAttendance({
+      fromDate: "2026-01-07",
+      toDate: "2026-01-07",
+    });
+
+    expect(capturedBuilder!.eq).toHaveBeenCalledWith("work_date", "2026-01-07");
+    expect(capturedBuilder!.gte).not.toHaveBeenCalled();
+  });
+
+  it("7.2 date range uses gte/lte", async () => {
+    mockAuthenticatedAdmin();
+    let callIndex = 0;
+    let capturedBuilder: ReturnType<typeof makeAttendanceQueryBuilder>;
+    mockSupabase.from.mockImplementation(() => {
+      callIndex++;
+      if (callIndex === 1) return mockRoleCheck("admin");
+      capturedBuilder = makeAttendanceQueryBuilder({ data: [], error: null });
+      return capturedBuilder;
+    });
+
+    await getDailyAttendance({
+      fromDate: "2026-01-01",
+      toDate: "2026-01-07",
+    });
+
+    expect(capturedBuilder!.gte).toHaveBeenCalledWith("work_date", "2026-01-01");
+    expect(capturedBuilder!.lte).toHaveBeenCalledWith("work_date", "2026-01-07");
+    expect(capturedBuilder!.eq).not.toHaveBeenCalledWith(
+      "work_date",
+      expect.anything()
+    );
+  });
+
+  it("7.3 workerId param adds eq profile_id filter", async () => {
+    mockAuthenticatedAdmin();
+    let callIndex = 0;
+    let capturedBuilder: ReturnType<typeof makeAttendanceQueryBuilder>;
+    mockSupabase.from.mockImplementation(() => {
+      callIndex++;
+      if (callIndex === 1) return mockRoleCheck("admin");
+      capturedBuilder = makeAttendanceQueryBuilder({ data: [], error: null });
+      return capturedBuilder;
+    });
+
+    await getDailyAttendance({ workerId: "worker-uuid-123" });
+
+    expect(capturedBuilder!.eq).toHaveBeenCalledWith(
+      "profile_id",
+      "worker-uuid-123"
+    );
+  });
+
+  it("7.4 areaId param adds eq area_id filter", async () => {
+    mockAuthenticatedAdmin();
+    let callIndex = 0;
+    let capturedBuilder: ReturnType<typeof makeAttendanceQueryBuilder>;
+    mockSupabase.from.mockImplementation(() => {
+      callIndex++;
+      if (callIndex === 1) return mockRoleCheck("admin");
+      capturedBuilder = makeAttendanceQueryBuilder({ data: [], error: null });
+      return capturedBuilder;
+    });
+
+    await getDailyAttendance({ areaId: "area-uuid-456" });
+
+    expect(capturedBuilder!.eq).toHaveBeenCalledWith("area_id", "area-uuid-456");
+  });
+
+  it("7.5 invalid fromDate returns תאריך לא תקין error", async () => {
+    mockAuthenticatedAdmin();
+    mockSupabase.from.mockImplementation(() => mockRoleCheck("admin"));
+
+    const result = await getDailyAttendance({ fromDate: "not-a-date" });
+
+    expect(result).toEqual({ success: false, error: "תאריך לא תקין" });
+  });
+
+  it("7.6 date range > 31 days returns range cap error", async () => {
+    mockAuthenticatedAdmin();
+    mockSupabase.from.mockImplementation(() => mockRoleCheck("admin"));
+
+    const result = await getDailyAttendance({
+      fromDate: "2026-01-01",
+      toDate: "2026-03-15",
+    });
+
+    expect(result).toEqual({
+      success: false,
+      error: "טווח תאריכים לא יכול לעלות על 31 יום",
+    });
+  });
+
+  it("7.7 inverted date range (fromDate > toDate) returns validation error", async () => {
+    mockAuthenticatedAdmin();
+    mockSupabase.from.mockImplementation(() => mockRoleCheck("admin"));
+
+    const result = await getDailyAttendance({
+      fromDate: "2026-01-07",
+      toDate: "2026-01-01",
+    });
+
+    expect(result).toEqual({
+      success: false,
+      error: "תאריך התחלה לא יכול להיות אחרי תאריך הסיום",
+    });
+  });
+});
+
+describe("verifyDashboardCaller", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("allows owner role", async () => {
+    mockSupabase.auth.getUser.mockResolvedValue({
+      data: { user: { id: "user-1" } },
+    });
+    mockSupabase.from.mockImplementation(() => mockRoleCheck("owner"));
+
+    const result = await verifyDashboardCaller(mockSupabase as never);
+
+    expect(result.user).not.toBeNull();
+    expect(result.error).toBeNull();
+  });
+
+  it("allows admin role", async () => {
+    mockSupabase.auth.getUser.mockResolvedValue({
+      data: { user: { id: "user-1" } },
+    });
+    mockSupabase.from.mockImplementation(() => mockRoleCheck("admin"));
+
+    const result = await verifyDashboardCaller(mockSupabase as never);
+
+    expect(result.user).not.toBeNull();
+    expect(result.error).toBeNull();
+  });
+
+  it("allows manager role", async () => {
+    mockSupabase.auth.getUser.mockResolvedValue({
+      data: { user: { id: "user-1" } },
+    });
+    mockSupabase.from.mockImplementation(() => mockRoleCheck("manager"));
+
+    const result = await verifyDashboardCaller(mockSupabase as never);
+
+    expect(result.user).not.toBeNull();
+    expect(result.error).toBeNull();
+  });
+
+  it("denies worker role", async () => {
+    mockSupabase.auth.getUser.mockResolvedValue({
+      data: { user: { id: "user-1" } },
+    });
+    mockSupabase.from.mockImplementation(() => mockRoleCheck("worker"));
+
+    const result = await verifyDashboardCaller(mockSupabase as never);
+
+    expect(result.user).toBeNull();
+    expect(result.error).toBe("אין הרשאות צפייה");
+  });
+});
+
+describe("getAnomalies", () => {
+  // Fluent query builder that is also thenable (awaitable via Promise.all).
+  // All chain methods return `this`; awaiting the builder resolves `result`.
+  function makeAnomalyBuilder(result: { data: unknown[] | null; error: { message: string } | null }) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const builder: any = {
+      select: vi.fn().mockReturnThis(),
+      in: vi.fn().mockReturnThis(),
+      gt: vi.fn().mockReturnThis(),
+      eq: vi.fn().mockReturnThis(),
+      gte: vi.fn().mockReturnThis(),
+      lte: vi.fn().mockReturnThis(),
+      lt: vi.fn().mockReturnThis(),
+      order: vi.fn().mockReturnThis(),
+      then: (
+        resolve: (v: typeof result) => unknown,
+        reject?: (e: unknown) => unknown
+      ) => Promise.resolve(result).then(resolve, reject),
+    };
+    return builder;
+  }
+
+  function setupAnomalyMocks(
+    excessResult: { data: unknown[] | null; error: { message: string } | null },
+    staleResult: { data: unknown[] | null; error: { message: string } | null },
+    callerRole = "admin"
+  ) {
+    mockSupabase.auth.getUser.mockResolvedValue({
+      data: { user: { id: "user-1" } },
+    });
+
+    const excessBuilder = makeAnomalyBuilder(excessResult);
+    const staleBuilder = makeAnomalyBuilder(staleResult);
+    let callIndex = 0;
+    mockSupabase.from.mockImplementation(() => {
+      callIndex++;
+      if (callIndex === 1) return mockRoleCheck(callerRole);
+      if (callIndex === 2) return excessBuilder;
+      return staleBuilder;
+    });
+
+    return { excessBuilder, staleBuilder };
+  }
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("5.1 — no matching records → returns empty arrays", async () => {
+    setupAnomalyMocks({ data: [], error: null }, { data: [], error: null });
+
+    const result = await getAnomalies();
+
+    expect(result).toEqual({
+      success: true,
+      data: { excessiveHours: [], stalePending: [] },
+    });
+  });
+
+  it("5.2 — approved record with total_hours=13 → returned in excessiveHours", async () => {
+    const row = {
+      id: "rec-1",
+      work_date: "2026-03-11",
+      total_hours: 13,
+      profiles: { full_name: "Ali" },
+      areas: { name: "North Field" },
+    };
+    setupAnomalyMocks({ data: [row], error: null }, { data: [], error: null });
+
+    const result = await getAnomalies();
+
+    expect(result.success).toBe(true);
+    if (!result.success) return;
+    expect(result.data.excessiveHours).toHaveLength(1);
+    expect(result.data.excessiveHours[0]).toMatchObject({
+      id: "rec-1",
+      worker_name: "Ali",
+      area_name: "North Field",
+      work_date: "2026-03-11",
+      total_hours: 13,
+    });
+    expect(result.data.stalePending).toHaveLength(0);
+  });
+
+  it("5.3 — threshold is strictly gt(12), not gte", async () => {
+    const { excessBuilder } = setupAnomalyMocks(
+      { data: [], error: null },
+      { data: [], error: null }
+    );
+    await getAnomalies();
+    // Must use .gt(), not .gte() — threshold is exclusive (> 12)
+    expect(excessBuilder.gt).toHaveBeenCalledWith("total_hours", 12);
+  });
+
+  it("5.4 — pending record with null profile/area → returned in stalePending with null names", async () => {
+    const row = {
+      id: "rec-2",
+      work_date: "2026-03-10",
+      total_hours: null,
+      profiles: null,
+      areas: null,
+    };
+    setupAnomalyMocks({ data: [], error: null }, { data: [row], error: null });
+
+    const result = await getAnomalies();
+
+    expect(result.success).toBe(true);
+    if (!result.success) return;
+    expect(result.data.stalePending).toHaveLength(1);
+    expect(result.data.stalePending[0]).toMatchObject({
+      id: "rec-2",
+      worker_name: null,
+      area_name: null,
+      work_date: "2026-03-10",
+      total_hours: null,
+    });
+  });
+
+  it("5.5 — stale query uses .lt(created_at, iso-threshold)", async () => {
+    const { staleBuilder } = setupAnomalyMocks(
+      { data: [], error: null },
+      { data: [], error: null }
+    );
+    await getAnomalies();
+    // Must use .lt() (strictly less than), with an ISO datetime string
+    expect(staleBuilder.lt).toHaveBeenCalledWith(
+      "created_at",
+      expect.stringMatching(/^\d{4}-\d{2}-\d{2}T/)
+    );
+  });
+
+  it("5.6 — date range → excess query uses gte/lte (not eq)", async () => {
+    const { excessBuilder } = setupAnomalyMocks(
+      { data: [], error: null },
+      { data: [], error: null }
+    );
+    await getAnomalies({ fromDate: "2026-01-01", toDate: "2026-01-07" });
+    expect(excessBuilder.gte).toHaveBeenCalledWith("work_date", "2026-01-01");
+    expect(excessBuilder.lte).toHaveBeenCalledWith("work_date", "2026-01-07");
+    expect(excessBuilder.eq).not.toHaveBeenCalledWith("work_date", expect.anything());
+  });
+
+  it("5.7 — single day → excess query uses .eq (not gte/lte)", async () => {
+    const { excessBuilder } = setupAnomalyMocks(
+      { data: [], error: null },
+      { data: [], error: null }
+    );
+    await getAnomalies({ fromDate: "2026-01-01", toDate: "2026-01-01" });
+    expect(excessBuilder.eq).toHaveBeenCalledWith("work_date", "2026-01-01");
+    expect(excessBuilder.gte).not.toHaveBeenCalled();
+    expect(excessBuilder.lte).not.toHaveBeenCalled();
+  });
+
+  it("5.8 — invalid date → returns validation error", async () => {
+    // Auth mock not needed — validation happens before DB call
+    mockSupabase.auth.getUser.mockResolvedValue({
+      data: { user: { id: "user-1" } },
+    });
+    mockSupabase.from.mockImplementation(() => mockRoleCheck("admin"));
+
+    const result = await getAnomalies({ fromDate: "bad-date" });
+
+    expect(result).toEqual({ success: false, error: "תאריך לא תקין" });
+  });
+
+  it("5.9 — manager role caller → succeeds (not blocked by verifyDashboardCaller)", async () => {
+    setupAnomalyMocks({ data: [], error: null }, { data: [], error: null }, "manager");
+
+    const result = await getAnomalies();
+
+    expect(result.success).toBe(true);
+  });
+
+  it("5.10 — stale threshold is approximately Date.now() - 24h", async () => {
+    const { staleBuilder } = setupAnomalyMocks(
+      { data: [], error: null },
+      { data: [], error: null }
+    );
+    const before = Date.now();
+    await getAnomalies();
+    const after = Date.now();
+
+    expect(staleBuilder.lt).toHaveBeenCalledOnce();
+    const [field, isoValue] = staleBuilder.lt.mock.calls[0] as [string, string];
+    expect(field).toBe("created_at");
+    const usedThreshold = new Date(isoValue).getTime();
+    const expectedThreshold = before - 24 * 60 * 60 * 1000;
+    // Allow ±5 seconds tolerance
+    expect(usedThreshold).toBeGreaterThanOrEqual(expectedThreshold - 5000);
+    expect(usedThreshold).toBeLessThanOrEqual(after - 24 * 60 * 60 * 1000 + 5000);
+  });
+
+  it("5.11 — excess query error → returns { success: false, error }", async () => {
+    setupAnomalyMocks(
+      { data: null, error: { message: "db error on excess" } },
+      { data: [], error: null }
+    );
+
+    const result = await getAnomalies();
+
+    expect(result).toEqual({ success: false, error: "db error on excess" });
+  });
+
+  it("5.12 — stale query error → returns { success: false, error }", async () => {
+    setupAnomalyMocks(
+      { data: [], error: null },
+      { data: null, error: { message: "db error on stale" } }
+    );
+
+    const result = await getAnomalies();
+
+    expect(result).toEqual({ success: false, error: "db error on stale" });
+  });
+
+  it("5.13 — inverted date range → returns validation error", async () => {
+    mockSupabase.auth.getUser.mockResolvedValue({
+      data: { user: { id: "user-1" } },
+    });
+    mockSupabase.from.mockImplementation(() => mockRoleCheck("admin"));
+
+    const result = await getAnomalies({ fromDate: "2026-03-11", toDate: "2026-01-01" });
+
+    expect(result).toEqual({
+      success: false,
+      error: "תאריך התחלה לא יכול להיות אחרי תאריך הסיום",
     });
   });
 });
