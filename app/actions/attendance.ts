@@ -70,23 +70,9 @@ export async function getPendingRecords(): Promise<
       let voiceSignedUrl: string | null = null;
 
       if (row.voice_ref_url) {
-        try {
-          const storagePath = extractVoiceStoragePath(row.voice_ref_url);
-          console.log("[getPendingRecords] voice_ref_url:", row.voice_ref_url, "→ storagePath:", storagePath);
-          if (storagePath) {
-            const { data: signedUrlData, error: signError } = await supabase.storage
-              .from("voice-recordings")
-              .createSignedUrl(storagePath, 3600);
-
-            console.log("[getPendingRecords] createSignedUrl result:", signedUrlData?.signedUrl ?? "NO URL", signError?.message ?? "no error");
-            if (signedUrlData?.signedUrl) {
-              voiceSignedUrl = signedUrlData.signedUrl;
-            } else if (signError) {
-              console.error("[getPendingRecords] Signed URL failed:", storagePath, signError.message);
-            }
-          }
-        } catch (err) {
-          console.error("[getPendingRecords] Unexpected error generating signed URL:", err);
+        const storagePath = extractVoiceStoragePath(row.voice_ref_url);
+        if (storagePath) {
+          voiceSignedUrl = `/api/audio/${storagePath}`;
         }
       }
 
