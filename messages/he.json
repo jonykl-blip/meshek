@@ -8,7 +8,27 @@
   },
   "home": {
     "heroTitle": "משק - ניהול חקלאי",
-    "nextSteps": "שלבים הבאים"
+    "heroDescription": "מערכת ניהול כוח אדם ונוכחות למשק חקלאי",
+    "signInCta": "כניסה למערכת",
+    "sections": {
+      "management": "ניהול",
+      "finance": "כספים",
+      "reportsOps": "דוחות ותפעול"
+    },
+    "nav": {
+      "workers": "עובדים",
+      "workersDesc": "ניהול פרופילי עובדים ושיוך טלגרם",
+      "areas": "שטחים",
+      "areasDesc": "ניהול שטחים וכינויים",
+      "equipment": "ציוד",
+      "equipmentDesc": "ניהול רשימת הציוד",
+      "payroll": "שכר",
+      "payrollDesc": "חישוב שכר וייצוא CSV",
+      "dashboard": "נוכחות יומית",
+      "dashboardDesc": "צפייה ברשומות נוכחות יומיות",
+      "review": "רשומות ממתינות לאישור",
+      "reviewDesc": "סקירה ואישור רשומות ממתינות"
+    }
   },
   "auth": {
     "signUpSuccess": {

@@ -976,6 +976,101 @@
       ],
       "id": "a1b2c3d4-2700-4001-b001-onboarding01",
       "name": "Onboarding Prompt"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "route-clockin-001",
+                    "leftValue": "={{ $json.message.text }}",
+                    "rightValue": "/clockin",
+                    "operator": {
+                      "type": "string",
+                      "operation": "startsWith"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "clockin"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "route-clockout-001",
+                    "leftValue": "={{ $json.message.text }}",
+                    "rightValue": "/clockout",
+                    "operator": {
+                      "type": "string",
+                      "operation": "startsWith"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "clockout"
+            }
+          ]
+        },
+        "options": {
+          "fallbackOutput": "extra"
+        }
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3,
+      "position": [
+        -1960,
+        1056
+      ],
+      "id": "a1b2c3d4-6100-4001-b001-route_cmds01",
+      "name": "Route Commands"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Clock-In Command Handler (/clockin [area])\n// Creates attendance_logs record with status = pending_clockout\n// Story 6.1 Tasks 3.1–3.8, Task 5.1–5.2\n\nconst { DateTime } = require(\"luxon\");\n\n// Hebrew response constants (Task 5.1)\nconst CLOCKIN_SUCCESS = \"התחלת שיפט ✅ — {{worker}}, {{area}}\";\nconst ERROR_ALREADY_CLOCKED_IN = \"יש לך שיפט פתוח — שלח /clockout לסיום\";\nconst ERROR_UNKNOWN_AREA = \"שטח לא מזוהה. שטחים זמינים: {{areas}}\";\nconst CLOCKIN_USAGE = \"שלח /clockin [שם שטח] — לדוגמה: /clockin אבוקדו\";\n\nconst SUPABASE_URL = \"https://jnsfklshpabogzvolzct.supabase.co\";\nconst SERVICE_KEY = \"<SUPABASE_SERVICE_ROLE_KEY>\";\nconst TELEGRAM_BOT_TOKEN = \"<TELEGRAM_BOT_TOKEN>\";\n\nconst headers = {\n  \"apikey\": SERVICE_KEY,\n  \"Authorization\": \"Bearer \" + SERVICE_KEY,\n  \"Content-Type\": \"application/json\",\n};\n\nconst message = items[0].json.message;\nconst chatId = message.chat.id;\nconst msgTimestamp = message.date;\nconst jerusalemTime = DateTime.fromSeconds(msgTimestamp, { zone: \"Asia/Jerusalem\" });\nconst workDate = jerusalemTime.toFormat(\"yyyy-MM-dd\");\nconst timestampTz = jerusalemTime.toISO();\n\n// Telegram send helper (arrow fn preserves this)\nconst send = async (text) => {\n  await this.helpers.httpRequest({\n    method: \"POST\",\n    url: \"https://api.telegram.org/bot\" + TELEGRAM_BOT_TOKEN + \"/sendMessage\",\n    body: { chat_id: chatId, text, parse_mode: \"HTML\" },\n    json: true,\n  });\n};\n\n// Task 3.1: Identify Worker by telegram_id\nconst telegramId = String(message.from.id);\nlet profile = null;\n\ntry {\n  const resp = await this.helpers.httpRequest({\n    method: \"GET\",\n    url: SUPABASE_URL + \"/rest/v1/profiles\",\n    qs: {\n      telegram_id: \"eq.\" + telegramId,\n      is_active: \"eq.true\",\n      select: \"id,full_name,language_pref\",\n    },\n    headers,\n    json: true,\n  });\n  if (resp && resp.length > 0) profile = resp[0];\n} catch (err) {\n  console.log(\"Worker lookup failed: \" + err.message);\n}\n\nif (!profile) {\n  await send(\"שלום! 👋 אני לא מזהה את מספר הטלגרם שלך במערכת. אנא שלח/י את שמך המלא כדי שנוכל לקשר אותך.\");\n  return [];\n}\n\n// Task 3.2: Parse area argument\nconst areaArg = (message.text || \"\").trim().replace(/^\\/clockin\\s*/, \"\").trim();\n\nif (!areaArg) {\n  await send(CLOCKIN_USAGE);\n  return [];\n}\n\n// Task 3.3: Lookup Area by Alias then by Name\nconst safeName = areaArg.replace(/%/g, \"\\\\%\").replace(/_/g, \"\\\\_\");\nlet areaId = null;\nlet areaName = null;\n\ntry {\n  const aliasResp = await this.helpers.httpRequest({\n    method: \"GET\",\n    url: SUPABASE_URL + \"/rest/v1/area_aliases\",\n    qs: { alias: \"ilike.\" + safeName, select: \"area_id,areas!inner(id,name)\" },\n    headers,\n    json: true,\n  });\n\n  if (aliasResp && aliasResp.length > 0) {\n    areaId = aliasResp[0].area_id;\n    areaName = aliasResp[0].areas?.name || areaArg;\n  } else {\n    const areaResp = await this.helpers.httpRequest({\n      method: \"GET\",\n      url: SUPABASE_URL + \"/rest/v1/areas\",\n      qs: { name: \"ilike.\" + safeName, is_active: \"eq.true\", select: \"id,name\" },\n      headers,\n      json: true,\n    });\n    if (areaResp && areaResp.length > 0) {\n      areaId = areaResp[0].id;\n      areaName = areaResp[0].name;\n    }\n  }\n} catch (err) {\n  console.log(\"Area lookup failed: \" + err.message);\n}\n\n// Task 3.4: Handle Unknown Area — list available areas\nif (!areaId) {\n  try {\n    const allAreas = await this.helpers.httpRequest({\n      method: \"GET\",\n      url: SUPABASE_URL + \"/rest/v1/areas\",\n      qs: { is_active: \"eq.true\", select: \"name\", order: \"name.asc\" },\n      headers,\n      json: true,\n    });\n    const areaList = (allAreas || []).map(a => a.name).join(\", \");\n    await send(ERROR_UNKNOWN_AREA.replace(\"{{areas}}\", areaList));\n  } catch (err) {\n    await send(\"שגיאה — נסה שוב\");\n  }\n  return [];\n}\n\n// Task 3.5: Check for active clock-in today\ntry {\n  const openResp = await this.helpers.httpRequest({\n    method: \"GET\",\n    url: SUPABASE_URL + \"/rest/v1/attendance_logs\",\n    qs: {\n      profile_id: \"eq.\" + profile.id,\n      work_date: \"eq.\" + workDate,\n      status: \"eq.pending_clockout\",\n      select: \"id\",\n    },\n    headers,\n    json: true,\n  });\n\n  // Task 3.6: Reject duplicate clock-in\n  if (openResp && openResp.length > 0) {\n    await send(ERROR_ALREADY_CLOCKED_IN);\n    return [];\n  }\n} catch (err) {\n  console.log(\"Active clock-in check failed: \" + err.message);\n}\n\n// Task 3.7: Insert Attendance Log\ntry {\n  await this.helpers.httpRequest({\n    method: \"POST\",\n    url: SUPABASE_URL + \"/rest/v1/attendance_logs\",\n    headers: { ...headers, \"Prefer\": \"return=representation\" },\n    body: {\n      profile_id: profile.id,\n      area_id: areaId,\n      work_date: workDate,\n      start_time: timestampTz,\n      status: \"pending_clockout\",\n      source: \"bot\",\n      telegram_message_id: message.message_id,\n    },\n    json: true,\n  });\n} catch (err) {\n  console.log(\"Insert attendance failed: \" + err.message);\n  await send(\"שגיאה בשמירת הנתונים — נסה שוב\");\n  return [];\n}\n\n// Task 3.8: Send confirmation\nawait send(CLOCKIN_SUCCESS.replace(\"{{worker}}\", profile.full_name).replace(\"{{area}}\", areaName));\nreturn [];",
+        "mode": "runOnceForAllItems"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -1750,
+        500
+      ],
+      "id": "a1b2c3d4-6100-4001-b001-clock_in_01",
+      "name": "Clock-In"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Clock-Out Command Handler (/clockout)\n// Updates open attendance_logs record: sets end_time, total_hours, status = pending_approval\n// Story 6.1 Tasks 4.1–4.6, Task 5.1–5.2\n\nconst { DateTime } = require(\"luxon\");\n\n// Hebrew response constants (Task 5.1)\nconst CLOCKOUT_SUCCESS = \"סיום שיפט ✅ — {{worker}}, {{area}}, {{hours}} שעות\";\nconst ERROR_NO_OPEN_SHIFT = \"אין שיפט פתוח — שלח /clockin [שטח] להתחלה\";\n\nconst SUPABASE_URL = \"https://jnsfklshpabogzvolzct.supabase.co\";\nconst SERVICE_KEY = \"<SUPABASE_SERVICE_ROLE_KEY>\";\nconst TELEGRAM_BOT_TOKEN = \"<TELEGRAM_BOT_TOKEN>\";\n\nconst headers = {\n  \"apikey\": SERVICE_KEY,\n  \"Authorization\": \"Bearer \" + SERVICE_KEY,\n  \"Content-Type\": \"application/json\",\n};\n\nconst message = items[0].json.message;\nconst chatId = message.chat.id;\nconst msgTimestamp = message.date;\nconst jerusalemTime = DateTime.fromSeconds(msgTimestamp, { zone: \"Asia/Jerusalem\" });\nconst workDate = jerusalemTime.toFormat(\"yyyy-MM-dd\");\nconst endTimeTz = jerusalemTime.toISO();\n\nconst send = async (text) => {\n  await this.helpers.httpRequest({\n    method: \"POST\",\n    url: \"https://api.telegram.org/bot\" + TELEGRAM_BOT_TOKEN + \"/sendMessage\",\n    body: { chat_id: chatId, text, parse_mode: \"HTML\" },\n    json: true,\n  });\n};\n\n// Task 4.1: Identify Worker by telegram_id\nconst telegramId = String(message.from.id);\nlet profile = null;\n\ntry {\n  const resp = await this.helpers.httpRequest({\n    method: \"GET\",\n    url: SUPABASE_URL + \"/rest/v1/profiles\",\n    qs: {\n      telegram_id: \"eq.\" + telegramId,\n      is_active: \"eq.true\",\n      select: \"id,full_name,language_pref\",\n    },\n    headers,\n    json: true,\n  });\n  if (resp && resp.length > 0) profile = resp[0];\n} catch (err) {\n  console.log(\"Worker lookup failed: \" + err.message);\n}\n\nif (!profile) {\n  await send(\"שלום! 👋 אני לא מזהה את מספר הטלגרם שלך במערכת. אנא שלח/י את שמך המלא כדי שנוכל לקשר אותך.\");\n  return [];\n}\n\n// Task 4.2: Find open clock-in for today\nlet openRecord = null;\n\ntry {\n  const openResp = await this.helpers.httpRequest({\n    method: \"GET\",\n    url: SUPABASE_URL + \"/rest/v1/attendance_logs\",\n    qs: {\n      profile_id: \"eq.\" + profile.id,\n      work_date: \"eq.\" + workDate,\n      status: \"eq.pending_clockout\",\n      select: \"id,start_time,area_id,areas(name)\",\n    },\n    headers,\n    json: true,\n  });\n  if (openResp && openResp.length > 0) openRecord = openResp[0];\n} catch (err) {\n  console.log(\"Open clock-in lookup failed: \" + err.message);\n}\n\n// Task 4.3: Handle no open clock-in\nif (!openRecord) {\n  await send(ERROR_NO_OPEN_SHIFT);\n  return [];\n}\n\n// Task 4.4: Calculate total hours\nconst startTime = DateTime.fromISO(openRecord.start_time, { zone: \"Asia/Jerusalem\" });\nconst endTime = DateTime.fromSeconds(msgTimestamp, { zone: \"Asia/Jerusalem\" });\nconst totalHours = endTime.diff(startTime, \"hours\").hours;\nconst roundedHours = Math.round(totalHours * 10) / 10;\n\n// Task 4.5: Update Attendance Log\ntry {\n  await this.helpers.httpRequest({\n    method: \"PATCH\",\n    url: SUPABASE_URL + \"/rest/v1/attendance_logs\",\n    qs: { id: \"eq.\" + openRecord.id },\n    headers: { ...headers, \"Prefer\": \"return=representation\" },\n    body: {\n      end_time: endTimeTz,\n      total_hours: roundedHours,\n      status: \"pending_approval\",\n    },\n    json: true,\n  });\n} catch (err) {\n  console.log(\"Update attendance failed: \" + err.message);\n  await send(\"שגיאה בעדכון הנתונים — נסה שוב\");\n  return [];\n}\n\n// Task 4.6: Send confirmation\nconst areaName = openRecord.areas?.name || \"לא ידוע\";\nawait send(\n  CLOCKOUT_SUCCESS\n    .replace(\"{{worker}}\", profile.full_name)\n    .replace(\"{{area}}\", areaName)\n    .replace(\"{{hours}}\", String(roundedHours))\n);\nreturn [];",
+        "mode": "runOnceForAllItems"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -1750,
+        1600
+      ],
+      "id": "a1b2c3d4-6100-4001-b001-clock_out_01",
+      "name": "Clock-Out"
     }
   ],
   "pinData": {
@@ -1282,7 +1377,7 @@
         ],
         [
           {
-            "node": "Identify Sender",
+            "node": "Route Commands",
             "type": "main",
             "index": 0
           }
@@ -1360,6 +1455,31 @@
           },
           {
             "node": "Ack Message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Route Commands": {
+      "main": [
+        [
+          {
+            "node": "Clock-In",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Clock-Out",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Identify Sender",
             "type": "main",
             "index": 0
           }
