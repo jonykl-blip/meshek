@@ -11,9 +11,9 @@
     "heroDescription": "מערכת ניהול כוח אדם ונוכחות למשק חקלאי",
     "signInCta": "כניסה למערכת",
     "sections": {
-      "management": "ניהול",
-      "finance": "כספים",
-      "reportsOps": "דוחות ותפעול"
+      "management": "การจัดการ",
+      "finance": "การเงิน",
+      "reportsOps": "รายงานและปฏิบัติการ"
     },
     "nav": {
       "workers": "עובדים",

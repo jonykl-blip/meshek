@@ -88,7 +88,6 @@ export default async function Home({
               width={32}
               height={32}
               className="h-8 w-auto mix-blend-multiply brightness-110"
-              priority
             />
             {tCommon("appName")}
           </Link>
@@ -130,7 +129,7 @@ export default async function Home({
                   {section.cards.map((card) => (
                     <Link key={card.titleKey} href={card.href}>
                       <Card className="hover:border-foreground/20 transition-colors h-full">
-                        <CardHeader className="flex flex-row items-center gap-3">
+                        <CardHeader className="flex flex-row items-center gap-3 space-y-0">
                           <card.icon className="h-5 w-5 text-muted-foreground shrink-0" />
                           <div>
                             <CardTitle className="text-base">
