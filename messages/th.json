@@ -231,6 +231,36 @@
       "validation": {
         "nameRequired": "שם הציוד הוא שדה חובה"
       }
+    },
+    "payroll": {
+      "title": "שכר",
+      "worker": "עובד",
+      "totalHours": "סה\"כ שעות",
+      "hourlyRate": "תעריף לשעה",
+      "grossPay": "שכר ברוטו",
+      "grandTotal": "סה\"כ",
+      "emptyState": "אין רשומות מאושרות בתקופה זו",
+      "loadError": "שגיאה בטעינת נתוני שכר",
+      "fromDate": "מתאריך",
+      "toDate": "עד תאריך",
+      "currentMonth": "חודש נוכחי",
+      "previousMonth": "חודש קודם",
+      "missingRate": "תעריף חסר",
+      "recordCount": "ימי עבודה",
+      "currency": "₪",
+      "missingRateWarning": "חלק מהעובדים חסרים תעריף שעתי — סה\"כ ברוטו חלקי",
+      "exportCsv": "ייצוא CSV",
+      "exportGateTitle": "רשומות חריגות לפני ייצוא",
+      "exportGateDesc": "נמצאו רשומות עם שעות חריגות (מעל 12 שעות ביום). אנא בדקי לפני הייצוא.",
+      "exportGateConfirm": "אישור והמשך",
+      "exportGateCancel": "ביטול",
+      "exportGateEdit": "ערוך",
+      "exportGateWorker": "עובד",
+      "exportGateDate": "תאריך",
+      "exportGateArea": "אזור",
+      "exportGateHours": "שעות",
+      "exportGateNoAnomalies": "אין חריגות — ניתן לייצא",
+      "exportGateStubToast": "ייצוא CSV יתווסף בסיפור 5.3"
     }
   },
   "protected": {

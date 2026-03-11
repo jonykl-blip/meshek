@@ -43,9 +43,8 @@ const navItems: NavItem[] = [
   {
     label: "שכר",
     icon: Banknote,
-    href: null,
+    href: "/admin/payroll",
     roles: ["owner", "admin"],
-    disabled: true,
   },
   {
     label: "עובדים",
