@@ -356,6 +356,7 @@
     "home": "ראשי",
     "breadcrumbSep": "/",
     "notifications": "התראות",
+    "userMenu": "תפריט משתמש",
     "pages": {
       "dashboard": "נוכחות יומית",
       "admin": "ניהול מערכת",

@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import Image from "next/image";
 import { Link, usePathname } from "@/i18n/navigation";
 import { useTranslations } from "next-intl";
+import { getInitials } from "@/lib/format";
 import {
   Tooltip,
   TooltipContent,
@@ -72,14 +73,6 @@ const ROLE_LABELS: Record<string, string> = {
   manager: "מנהל משמרת",
   worker: "עובד",
 };
-
-function getInitials(name: string): string {
-  const parts = name.trim().split(/\s+/);
-  if (parts.length >= 2) {
-    return parts[0][0] + parts[1][0];
-  }
-  return name.slice(0, 2);
-}
 
 interface SidebarNavProps {
   role: string;
@@ -231,8 +224,8 @@ export default function SidebarNav({ role, fullName, kpis }: SidebarNavProps) {
                   "relative flex items-center gap-[10px] w-full text-start transition-all duration-200",
                   collapsed ? "px-3 py-2.5" : "px-3 py-[9px] rounded-[10px]",
                   isActive
-                    ? "bg-white/[0.13] text-white border-r-[3px] font-semibold"
-                    : "text-white/65 hover:bg-white/[0.08] hover:text-white border-r-[3px] border-transparent",
+                    ? "bg-white/[0.13] text-white border-s-[3px] font-semibold"
+                    : "text-white/65 hover:bg-white/[0.08] hover:text-white border-s-[3px] border-transparent",
                   item.disabled
                     ? "opacity-50 pointer-events-none cursor-not-allowed"
                     : "",
@@ -250,7 +243,7 @@ export default function SidebarNav({ role, fullName, kpis }: SidebarNavProps) {
                 ) : (
                   <Link href={item.href!} className={itemClasses}
                     style={{
-                      borderRightColor: isActive ? "hsl(var(--accent))" : "transparent",
+                      borderInlineStartColor: isActive ? "hsl(var(--accent))" : "transparent",
                     }}
                   >
                     <Icon size={20} className="shrink-0" />
