@@ -172,6 +172,11 @@
       "langTh": "תאילנדית",
       "langEn": "אנגלית",
       "noWorkers": "אין עובדים פעילים",
+      "aliases": "כינויים",
+      "addAlias": "הוסף כינוי",
+      "aliasPlaceholder": "שם כינוי חדש",
+      "aliasAdded": "כינוי נוסף",
+      "aliasRemoved": "כינוי הוסר",
       "validation": {
         "nameRequired": "שם הוא שדה חובה",
         "rateRequired": "תעריף הוא שדה חובה",

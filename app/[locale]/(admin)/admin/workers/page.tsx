@@ -52,7 +52,7 @@ export default async function WorkersPage({
   // Fetch all active profiles
   const { data: profiles } = await supabase
     .from("profiles")
-    .select("id, full_name, role, language_pref, telegram_id, hourly_rate, is_active")
+    .select("id, full_name, role, language_pref, telegram_id, hourly_rate, is_active, profile_aliases(id, alias)")
     .eq("is_active", true)
     .order("full_name");
 
@@ -90,6 +90,11 @@ export default async function WorkersPage({
           langTh: t("langTh"),
           langEn: t("langEn"),
           noWorkers: t("noWorkers"),
+          aliases: t("aliases"),
+          addAlias: t("addAlias"),
+          aliasPlaceholder: t("aliasPlaceholder"),
+          aliasAdded: t("aliasAdded"),
+          aliasRemoved: t("aliasRemoved"),
           validationNameRequired: t("validation.nameRequired"),
           validationRatePositive: t("validation.ratePositive"),
           validationTelegramNumeric: t("validation.telegramNumeric"),

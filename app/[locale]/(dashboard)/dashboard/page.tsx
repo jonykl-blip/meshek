@@ -118,7 +118,6 @@ export default async function DashboardPage({
     statusPending: tActions("statusPending"),
     approveSuccess: tActions("approveSuccess"),
     rejectSuccess: tActions("rejectSuccess"),
-    actionError: tActions("actionError"),
   };
 
   const filterLabels = {

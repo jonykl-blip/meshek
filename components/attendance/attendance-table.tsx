@@ -97,7 +97,9 @@ function RecordRow({
       </td>
       <td className="px-4 py-3">{record.area_name ?? labels.noArea}</td>
       <td className="px-4 py-3">
-        {numberFormatter.format(record.total_hours)}
+        {record.total_hours != null
+          ? numberFormatter.format(record.total_hours)
+          : "—"}
       </td>
       <td className="px-4 py-3">{getStatusBadge(record.status, labels)}</td>
       {hasPendingRecords && (
@@ -153,7 +155,7 @@ export function AttendanceTable({
     );
   }
 
-  const totalHours = records.reduce((sum, r) => sum + r.total_hours, 0);
+  const totalHours = records.reduce((sum, r) => sum + (r.total_hours ?? 0), 0);
   const colCount = hasPendingRecords ? 5 : 4;
 
   return (
@@ -198,7 +200,7 @@ export function AttendanceTable({
                 ? sortedDates.map((date) => {
                     const dayRecords = groupedByDate[date];
                     const dayTotal = dayRecords.reduce(
-                      (sum, r) => sum + r.total_hours,
+                      (sum, r) => sum + (r.total_hours ?? 0),
                       0
                     );
                     const dayLabel = dateFormatter.format(

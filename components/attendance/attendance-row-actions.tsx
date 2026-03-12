@@ -15,7 +15,6 @@ export interface AttendanceRowActionsLabels {
   statusPending: string;
   approveSuccess: string;
   rejectSuccess: string;
-  actionError: string;
 }
 
 interface AttendanceRowActionsProps {
@@ -39,7 +38,17 @@ export function AttendanceRowActions({
     type: "success" | "error";
   } | null>(null);
 
-  if (status !== "pending") return null;
+  if (status !== "pending" && !feedback) return null;
+
+  if (status !== "pending" && feedback) {
+    return (
+      <span
+        className={`text-xs ${feedback.type === "success" ? "text-green-600" : "text-red-600"}`}
+      >
+        {feedback.message}
+      </span>
+    );
+  }
 
   const isClean = profileId !== null && areaId !== null;
 

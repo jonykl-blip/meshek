@@ -4,7 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { logAudit } from "@/lib/audit";
 import { verifyAdminCaller, type ActionResult } from "@/lib/auth-helpers";
-import { workerProfileSchema } from "@/lib/validators/worker-profile";
+import { workerProfileSchema, profileAliasSchema } from "@/lib/validators/worker-profile";
 import { revalidatePath } from "next/cache";
 import crypto from "crypto";
 
@@ -16,6 +16,12 @@ interface Profile {
   telegram_id: string | null;
   hourly_rate: number | null;
   is_active: boolean;
+}
+
+interface ProfileAlias {
+  id: string;
+  profile_id: string;
+  alias: string;
 }
 
 export async function bindTelegramId(
@@ -299,4 +305,79 @@ export async function archiveWorkerProfile(
 
   revalidatePath("/admin/workers");
   return { success: true, data: updated };
+}
+
+export async function addProfileAlias(
+  profileId: string,
+  alias: string,
+): Promise<ActionResult<ProfileAlias>> {
+  const supabase = await createClient();
+  const { user, error: authError } = await verifyAdminCaller(supabase);
+  if (!user) return { success: false, error: authError };
+
+  const parsed = profileAliasSchema.safeParse({ alias });
+  if (!parsed.success) {
+    return { success: false, error: parsed.error.issues[0].message };
+  }
+
+  const { data: newAlias, error } = await supabase
+    .from("profile_aliases")
+    .insert({ profile_id: profileId, alias: parsed.data.alias })
+    .select("id, profile_id, alias")
+    .single();
+
+  if (error) {
+    return { success: false, error: error.message };
+  }
+
+  await logAudit({
+    actorId: user.id,
+    tableName: "profile_aliases",
+    recordId: newAlias.id,
+    action: "create",
+    before: null,
+    after: newAlias,
+  });
+
+  revalidatePath("/admin/workers");
+  return { success: true, data: newAlias };
+}
+
+export async function removeProfileAlias(
+  aliasId: string,
+): Promise<ActionResult<{ id: string }>> {
+  const supabase = await createClient();
+  const { user, error: authError } = await verifyAdminCaller(supabase);
+  if (!user) return { success: false, error: authError };
+
+  const { data: beforeAlias } = await supabase
+    .from("profile_aliases")
+    .select("id, profile_id, alias")
+    .eq("id", aliasId)
+    .single();
+
+  if (!beforeAlias) {
+    return { success: false, error: "כינוי לא נמצא" };
+  }
+
+  const { error } = await supabase
+    .from("profile_aliases")
+    .delete()
+    .eq("id", aliasId);
+
+  if (error) {
+    return { success: false, error: error.message };
+  }
+
+  await logAudit({
+    actorId: user.id,
+    tableName: "profile_aliases",
+    recordId: aliasId,
+    action: "archive",
+    before: beforeAlias,
+    after: null,
+  });
+
+  revalidatePath("/admin/workers");
+  return { success: true, data: { id: aliasId } };
 }

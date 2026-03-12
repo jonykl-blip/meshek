@@ -20,4 +20,12 @@ export const workerProfileSchema = z.object({
   role: z.enum(["worker", "manager", "admin"]),
 });
 
+export const profileAliasSchema = z.object({
+  alias: z
+    .string()
+    .min(1, "שם הכינוי הוא שדה חובה")
+    .max(100),
+});
+
 export type WorkerProfileInput = z.infer<typeof workerProfileSchema>;
+export type ProfileAliasInput = z.infer<typeof profileAliasSchema>;

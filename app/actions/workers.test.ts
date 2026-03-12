@@ -39,6 +39,8 @@ const {
   createWorkerProfile,
   updateWorkerProfile,
   archiveWorkerProfile,
+  addProfileAlias,
+  removeProfileAlias,
 } = await import("./workers");
 
 // Mock .from() per call sequence for a given client
@@ -53,6 +55,7 @@ function setupMockChain(results: { data: unknown; error: unknown }[]) {
       neq: () => builder,
       update: () => builder,
       insert: () => builder,
+      delete: () => builder,
       single: () => Promise.resolve(result),
       maybeSingle: () => Promise.resolve(result),
     };
@@ -436,5 +439,124 @@ describe("archiveWorkerProfile", () => {
     const result = await archiveWorkerProfile("profile-1");
 
     expect(result).toEqual({ success: false, error: "העובד כבר גונז" });
+  });
+});
+
+describe("addProfileAlias", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("returns error when user is not authenticated", async () => {
+    mockSupabase.auth.getUser.mockResolvedValue({
+      data: { user: null },
+    });
+
+    const result = await addProfileAlias("profile-1", "יוגי");
+
+    expect(result).toEqual({ success: false, error: "לא מאומת" });
+  });
+
+  it("returns error when caller is not admin/owner", async () => {
+    mockSupabase.auth.getUser.mockResolvedValue({
+      data: { user: { id: "user-1" } },
+    });
+    setupMockChain([{ data: { role: "worker" }, error: null }]);
+
+    const result = await addProfileAlias("profile-1", "יוגי");
+
+    expect(result).toEqual({ success: false, error: "אין הרשאה" });
+  });
+
+  it("returns validation error for empty alias", async () => {
+    mockAuthenticatedAdmin();
+    setupMockChain([{ data: { role: "admin" }, error: null }]);
+
+    const result = await addProfileAlias("profile-1", "");
+
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      expect(result.error).toContain("כינוי");
+    }
+  });
+
+  it("successfully adds alias with audit log", async () => {
+    const newAlias = { id: "alias-1", profile_id: "profile-1", alias: "יוגי" };
+
+    mockAuthenticatedAdmin();
+    setupMockChain([
+      { data: { role: "admin" }, error: null }, // caller check
+      { data: newAlias, error: null }, // insert result
+    ]);
+
+    const result = await addProfileAlias("profile-1", "יוגי");
+
+    expect(result).toEqual({ success: true, data: newAlias });
+  });
+
+  it("returns error on Supabase insert failure", async () => {
+    mockAuthenticatedAdmin();
+    setupMockChain([
+      { data: { role: "admin" }, error: null }, // caller check
+      { data: null, error: { message: "duplicate key value" } }, // insert error
+    ]);
+
+    const result = await addProfileAlias("profile-1", "יוגי");
+
+    expect(result).toEqual({ success: false, error: "duplicate key value" });
+  });
+});
+
+describe("removeProfileAlias", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("returns error when user is not authenticated", async () => {
+    mockSupabase.auth.getUser.mockResolvedValue({
+      data: { user: null },
+    });
+
+    const result = await removeProfileAlias("alias-1");
+
+    expect(result).toEqual({ success: false, error: "לא מאומת" });
+  });
+
+  it("returns error when caller is not admin/owner", async () => {
+    mockSupabase.auth.getUser.mockResolvedValue({
+      data: { user: { id: "user-1" } },
+    });
+    setupMockChain([{ data: { role: "worker" }, error: null }]);
+
+    const result = await removeProfileAlias("alias-1");
+
+    expect(result).toEqual({ success: false, error: "אין הרשאה" });
+  });
+
+  it("returns error when alias not found", async () => {
+    mockAuthenticatedAdmin();
+    setupMockChain([
+      { data: { role: "admin" }, error: null }, // caller check
+      { data: null, error: null }, // alias not found
+    ]);
+
+    const result = await removeProfileAlias("missing-alias");
+
+    expect(result).toEqual({ success: false, error: "כינוי לא נמצא" });
+  });
+
+  it("successfully removes alias with audit log", async () => {
+    const existingAlias = { id: "alias-1", profile_id: "profile-1", alias: "יוגי" };
+
+    mockAuthenticatedAdmin();
+    setupMockChain([
+      { data: { role: "admin" }, error: null }, // caller check
+      { data: existingAlias, error: null }, // fetch before delete
+      { data: null, error: null }, // delete result
+    ]);
+
+    const result = await removeProfileAlias("alias-1");
+
+    expect(result).toEqual({ success: true, data: { id: "alias-1" } });
   });
 });

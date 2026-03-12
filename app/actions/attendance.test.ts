@@ -1612,13 +1612,11 @@ describe("getDailyAttendance", () => {
   });
 
   // Fluent query builder for attendance_logs queries.
-  // select→in→(eq|gte+lte)→(eq)?→(eq)?→order→order
-  // First order() returns builder; second order() resolves the Promise.
+  // select→in→(eq|gte+lte)→(eq)?→(eq)?→order→order→limit
   function makeAttendanceQueryBuilder(result: {
     data: unknown[] | null;
     error: { message: string } | null;
   }) {
-    let orderCallCount = 0;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const builder: any = {
       select: vi.fn().mockReturnThis(),
@@ -1626,10 +1624,8 @@ describe("getDailyAttendance", () => {
       eq: vi.fn().mockReturnThis(),
       gte: vi.fn().mockReturnThis(),
       lte: vi.fn().mockReturnThis(),
-      order: vi.fn().mockImplementation(() => {
-        orderCallCount++;
-        return orderCallCount >= 2 ? Promise.resolve(result) : builder;
-      }),
+      order: vi.fn().mockReturnThis(),
+      limit: vi.fn().mockResolvedValue(result),
     };
     return builder;
   }

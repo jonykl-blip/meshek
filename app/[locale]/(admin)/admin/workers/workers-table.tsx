@@ -6,6 +6,8 @@ import {
   createWorkerProfile,
   updateWorkerProfile,
   archiveWorkerProfile,
+  addProfileAlias,
+  removeProfileAlias,
 } from "@/app/actions/workers";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -35,6 +37,7 @@ interface Profile {
   telegram_id: string | null;
   hourly_rate: number | null;
   is_active: boolean;
+  profile_aliases: { id: string; alias: string }[];
 }
 
 interface Labels {
@@ -66,6 +69,11 @@ interface Labels {
   langTh: string;
   langEn: string;
   noWorkers: string;
+  aliases: string;
+  addAlias: string;
+  aliasPlaceholder: string;
+  aliasAdded: string;
+  aliasRemoved: string;
   validationNameRequired: string;
   validationRatePositive: string;
   validationTelegramNumeric: string;
@@ -321,6 +329,33 @@ function WorkerRow({
   });
   const [error, setError] = useState("");
   const [isPending, startTransition] = useTransition();
+  const [newAlias, setNewAlias] = useState("");
+  const [showAliasInput, setShowAliasInput] = useState(false);
+
+  function handleAddAlias() {
+    if (!newAlias.trim()) return;
+    startTransition(async () => {
+      const result = await addProfileAlias(profile.id, newAlias.trim());
+      if (result.success) {
+        setNewAlias("");
+        setShowAliasInput(false);
+        onUpdated();
+      } else {
+        setError(result.error);
+      }
+    });
+  }
+
+  function handleRemoveAlias(aliasId: string) {
+    startTransition(async () => {
+      const result = await removeProfileAlias(aliasId);
+      if (result.success) {
+        onUpdated();
+      } else {
+        setError(result.error);
+      }
+    });
+  }
 
   function handleSave() {
     setError("");
@@ -478,6 +513,52 @@ function WorkerRow({
               {labels.archiveWorker}
             </Button>
           </div>
+        </td>
+      </tr>
+      <tr className="border-b last:border-b-0">
+        <td colSpan={6} className="px-4 pb-3 pt-0">
+          <div className="flex flex-wrap items-center gap-1">
+            <span className="text-xs text-muted-foreground">{labels.aliases}:</span>
+            {profile.profile_aliases.map((a) => (
+              <Badge key={a.id} variant="secondary" className="gap-1">
+                {a.alias}
+                <button
+                  onClick={() => handleRemoveAlias(a.id)}
+                  className="mr-1 text-xs opacity-60 hover:opacity-100"
+                  disabled={isPending}
+                >
+                  ×
+                </button>
+              </Badge>
+            ))}
+            {showAliasInput ? (
+              <div className="flex items-center gap-1">
+                <Input
+                  value={newAlias}
+                  onChange={(e) => setNewAlias(e.target.value)}
+                  className="h-7 w-28 text-xs"
+                  placeholder={labels.aliasPlaceholder}
+                  onKeyDown={(e) => e.key === "Enter" && handleAddAlias()}
+                />
+                <Button size="sm" variant="ghost" className="h-7 px-2 text-xs" onClick={handleAddAlias} disabled={isPending}>
+                  +
+                </Button>
+                <Button size="sm" variant="ghost" className="h-7 px-2 text-xs" onClick={() => { setShowAliasInput(false); setNewAlias(""); }}>
+                  ×
+                </Button>
+              </div>
+            ) : (
+              <Button
+                size="sm"
+                variant="ghost"
+                className="h-7 px-2 text-xs"
+                onClick={() => setShowAliasInput(true)}
+              >
+                {labels.addAlias}
+              </Button>
+            )}
+          </div>
+          {error && <span className="text-sm text-red-600">{error}</span>}
         </td>
       </tr>
       <ArchiveDialog

@@ -629,7 +629,7 @@ export interface DailyAttendanceRecord {
   worker_name: string | null;
   area_name: string | null;
   work_date: string;
-  total_hours: number;
+  total_hours: number | null;
   status: "approved" | "imported" | "pending" | "rejected";
   source: string;
   profile_id: string | null;
@@ -691,7 +691,8 @@ export async function getDailyAttendance(params?: {
 
   const { data, error } = await query
     .order("work_date", { ascending: false })
-    .order("full_name", { referencedTable: "profiles", ascending: true });
+    .order("full_name", { referencedTable: "profiles", ascending: true })
+    .limit(500);
 
   if (error) return { success: false, error: error.message };
 
