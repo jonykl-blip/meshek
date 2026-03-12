@@ -16,6 +16,7 @@ import {
   ClipboardList,
   MapPin,
   Users,
+  Wheat,
   Wrench,
 } from "lucide-react";
 import type { Metadata } from "next";
@@ -44,6 +45,7 @@ const navSections = [
       { titleKey: "workers", descKey: "workersDesc", icon: Users, href: "/admin/workers" },
       { titleKey: "areas", descKey: "areasDesc", icon: MapPin, href: "/admin/areas" },
       { titleKey: "equipment", descKey: "equipmentDesc", icon: Wrench, href: "/admin/equipment" },
+      { titleKey: "crops", descKey: "cropsDesc", icon: Wheat, href: "/admin/crops" },
     ],
   },
   {

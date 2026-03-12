@@ -16,6 +16,7 @@ import {
   Users,
   MapPin,
   Wrench,
+  Wheat,
   ChevronLeft,
   ChevronRight,
   type LucideIcon,
@@ -41,6 +42,7 @@ const navSections: NavSection[] = [
       { label: "עובדים", icon: Users, href: "/admin/workers", roles: ["owner", "admin"] },
       { label: "שטחים", icon: MapPin, href: "/admin/areas", roles: ["owner", "admin"] },
       { label: "ציוד", icon: Wrench, href: "/admin/equipment", roles: ["owner", "admin"] },
+      { label: "גידולים", icon: Wheat, href: "/admin/crops", roles: ["owner", "admin"] },
     ],
   },
   {

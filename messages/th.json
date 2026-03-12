@@ -22,6 +22,8 @@
       "areasDesc": "ניהול שטחים וכינויים",
       "equipment": "ציוד",
       "equipmentDesc": "ניהול רשימת הציוד",
+      "crops": "גידולים",
+      "cropsDesc": "ניהול רשימת הגידולים",
       "payroll": "שכר",
       "payrollDesc": "חישוב שכר וייצוא CSV",
       "dashboard": "נוכחות יומית",
@@ -230,6 +232,27 @@
       "editHours": "שעות עבודה",
       "editArea": "שטח עבודה",
       "cannotApproveUnresolved": "לא ניתן לאשר — יש להתאים עובד ושטח קודם"
+    },
+    "crops": {
+      "title": "ניהול גידולים",
+      "addCrop": "הוסף גידול",
+      "editCrop": "עריכה",
+      "deleteCrop": "מחק",
+      "name": "שם הגידול",
+      "deleteConfirm": "האם למחוק את {name}?",
+      "deleteDescription": "מחיקת גידול היא פעולה סופית. לא ניתן למחוק גידול שמשויכות אליו חלקות.",
+      "confirm": "אישור",
+      "cancel": "ביטול",
+      "save": "שמור",
+      "saving": "שומר...",
+      "created": "נוצר בהצלחה",
+      "updated": "עודכן בהצלחה",
+      "deleted": "נמחק בהצלחה",
+      "noCrops": "אין גידולים",
+      "actions": "פעולות",
+      "validation": {
+        "nameRequired": "שם הגידול הוא שדה חובה"
+      }
     },
     "equipment": {
       "title": "ניהול ציוד",
