@@ -22,27 +22,30 @@ export default async function DashboardLayout({
 
   let userInitials = "";
   let pendingCount = 0;
+  let role = "";
+  let fullName = "";
+  let kpis = { pendingCount: 0, approvedToday: 0, anomalyCount: 0 };
 
   if (user) {
-    const { data: profile } = await supabase
-      .from("profiles")
-      .select("full_name")
-      .eq("id", user.id)
-      .single();
+    const [profileResult, kpisResult] = await Promise.all([
+      supabase
+        .from("profiles")
+        .select("full_name, role")
+        .eq("id", user.id)
+        .single(),
+      getSidebarKpis(supabase).catch(() => kpis),
+    ]);
 
-    userInitials = getInitials(profile?.full_name ?? "");
-
-    try {
-      const kpis = await getSidebarKpis(supabase);
-      pendingCount = kpis.pendingCount;
-    } catch {
-      // KPIs are non-critical for topbar rendering
-    }
+    fullName = profileResult.data?.full_name ?? "";
+    role = profileResult.data?.role ?? "";
+    userInitials = getInitials(fullName);
+    kpis = kpisResult;
+    pendingCount = kpis.pendingCount;
   }
 
   return (
     <div className="flex min-h-screen">
-      <AppSidebar />
+      <AppSidebar role={role} fullName={fullName} kpis={kpis} />
       <div className="flex flex-1 flex-col overflow-auto">
         <AppTopBar userInitials={userInitials} notificationCount={pendingCount} />
         <main className="flex-1">{children}</main>

@@ -7,13 +7,18 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Link, useRouter } from "@/i18n/navigation";
 import { useState } from "react";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { Mail } from "lucide-react";
+
+function isRelativePath(value: string | undefined): value is string {
+  return !!value && value.startsWith("/") && !value.startsWith("//");
+}
 
 export function LoginForm({
   className,
+  returnTo,
   ...props
-}: React.ComponentPropsWithoutRef<"div">) {
+}: React.ComponentPropsWithoutRef<"div"> & { returnTo?: string }) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -21,7 +26,9 @@ export function LoginForm({
   const [magicLinkSent, setMagicLinkSent] = useState(false);
   const [isSendingMagicLink, setIsSendingMagicLink] = useState(false);
   const router = useRouter();
+  const locale = useLocale();
   const t = useTranslations("auth");
+  const safeReturnTo = isRelativePath(returnTo) ? returnTo : undefined;
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -35,7 +42,7 @@ export function LoginForm({
         password,
       });
       if (error) throw error;
-      router.push("/");
+      router.push(safeReturnTo || "/");
     } catch (error: unknown) {
       setError(error instanceof Error ? error.message : t("anErrorOccurred"));
     } finally {
@@ -54,7 +61,14 @@ export function LoginForm({
     setMagicLinkSent(false);
 
     try {
-      const { error } = await supabase.auth.signInWithOtp({ email });
+      const confirmUrl = `${window.location.origin}/${locale}/auth/confirm`;
+      const emailRedirectTo = safeReturnTo
+        ? `${confirmUrl}?returnTo=${encodeURIComponent(safeReturnTo)}`
+        : confirmUrl;
+      const { error } = await supabase.auth.signInWithOtp({
+        email,
+        options: { emailRedirectTo },
+      });
       if (error) throw error;
       setMagicLinkSent(true);
     } catch (error: unknown) {

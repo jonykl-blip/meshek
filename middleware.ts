@@ -57,6 +57,7 @@ export async function middleware(request: NextRequest) {
       : "";
     const url = request.nextUrl.clone();
     url.pathname = `${localePrefix}/auth/login`;
+    url.searchParams.set("returnTo", pathnameWithoutLocale);
     return NextResponse.redirect(url);
   }
 

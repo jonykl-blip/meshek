@@ -1,39 +1,16 @@
-import { createClient } from "@/lib/supabase/server";
-import { getSidebarKpis } from "@/app/actions/sidebar";
 import SidebarNav from "./sidebar-nav";
 
-export default async function AppSidebar() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+interface AppSidebarProps {
+  role: string;
+  fullName: string;
+  kpis: { pendingCount: number; approvedToday: number; anomalyCount: number };
+}
 
-  if (!user) return null;
-
-  const { data: profile, error: profileError } = await supabase
-    .from("profiles")
-    .select("role, full_name")
-    .eq("id", user.id)
-    .single();
-
-  if (profileError) {
-    console.error("[AppSidebar] Failed to fetch profile:", profileError.message);
-    return null;
-  }
-
-  if (!profile) return null;
-
-  let kpis = { pendingCount: 0, approvedToday: 0, anomalyCount: 0 };
-  try {
-    kpis = await getSidebarKpis(supabase);
-  } catch (err) {
-    console.error("[AppSidebar] Failed to fetch KPIs:", err);
-  }
-
+export default function AppSidebar({ role, fullName, kpis }: AppSidebarProps) {
   return (
     <SidebarNav
-      role={profile.role}
-      fullName={profile.full_name ?? ""}
+      role={role}
+      fullName={fullName}
       kpis={kpis}
     />
   );

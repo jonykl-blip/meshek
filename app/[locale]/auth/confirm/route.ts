@@ -46,7 +46,13 @@ export async function GET(
         redirect(`${localePrefix}/auth/error?error=worker_not_allowed`);
       }
 
-      const destination = profile.role === "admin" ? "/admin" : "/dashboard";
+      const returnTo = searchParams.get("returnTo");
+      const safeReturnTo =
+        returnTo && returnTo.startsWith("/") && !returnTo.startsWith("//")
+          ? returnTo
+          : null;
+      const destination =
+        safeReturnTo ?? (profile.role === "admin" ? "/admin" : "/dashboard");
       redirect(`${localePrefix}${destination}`);
     } else {
       redirect(

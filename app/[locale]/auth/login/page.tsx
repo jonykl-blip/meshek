@@ -11,10 +11,13 @@ export function generateStaticParams() {
 
 export default async function Page({
   params,
+  searchParams,
 }: {
   params: Promise<{ locale: string }>;
+  searchParams: Promise<{ returnTo?: string }>;
 }) {
   const { locale } = await params;
+  const { returnTo } = await searchParams;
   setRequestLocale(locale);
   const t = await getTranslations("auth");
 
@@ -50,7 +53,7 @@ export default async function Page({
       {/* Right: Login Form */}
       <div className="login-right">
         <Suspense>
-          <LoginForm />
+          <LoginForm returnTo={returnTo} />
         </Suspense>
       </div>
     </div>
