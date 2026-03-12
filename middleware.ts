@@ -10,15 +10,12 @@ export async function middleware(request: NextRequest) {
   // Run locale middleware — handles locale detection and rewrites
   const response = intlMiddleware(request);
 
-  // If next-intl is redirecting (locale normalization), return immediately
-  if (response.status !== 200) {
-    return response;
-  }
-
-  // Apply Supabase auth session refresh onto the intl response
-  // (preserves next-intl's internal rewrite of / → /[defaultLocale])
   if (!hasEnvVars) return response;
 
+  // Always refresh the Supabase auth session — even on locale redirects.
+  // Mobile browsers often have a different Accept-Language header which
+  // triggers intlMiddleware redirects; skipping the session refresh on
+  // those hops caused auth cookies to go stale on mobile.
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!,
@@ -40,6 +37,12 @@ export async function middleware(request: NextRequest) {
   );
 
   const { data: { user } } = await supabase.auth.getUser();
+
+  // If next-intl is redirecting (locale normalization), return with
+  // refreshed auth cookies attached to the redirect response.
+  if (response.status !== 200) {
+    return response;
+  }
 
   // Strip locale prefix to normalize path checks.
   // Default locale "he" has no prefix (localePrefix: "as-needed").

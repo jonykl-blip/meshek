@@ -133,38 +133,36 @@ export default async function Home({
           </div>
         </section>
 
-        {/* Feature cards — only shown to authenticated users */}
-        {user && (
-          <div className="max-w-5xl w-full flex flex-col gap-10 px-5 py-12">
-            {navSections.map((section) => (
-              <section key={section.sectionKey}>
-                <h2 className="text-xl font-semibold mb-4 text-start flex items-center gap-3">
-                  <span className="w-1 h-6 rounded-full bg-primary" />
-                  {t(`sections.${section.sectionKey}`)}
-                </h2>
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {section.cards.map((card) => (
-                    <Link key={card.titleKey} href={card.href}>
-                      <Card className="shadow-md rounded-lg border bg-card hover:-translate-y-0.5 hover:shadow-lg transition-all duration-200 h-full">
-                        <CardHeader className="flex flex-row items-center gap-3 space-y-0">
-                          <card.icon className="h-5 w-5 text-primary shrink-0" />
-                          <div>
-                            <CardTitle className="text-base font-bold">
-                              {t(`nav.${card.titleKey}`)}
-                            </CardTitle>
-                            <CardDescription>
-                              {t(`nav.${card.descKey}`)}
-                            </CardDescription>
-                          </div>
-                        </CardHeader>
-                      </Card>
-                    </Link>
-                  ))}
-                </div>
-              </section>
-            ))}
-          </div>
-        )}
+        {/* Feature cards */}
+        <div className="max-w-5xl w-full flex flex-col gap-10 px-5 py-12">
+          {navSections.map((section) => (
+            <section key={section.sectionKey}>
+              <h2 className="text-xl font-semibold mb-4 text-start flex items-center gap-3">
+                <span className="w-1 h-6 rounded-full bg-primary" />
+                {t(`sections.${section.sectionKey}`)}
+              </h2>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                {section.cards.map((card) => (
+                  <Link key={card.titleKey} href={card.href}>
+                    <Card className="shadow-md rounded-lg border bg-card hover:-translate-y-0.5 hover:shadow-lg transition-all duration-200 h-full">
+                      <CardHeader className="flex flex-row items-center gap-3 space-y-0">
+                        <card.icon className="h-5 w-5 text-primary shrink-0" />
+                        <div>
+                          <CardTitle className="text-base font-bold">
+                            {t(`nav.${card.titleKey}`)}
+                          </CardTitle>
+                          <CardDescription>
+                            {t(`nav.${card.descKey}`)}
+                          </CardDescription>
+                        </div>
+                      </CardHeader>
+                    </Card>
+                  </Link>
+                ))}
+              </div>
+            </section>
+          ))}
+        </div>
       </main>
 
       {/* Footer */}
