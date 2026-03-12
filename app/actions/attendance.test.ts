@@ -971,16 +971,14 @@ describe("getActiveWorkers", () => {
       return {
         select: () => ({
           eq: () => ({
-            eq: () => ({
-              order: () =>
-                Promise.resolve({
-                  data: [
-                    { id: "w-1", full_name: "עידן" },
-                    { id: "w-2", full_name: "דני" },
-                  ],
-                  error: null,
-                }),
-            }),
+            order: () =>
+              Promise.resolve({
+                data: [
+                  { id: "w-1", full_name: "עידן" },
+                  { id: "w-2", full_name: "דני" },
+                ],
+                error: null,
+              }),
           }),
         }),
       };
@@ -1006,9 +1004,7 @@ describe("getActiveWorkers", () => {
       return {
         select: () => ({
           eq: () => ({
-            eq: () => ({
-              order: () => Promise.resolve({ data: [], error: null }),
-            }),
+            order: () => Promise.resolve({ data: [], error: null }),
           }),
         }),
       };
@@ -2290,14 +2286,12 @@ describe("createManualAttendance", () => {
       select: () => ({
         eq: () => ({
           eq: () => ({
-            eq: () => ({
-              single: () =>
-                Promise.resolve(
-                  exists
-                    ? { data: { id: "found" }, error: null }
-                    : { data: null, error: { code: "PGRST116", message: "not found" } }
-                ),
-            }),
+            single: () =>
+              Promise.resolve(
+                exists
+                  ? { data: { id: "found" }, error: null }
+                  : { data: null, error: { code: "PGRST116", message: "not found" } }
+              ),
           }),
         }),
       }),

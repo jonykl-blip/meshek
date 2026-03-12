@@ -289,7 +289,6 @@ export async function getActiveWorkers(): Promise<
     .from("profiles")
     .select("id, full_name")
     .eq("is_active", true)
-    .eq("role", "worker")
     .order("full_name");
 
   if (error) return { success: false, error: error.message };
@@ -849,13 +848,12 @@ export async function createManualAttendance(input: {
     return { success: false, error: "שעות חייבות להיות בכפולות של 0.5" };
   }
 
-  // Validate worker exists, is active, and has worker role
+  // Validate profile exists and is active
   const { data: workerProfile } = await supabase
     .from("profiles")
     .select("id")
     .eq("id", profileId)
     .eq("is_active", true)
-    .eq("role", "worker")
     .single();
 
   if (!workerProfile) {
