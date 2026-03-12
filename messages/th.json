@@ -352,11 +352,35 @@
       "exporting": "מייצא..."
     }
   },
+  "topbar": {
+    "home": "ראשי",
+    "breadcrumbSep": "/",
+    "notifications": "התראות",
+    "pages": {
+      "dashboard": "נוכחות יומית",
+      "admin": "ניהול מערכת",
+      "workers": "עובדים",
+      "areas": "שטחים",
+      "equipment": "ציוד",
+      "crops": "גידולים",
+      "payroll": "שכר",
+      "review": "רשומות ממתינות לאישור",
+      "health": "בריאות מערכת"
+    }
+  },
   "sidebar": {
     "sections": {
       "management": "การจัดการ",
       "finance": "การเงิน",
       "reportsOps": "รายงานและปฏิบัติการ"
+    },
+    "kpi": {
+      "pending": "รอดำเนินการ: {count}",
+      "approvedToday": "อนุมัติวันนี้: {count}",
+      "anomalies": "ข้อผิดปกติ: {count}"
+    },
+    "footer": {
+      "help": "עזרה ותמיכה"
     }
   },
   "bot": {
