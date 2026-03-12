@@ -39,8 +39,7 @@ export async function middleware(request: NextRequest) {
     },
   );
 
-  const { data } = await supabase.auth.getClaims();
-  const user = data?.claims;
+  const { data: { user } } = await supabase.auth.getUser();
 
   // Strip locale prefix to normalize path checks.
   // Default locale "he" has no prefix (localePrefix: "as-needed").
