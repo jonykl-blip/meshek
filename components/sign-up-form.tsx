@@ -4,13 +4,6 @@ import Image from "next/image";
 import { cn } from "@/lib/utils";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Link, useRouter } from "@/i18n/navigation";
@@ -57,73 +50,72 @@ export function SignUpForm({
 
   return (
     <div className={cn("flex flex-col gap-6", className)} {...props}>
-      <div className="flex justify-center">
-        <Image
-          src="/images/meshek-logo.jpeg"
-          alt="משק פילצביץ'"
-          width={120}
-          height={120}
-          className="h-16 w-auto"
-          priority
-        />
+      <div className="auth-card">
+        <div className="flex justify-center mb-6">
+          <Image
+            src="/images/meshek-logo.jpeg"
+            alt="משק פילצביץ'"
+            width={120}
+            height={120}
+            className="h-16 w-auto mix-blend-multiply brightness-110"
+            priority
+          />
+        </div>
+        <h1 className="text-2xl font-bold text-center mb-1">{t("signUpTitle")}</h1>
+        <p className="text-sm text-muted-foreground text-center mb-8">{t("signUpDescription")}</p>
+        <form onSubmit={handleSignUp}>
+          <div className="flex flex-col gap-5">
+            <div className="grid gap-2">
+              <Label htmlFor="email">{t("emailLabel")}</Label>
+              <Input
+                id="email"
+                type="email"
+                placeholder="m@example.com"
+                required
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="h-[50px] rounded-md border-[1.5px] bg-background text-[0.95rem] focus-visible:border-primary focus-visible:ring-primary/10"
+              />
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="password">{t("passwordLabel")}</Label>
+              <Input
+                id="password"
+                type="password"
+                required
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="h-[50px] rounded-md border-[1.5px] bg-background text-[0.95rem] focus-visible:border-primary focus-visible:ring-primary/10"
+              />
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="repeat-password">{t("repeatPasswordLabel")}</Label>
+              <Input
+                id="repeat-password"
+                type="password"
+                required
+                value={repeatPassword}
+                onChange={(e) => setRepeatPassword(e.target.value)}
+                className="h-[50px] rounded-md border-[1.5px] bg-background text-[0.95rem] focus-visible:border-primary focus-visible:ring-primary/10"
+              />
+            </div>
+            {error && <p className="text-sm text-red-500">{error}</p>}
+            <Button
+              type="submit"
+              className="h-[50px] w-full rounded-md bg-gradient-to-br from-primary to-[#4A6526] text-base font-semibold shadow-[0_4px_16px_rgba(91,122,47,0.25)] hover:from-[#4A6526] hover:to-[#3A5420] hover:shadow-[0_6px_24px_rgba(91,122,47,0.35)]"
+              disabled={isLoading}
+            >
+              {isLoading ? t("creatingAccount") : t("signUpTitle")}
+            </Button>
+          </div>
+          <div className="mt-6 text-center text-sm">
+            {t("hasAccount")}{" "}
+            <Link href="/auth/login" className="font-semibold text-primary hover:underline">
+              {t("loginTitle")}
+            </Link>
+          </div>
+        </form>
       </div>
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-2xl">{t("signUpTitle")}</CardTitle>
-          <CardDescription>{t("signUpDescription")}</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={handleSignUp}>
-            <div className="flex flex-col gap-6">
-              <div className="grid gap-2">
-                <Label htmlFor="email">{t("emailLabel")}</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  placeholder="m@example.com"
-                  required
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                />
-              </div>
-              <div className="grid gap-2">
-                <div className="flex items-center">
-                  <Label htmlFor="password">{t("passwordLabel")}</Label>
-                </div>
-                <Input
-                  id="password"
-                  type="password"
-                  required
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                />
-              </div>
-              <div className="grid gap-2">
-                <div className="flex items-center">
-                  <Label htmlFor="repeat-password">{t("repeatPasswordLabel")}</Label>
-                </div>
-                <Input
-                  id="repeat-password"
-                  type="password"
-                  required
-                  value={repeatPassword}
-                  onChange={(e) => setRepeatPassword(e.target.value)}
-                />
-              </div>
-              {error && <p className="text-sm text-red-500">{error}</p>}
-              <Button type="submit" className="w-full" disabled={isLoading}>
-                {isLoading ? t("creatingAccount") : t("signUpTitle")}
-              </Button>
-            </div>
-            <div className="mt-4 text-center text-sm">
-              {t("hasAccount")}{" "}
-              <Link href="/auth/login" className="underline underline-offset-4">
-                {t("loginTitle")}
-              </Link>
-            </div>
-          </form>
-        </CardContent>
-      </Card>
     </div>
   );
 }

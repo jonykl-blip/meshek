@@ -1,5 +1,4 @@
 import Image from "next/image";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { routing } from "@/i18n/routing";
 import { Suspense } from "react";
@@ -30,7 +29,7 @@ async function ErrorContent({
   const hasKnownCode = ERROR_KEYS.includes(code as (typeof ERROR_KEYS)[number]);
 
   return (
-    <p className="text-sm text-muted-foreground">
+    <p className="text-sm text-muted-foreground text-center">
       {hasKnownCode ? t(code as (typeof ERROR_KEYS)[number]) : t("unspecified")}
     </p>
   );
@@ -48,30 +47,22 @@ export default async function Page({
 
   const t = await getTranslations("auth.error");
   return (
-    <div className="flex min-h-svh w-full items-center justify-center p-6 md:p-10">
-      <div className="w-full max-w-sm">
-        <div className="flex flex-col gap-6">
-          <div className="flex justify-center">
-            <Image
-              src="/images/meshek-logo.jpeg"
-              alt="משק פילצביץ'"
-              width={120}
-              height={120}
-              className="h-16 w-auto"
-              priority
-            />
-          </div>
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-2xl">{t("title")}</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <Suspense>
-                <ErrorContent searchParams={searchParams} />
-              </Suspense>
-            </CardContent>
-          </Card>
+    <div className="auth-section">
+      <div className="auth-card">
+        <div className="flex justify-center mb-6">
+          <Image
+            src="/images/meshek-logo.jpeg"
+            alt="משק פילצביץ'"
+            width={120}
+            height={120}
+            className="h-16 w-auto mix-blend-multiply brightness-110"
+            priority
+          />
         </div>
+        <h1 className="text-2xl font-bold text-center mb-4">{t("title")}</h1>
+        <Suspense>
+          <ErrorContent searchParams={searchParams} />
+        </Suspense>
       </div>
     </div>
   );

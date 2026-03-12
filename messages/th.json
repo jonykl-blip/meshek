@@ -4,7 +4,8 @@
     "loading": "טוען...",
     "error": "שגיאה",
     "poweredBy": "מופעל על ידי",
-    "envVarRequired": "משתני סביבה של Supabase נדרשים"
+    "envVarRequired": "משתני סביבה של Supabase נדרשים",
+    "copyright": "משק © {year}"
   },
   "home": {
     "heroTitle": "משק - ניהול חקלאי",
@@ -72,7 +73,18 @@
     "magicLinkButton": "שליחת קישור כניסה למייל",
     "magicLinkSent": "קישור נשלח למייל!",
     "brandName": "משק פילצביץ'",
-    "brandSubtitle": "ניהול חקלאי חכם"
+    "brandSubtitle": "ניהול חקלאי חכם",
+    "checkEmail": "בדיקת המייל שלך",
+    "resetInstructionsSent": "הוראות איפוס סיסמה נשלחו",
+    "resetInstructionsDescription": "אם נרשמת עם אימייל וסיסמה, תקבל/י מייל לאיפוס הסיסמה.",
+    "resetYourPassword": "איפוס סיסמה",
+    "resetDescription": "הכנס/י את כתובת האימייל ונשלח לך קישור לאיפוס הסיסמה",
+    "sendResetEmail": "שליחת מייל איפוס",
+    "sending": "שולח...",
+    "enterNewPassword": "הכנס/י את הסיסמה החדשה שלך",
+    "newPassword": "סיסמה חדשה",
+    "saveNewPassword": "שמירת סיסמה חדשה",
+    "saving": "שומר..."
   },
   "dashboard": {
     "title": "לוח הבקרה",

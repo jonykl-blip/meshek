@@ -414,6 +414,52 @@
   }
 }
 
+/* ===== AUTH PAGES — CENTERED GLASS CARD ===== */
+
+.auth-section {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: hsl(var(--background));
+  padding: 24px 40px;
+}
+
+.auth-card {
+  width: 100%;
+  max-width: 420px;
+  background: rgba(255,253,249,0.85);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-radius: var(--radius-xl);
+  padding: 48px 40px;
+  box-shadow: var(--shadow-xl);
+  border: 1px solid rgba(221,214,204,0.5);
+  position: relative;
+  overflow: hidden;
+  animation: fadeSlideUp 0.8s var(--ease) 0.3s both;
+}
+
+.auth-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 32px;
+  right: 32px;
+  height: 3px;
+  background: linear-gradient(90deg, hsl(var(--primary)), hsl(var(--accent)), #8B6914);
+  border-radius: 0 0 2px 2px;
+}
+
+@media (max-width: 500px) {
+  .auth-section {
+    padding: 16px;
+  }
+  .auth-card {
+    padding: 36px 24px;
+  }
+}
+
 /* Touch device: always show row actions (no hover on mobile/gloved hands) */
 @media (hover: none) {
   .row-actions {

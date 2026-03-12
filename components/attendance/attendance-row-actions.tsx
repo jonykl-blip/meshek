@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { Badge } from "@/components/ui/badge";
 import {
   dashboardApproveRecord,
   dashboardRejectRecord,
@@ -34,18 +33,18 @@ interface AttendanceRowActionsProps {
   editLabels: EditRecordDialogLabels;
 }
 
-export function AttendanceRowActions({
-  recordId,
-  status,
-  profileId,
-  areaId,
-  totalHours,
-  areaName: _areaName,
-  workerName,
-  areas,
-  labels,
-  editLabels,
-}: AttendanceRowActionsProps) {
+export function AttendanceRowActions(props: AttendanceRowActionsProps) {
+  const {
+    recordId,
+    status,
+    profileId,
+    areaId,
+    totalHours,
+    workerName,
+    areas,
+    labels,
+    editLabels,
+  } = props;
   const [isPending, startTransition] = useTransition();
   const [feedback, setFeedback] = useState<{
     message: string;
@@ -104,7 +103,7 @@ export function AttendanceRowActions({
   );
 
   return (
-    <div className="row-actions flex items-center gap-1 opacity-0 translate-x-2 transition-all duration-200 group-hover:opacity-100 group-hover:translate-x-0">
+    <div className="row-actions flex items-center gap-1 opacity-0 ltr:translate-x-2 rtl:-translate-x-2 transition-all duration-200 group-hover:opacity-100 group-hover:translate-x-0">
       {feedback ? (
         <span
           className={`text-xs ${feedback.type === "success" ? "text-green-600" : "text-red-600"}`}
@@ -114,9 +113,9 @@ export function AttendanceRowActions({
       ) : (
         <>
           {isPendingStatus && !isClean && (
-            <Badge className="bg-amber-100 text-amber-800 border-amber-200">
+            <span className="inline-block rounded-full px-2.5 py-0.5 text-xs font-semibold bg-[var(--status-pending-bg)] text-[var(--status-pending-text)]">
               {labels.pendingResolution}
-            </Badge>
+            </span>
           )}
           {isPendingStatus && isClean && (
             <>
