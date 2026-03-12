@@ -1,0 +1,1030 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Adama v2 — Dashboard | משק פיצביץ׳</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Rubik:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    /* ===== DESIGN TOKENS ===== */
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+    :root {
+      --bg: #F8F5F0;
+      --fg: #251F19;
+      --primary: #5B7A2F;
+      --primary-dark: #4A6526;
+      --primary-light: #6B8C3E;
+      --accent: #D9793A;
+      --accent-brown: #8B6914;
+      --secondary: #EDE8E0;
+      --muted: #7A7168;
+      --border: #DDD6CC;
+      --sidebar-top: #3A5420;
+      --sidebar-bottom: #2E4318;
+      --card: #FFFDF9;
+      --shadow-sm: 0 1px 3px rgba(37,31,25,0.04);
+      --shadow-md: 0 4px 16px rgba(37,31,25,0.06), 0 1px 3px rgba(37,31,25,0.04);
+      --shadow-lg: 0 8px 40px rgba(37,31,25,0.08), 0 2px 6px rgba(37,31,25,0.04);
+      --shadow-xl: 0 16px 56px rgba(37,31,25,0.12), 0 4px 12px rgba(37,31,25,0.06);
+      --radius-sm: 8px;
+      --radius-md: 12px;
+      --radius-lg: 20px;
+      --ease: cubic-bezier(0.4, 0, 0.2, 1);
+
+      --status-approved-bg: rgba(91,122,47,0.12);
+      --status-approved-text: #4A6526;
+      --status-pending-bg: rgba(196,155,48,0.12);
+      --status-pending-text: #9A7B25;
+      --status-rejected-bg: rgba(192,57,43,0.10);
+      --status-rejected-text: #A0312A;
+      --status-imported-bg: rgba(41,128,185,0.10);
+      --status-imported-text: #2471A3;
+    }
+
+    body {
+      font-family: 'Rubik', sans-serif;
+      background: var(--bg);
+      color: var(--fg);
+      line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* ===== DIRECTION BAR ===== */
+    .direction-bar {
+      background: linear-gradient(135deg, var(--sidebar-top), var(--sidebar-bottom));
+      color: #fff;
+      padding: 14px 40px;
+      text-align: center;
+      position: sticky;
+      top: 0;
+      z-index: 200;
+      box-shadow: 0 2px 20px rgba(37,31,25,0.15);
+    }
+    .direction-bar h1 { font-size: 1.2rem; font-weight: 700; direction: ltr; }
+    .direction-bar p { font-size: 0.75rem; opacity: 0.7; direction: ltr; margin-top: 1px; }
+
+    /* ===== ANIMATIONS ===== */
+    @keyframes fadeSlideUp {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+    @keyframes pulse {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.05); }
+    }
+    .animate-in { animation: fadeSlideUp 0.5s var(--ease) both; }
+    .stagger-1 { animation-delay: 0.05s; }
+    .stagger-2 { animation-delay: 0.1s; }
+    .stagger-3 { animation-delay: 0.15s; }
+    .stagger-4 { animation-delay: 0.2s; }
+
+    /* ===== DASHBOARD LAYOUT ===== */
+    .dashboard-wrap {
+      display: flex;
+      min-height: calc(100vh - 52px);
+    }
+
+    /* ===== SIDEBAR ===== */
+    .sidebar {
+      width: 260px;
+      background: linear-gradient(180deg, var(--sidebar-top) 0%, var(--sidebar-bottom) 100%);
+      color: #fff;
+      display: flex;
+      flex-direction: column;
+      position: sticky;
+      top: 52px;
+      height: calc(100vh - 52px);
+      flex-shrink: 0;
+      overflow-y: auto;
+      z-index: 50;
+    }
+    /* Noise texture overlay */
+    .sidebar::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.035'/%3E%3C/svg%3E");
+      pointer-events: none;
+    }
+
+    .sidebar-header {
+      padding: 28px 20px 16px;
+      text-align: center;
+      position: relative;
+      z-index: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .sidebar-logo-circle {
+      width: 60px;
+      height: 60px;
+      border-radius: 50%;
+      background: radial-gradient(circle at 50% 40%, rgba(255,255,255,0.95), rgba(237,232,224,0.9));
+      border: 2.5px solid rgba(107,140,62,0.6);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 3px 16px rgba(0,0,0,0.2);
+      overflow: hidden;
+    }
+    .sidebar-logo-circle img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      border-radius: 50%;
+    }
+
+    .sidebar-brand-name {
+      font-size: 0.9rem;
+      font-weight: 700;
+      color: rgba(255,255,255,0.95);
+    }
+
+    .sidebar-divider {
+      width: 80%;
+      height: 1px;
+      background: rgba(255,255,255,0.1);
+      margin: 4px auto 0;
+    }
+
+    /* User section */
+    .sidebar-user {
+      padding: 16px 20px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      position: relative;
+      z-index: 1;
+    }
+    .sidebar-avatar {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--accent), #c56a2e);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1rem;
+      font-weight: 700;
+      color: #fff;
+      flex-shrink: 0;
+      box-shadow: 0 2px 8px rgba(217,121,58,0.3);
+    }
+    .sidebar-user-info {
+      flex: 1;
+      min-width: 0;
+    }
+    .sidebar-user-name {
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: #fff;
+      line-height: 1.3;
+    }
+    .sidebar-user-role {
+      display: inline-block;
+      font-size: 0.65rem;
+      font-weight: 600;
+      background: rgba(217,121,58,0.25);
+      color: #F0C070;
+      padding: 1px 8px;
+      border-radius: 20px;
+      margin-top: 2px;
+      letter-spacing: 0.3px;
+    }
+
+    /* KPI pills */
+    .sidebar-kpis {
+      padding: 8px 16px 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+      position: relative;
+      z-index: 1;
+    }
+    .sidebar-kpi {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 7px 12px;
+      border-radius: var(--radius-sm);
+      background: rgba(255,255,255,0.05);
+      font-size: 0.78rem;
+      font-weight: 500;
+      transition: background 0.2s;
+    }
+    .sidebar-kpi:hover { background: rgba(255,255,255,0.09); }
+    .kpi-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+    .kpi-amber .kpi-dot { background: #E6A817; }
+    .kpi-green .kpi-dot { background: #5DB075; }
+    .kpi-red .kpi-dot { background: #E05C4D; }
+    .kpi-amber { color: #F0C654; }
+    .kpi-green { color: #8DD9A0; }
+    .kpi-red { color: #F08C7F; }
+
+    /* Nav */
+    .sidebar-nav {
+      flex: 1;
+      padding: 0 12px;
+      overflow-y: auto;
+      position: relative;
+      z-index: 1;
+    }
+    .sidebar-nav-section { margin-bottom: 18px; }
+    .sidebar-nav-section-title {
+      font-size: 0.62rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      color: rgba(255,255,255,0.35);
+      padding: 0 12px;
+      margin-bottom: 5px;
+    }
+    .sidebar-nav-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 9px 12px;
+      border-radius: 10px;
+      font-size: 0.84rem;
+      font-weight: 500;
+      color: rgba(255,255,255,0.65);
+      text-decoration: none;
+      transition: all 0.2s var(--ease);
+      cursor: pointer;
+      border-right: 3px solid transparent;
+      position: relative;
+    }
+    .sidebar-nav-item:hover {
+      background: rgba(255,255,255,0.08);
+      color: #fff;
+    }
+    .sidebar-nav-item.active {
+      background: rgba(255,255,255,0.13);
+      color: #fff;
+      border-right-color: var(--accent);
+      font-weight: 600;
+    }
+    /* Active indicator dot */
+    .sidebar-nav-item.active::after {
+      content: '';
+      position: absolute;
+      left: 12px;
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--accent);
+      box-shadow: 0 0 8px rgba(217,121,58,0.5);
+    }
+    .nav-icon {
+      width: 20px;
+      text-align: center;
+      font-size: 0.95rem;
+      flex-shrink: 0;
+    }
+
+    /* Sidebar footer */
+    .sidebar-footer {
+      padding: 16px 20px;
+      border-top: 1px solid rgba(255,255,255,0.08);
+      position: relative;
+      z-index: 1;
+    }
+    .sidebar-footer-link {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.8rem;
+      color: rgba(255,255,255,0.5);
+      text-decoration: none;
+      cursor: pointer;
+      transition: color 0.2s;
+    }
+    .sidebar-footer-link:hover { color: rgba(255,255,255,0.8); }
+
+    /* ===== MAIN AREA ===== */
+    .main-area {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      min-width: 0;
+    }
+
+    /* ===== TOP BAR ===== */
+    .topbar {
+      height: 56px;
+      background: rgba(255,253,249,0.85);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      padding: 0 32px;
+      gap: 16px;
+      position: sticky;
+      top: 52px;
+      z-index: 40;
+    }
+
+    .topbar-breadcrumbs {
+      font-size: 0.82rem;
+      color: var(--muted);
+      flex-shrink: 0;
+    }
+    .topbar-breadcrumbs a {
+      color: var(--muted);
+      text-decoration: none;
+    }
+    .topbar-breadcrumbs a:hover { color: var(--primary); }
+    .topbar-breadcrumbs .sep { margin: 0 6px; opacity: 0.5; }
+    .topbar-breadcrumbs .current { color: var(--fg); font-weight: 600; }
+
+    .topbar-spacer { flex: 1; }
+
+    .topbar-notif {
+      position: relative;
+      width: 36px;
+      height: 36px;
+      border-radius: var(--radius-sm);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: background 0.2s;
+      color: var(--muted);
+      border: none;
+      background: transparent;
+      font-size: 1.1rem;
+    }
+    .topbar-notif:hover { background: var(--secondary); color: var(--fg); }
+    .topbar-notif-badge {
+      position: absolute;
+      top: 4px;
+      right: 4px;
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      background: #E05C4D;
+      color: #fff;
+      font-size: 0.6rem;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border: 2px solid var(--card);
+    }
+
+    .topbar-user {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      cursor: pointer;
+      padding: 4px 8px 4px 4px;
+      border-radius: var(--radius-sm);
+      transition: background 0.2s;
+    }
+    .topbar-user:hover { background: var(--secondary); }
+    .topbar-user-avatar {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--accent), #c56a2e);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.8rem;
+      font-weight: 700;
+      color: #fff;
+    }
+    .topbar-user-arrow {
+      font-size: 0.65rem;
+      color: var(--muted);
+    }
+
+    /* ===== MAIN CONTENT ===== */
+    .main-content {
+      flex: 1;
+      padding: 28px 32px 48px;
+      overflow-y: auto;
+    }
+
+    .main-header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      margin-bottom: 24px;
+    }
+    .main-header-right h1 {
+      font-size: 1.7rem;
+      font-weight: 700;
+      line-height: 1.2;
+    }
+    .main-header-right .date-label {
+      font-size: 0.88rem;
+      color: var(--muted);
+      margin-top: 3px;
+    }
+
+    /* Buttons */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      border: none;
+      cursor: pointer;
+      font-family: 'Rubik', sans-serif;
+      font-weight: 600;
+      transition: all 0.25s var(--ease);
+      text-decoration: none;
+    }
+    .btn:active { transform: scale(0.97); }
+    .btn-primary {
+      background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+      color: #fff;
+      height: 44px;
+      padding: 0 28px;
+      border-radius: var(--radius-md);
+      font-size: 0.9rem;
+      box-shadow: 0 4px 12px rgba(91,122,47,0.2);
+    }
+    .btn-primary:hover {
+      box-shadow: 0 6px 20px rgba(91,122,47,0.3);
+      transform: translateY(-1px);
+    }
+    .btn-accent {
+      background: linear-gradient(135deg, var(--accent), #c56a2e);
+      color: #fff;
+      height: 42px;
+      padding: 0 22px;
+      border-radius: var(--radius-md);
+      font-size: 0.88rem;
+      box-shadow: 0 4px 12px rgba(217,121,58,0.2);
+    }
+    .btn-accent:hover {
+      box-shadow: 0 6px 20px rgba(217,121,58,0.3);
+      transform: translateY(-1px);
+    }
+    .btn-ghost {
+      background: transparent;
+      color: var(--muted);
+      height: 38px;
+      padding: 0 16px;
+      border-radius: var(--radius-sm);
+      font-size: 0.82rem;
+      font-weight: 500;
+    }
+    .btn-ghost:hover {
+      background: var(--secondary);
+      color: var(--fg);
+    }
+
+    /* ===== ANOMALY PANEL ===== */
+    .anomaly-panel {
+      background: var(--card);
+      border-radius: var(--radius-lg);
+      padding: 18px 22px;
+      margin-bottom: 20px;
+      box-shadow: var(--shadow-md);
+      border: 1px solid rgba(221,214,204,0.4);
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .anomaly-panel-title {
+      font-size: 0.78rem;
+      font-weight: 600;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-bottom: 2px;
+    }
+    .anomaly-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      padding: 10px 14px;
+      border-radius: var(--radius-md);
+      font-size: 0.84rem;
+      line-height: 1.5;
+    }
+    .anomaly-item.anomaly-red {
+      background: var(--status-rejected-bg);
+      color: var(--status-rejected-text);
+    }
+    .anomaly-item.anomaly-amber {
+      background: var(--status-pending-bg);
+      color: var(--status-pending-text);
+    }
+    .anomaly-icon {
+      font-size: 1rem;
+      flex-shrink: 0;
+      margin-top: 2px;
+    }
+    .anomaly-label { font-weight: 600; }
+
+    /* ===== FILTER BAR ===== */
+    .filter-bar {
+      background: var(--secondary);
+      border-radius: var(--radius-lg);
+      padding: 14px 20px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+      border: 1px solid rgba(221,214,204,0.5);
+    }
+    .filter-bar input,
+    .filter-bar select {
+      height: 38px;
+      padding: 0 12px;
+      border: 1.5px solid var(--border);
+      border-radius: var(--radius-sm);
+      background: var(--card);
+      font-family: 'Rubik', sans-serif;
+      font-size: 0.82rem;
+      color: var(--fg);
+      direction: rtl;
+      transition: all 0.2s var(--ease);
+    }
+    .filter-bar input:focus,
+    .filter-bar select:focus {
+      outline: none;
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(91,122,47,0.1);
+    }
+    .filter-bar label {
+      font-size: 0.78rem;
+      color: var(--muted);
+      font-weight: 500;
+    }
+    .filter-group {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    /* ===== TABLE ===== */
+    .table-wrapper {
+      background: var(--card);
+      border-radius: var(--radius-lg);
+      overflow: hidden;
+      box-shadow: var(--shadow-md);
+      border: 1px solid rgba(221,214,204,0.4);
+    }
+
+    .att-table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+    .att-table thead th {
+      padding: 13px 22px;
+      text-align: right;
+      font-size: 0.76rem;
+      font-weight: 600;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      background: rgba(248,245,240,0.9);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      border-bottom: 2px solid var(--border);
+      white-space: nowrap;
+      position: sticky;
+      top: 108px; /* direction-bar 52 + topbar 56 */
+      z-index: 10;
+    }
+    .att-table tbody tr {
+      transition: all 0.2s var(--ease);
+      border-right: 3px solid transparent;
+      position: relative;
+    }
+    .att-table tbody tr:nth-child(even) {
+      background: rgba(237,232,224,0.18);
+    }
+    .att-table tbody tr:hover {
+      background: rgba(237,232,224,0.45);
+      border-right-color: var(--accent);
+    }
+    .att-table tbody td {
+      padding: 14px 22px;
+      font-size: 0.88rem;
+      vertical-align: middle;
+    }
+    .att-table .worker-cell {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .worker-avatar-sm {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background: var(--secondary);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.7rem;
+      font-weight: 600;
+      color: var(--muted);
+      flex-shrink: 0;
+    }
+    .worker-name { font-weight: 600; }
+    .hours-cell {
+      font-variant-numeric: tabular-nums;
+      font-weight: 500;
+    }
+    .hours-anomaly {
+      color: var(--status-rejected-text);
+      font-weight: 700;
+    }
+
+    /* Row action buttons (appear on hover) */
+    .row-actions {
+      display: flex;
+      gap: 4px;
+      opacity: 0;
+      transform: translateX(8px);
+      transition: all 0.2s var(--ease);
+    }
+    tr:hover .row-actions {
+      opacity: 1;
+      transform: translateX(0);
+    }
+    .row-action-btn {
+      width: 30px;
+      height: 30px;
+      border-radius: 6px;
+      border: none;
+      background: var(--secondary);
+      color: var(--muted);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.8rem;
+      transition: all 0.15s;
+    }
+    .row-action-btn:hover {
+      background: var(--primary);
+      color: #fff;
+    }
+    .row-action-btn.reject:hover {
+      background: var(--status-rejected-text);
+    }
+
+    .att-table tfoot td {
+      padding: 14px 22px;
+      font-weight: 700;
+      font-size: 0.9rem;
+      background: rgba(91,122,47,0.04);
+      border-top: 2px solid var(--border);
+    }
+
+    /* Status badges */
+    .status-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 5px 14px;
+      border-radius: 50px;
+      font-size: 0.76rem;
+      font-weight: 600;
+      white-space: nowrap;
+    }
+    .status-approved {
+      background: var(--status-approved-bg);
+      color: var(--status-approved-text);
+    }
+    .status-pending {
+      background: var(--status-pending-bg);
+      color: var(--status-pending-text);
+    }
+    .status-rejected {
+      background: var(--status-rejected-bg);
+      color: var(--status-rejected-text);
+    }
+    .status-imported {
+      background: var(--status-imported-bg);
+      color: var(--status-imported-text);
+    }
+
+    /* ===== RESPONSIVE ===== */
+    @media (max-width: 1100px) {
+      .kpi-grid { grid-template-columns: repeat(2, 1fr); }
+    }
+    @media (max-width: 900px) {
+      .dashboard-wrap { flex-direction: column; }
+      .sidebar {
+        width: 100%;
+        height: auto;
+        position: static;
+        flex-direction: row;
+        flex-wrap: wrap;
+        padding: 12px;
+      }
+      .sidebar-nav { display: flex; flex-wrap: wrap; gap: 4px; }
+      .sidebar-nav-section { margin-bottom: 0; }
+      .sidebar-nav-section-title { display: none; }
+      .topbar { top: 52px; }
+      .att-table thead th { top: 108px; }
+      .kpi-grid { grid-template-columns: repeat(2, 1fr); }
+    }
+  </style>
+</head>
+<body>
+
+<!-- Direction Title Bar -->
+<div class="direction-bar">
+  <h1>Direction A: Adama v2 &#8212; Dashboard</h1>
+  <p>Premium Enterprise Agricultural Platform</p>
+</div>
+
+<div class="dashboard-wrap">
+  <!-- ===== SIDEBAR ===== -->
+  <aside class="sidebar">
+    <div class="sidebar-header">
+      <div class="sidebar-logo-circle">
+        <img src="data:image/jpeg;base64,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" alt="משק פיצביץ׳">
+      </div>
+      <div class="sidebar-brand-name">משק פיצביץ׳</div>
+      <div class="sidebar-divider"></div>
+    </div>
+
+    <!-- User -->
+    <div class="sidebar-user">
+      <div class="sidebar-avatar">י</div>
+      <div class="sidebar-user-info">
+        <div class="sidebar-user-name">יונתן קליין</div>
+        <span class="sidebar-user-role">בעלים</span>
+      </div>
+    </div>
+
+    <!-- KPIs -->
+    <div class="sidebar-kpis">
+      <div class="sidebar-kpi kpi-amber">
+        <span class="kpi-dot"></span>ממתינים: 3
+      </div>
+      <div class="sidebar-kpi kpi-green">
+        <span class="kpi-dot"></span>אושרו היום: 12
+      </div>
+      <div class="sidebar-kpi kpi-red">
+        <span class="kpi-dot"></span>חריגות: 1
+      </div>
+    </div>
+
+    <!-- Navigation -->
+    <nav class="sidebar-nav">
+      <div class="sidebar-nav-section">
+        <div class="sidebar-nav-section-title">ניהול</div>
+        <a class="sidebar-nav-item" href="#"><span class="nav-icon">&#x1F464;</span>עובדים</a>
+        <a class="sidebar-nav-item" href="#"><span class="nav-icon">&#x1F33E;</span>שטחים</a>
+        <a class="sidebar-nav-item" href="#"><span class="nav-icon">&#x1F69C;</span>ציוד</a>
+        <a class="sidebar-nav-item" href="#"><span class="nav-icon">&#x1F331;</span>גידולים</a>
+      </div>
+      <div class="sidebar-nav-section">
+        <div class="sidebar-nav-section-title">כספים</div>
+        <a class="sidebar-nav-item" href="#"><span class="nav-icon">&#x1F4B0;</span>שכר</a>
+      </div>
+      <div class="sidebar-nav-section">
+        <div class="sidebar-nav-section-title">דוחות ותפעול</div>
+        <a class="sidebar-nav-item" href="#"><span class="nav-icon">&#x2699;</span>ניהול מערכת</a>
+        <a class="sidebar-nav-item active" href="#"><span class="nav-icon">&#x1F4CB;</span>נוכחות</a>
+        <a class="sidebar-nav-item" href="#"><span class="nav-icon">&#x1F50D;</span>סקירת רשומות</a>
+      </div>
+    </nav>
+
+    <!-- Footer -->
+    <div class="sidebar-footer">
+      <a class="sidebar-footer-link">
+        <span>&#x2753;</span> עזרה ותמיכה
+      </a>
+    </div>
+  </aside>
+
+  <!-- ===== MAIN AREA ===== -->
+  <div class="main-area">
+    <!-- Top Bar -->
+    <header class="topbar">
+      <div class="topbar-breadcrumbs">
+        <a href="#">ראשי</a>
+        <span class="sep">/</span>
+        <span class="current">נוכחות</span>
+      </div>
+      <div class="topbar-spacer"></div>
+      <button class="topbar-notif">
+        &#x1F514;
+        <span class="topbar-notif-badge">3</span>
+      </button>
+      <div class="topbar-user">
+        <div class="topbar-user-avatar">י</div>
+        <span class="topbar-user-arrow">&#x25BE;</span>
+      </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="main-content">
+      <!-- Header -->
+      <div class="main-header animate-in">
+        <div class="main-header-right">
+          <h1>נוכחות</h1>
+          <div class="date-label">12 מרץ 2026</div>
+        </div>
+        <button class="btn btn-accent">+ הוספת רשומה</button>
+      </div>
+
+      <!-- Anomaly Panel -->
+      <div class="anomaly-panel animate-in">
+        <div class="anomaly-panel-title">התראות</div>
+        <div class="anomaly-item anomaly-red">
+          <span class="anomaly-icon">&#x26A0;</span>
+          <div>
+            <span class="anomaly-label">שעות חריגות:</span>
+            אברהם כהן — 14 שעות (שטח הדרום)
+          </div>
+        </div>
+        <div class="anomaly-item anomaly-amber">
+          <span class="anomaly-icon">&#x23F0;</span>
+          <div>
+            <span class="anomaly-label">ממתינים מעל יום:</span>
+            2 רשומות ממתינות מעל 24 שעות
+          </div>
+        </div>
+      </div>
+
+      <!-- Filter Bar -->
+      <div class="filter-bar animate-in stagger-1">
+        <div class="filter-group">
+          <label>מתאריך:</label>
+          <input type="date" value="2026-03-12">
+        </div>
+        <div class="filter-group">
+          <label>עד תאריך:</label>
+          <input type="date" value="2026-03-12">
+        </div>
+        <div class="filter-group">
+          <label>עובד:</label>
+          <select>
+            <option>כל העובדים</option>
+            <option>יוסי לוי</option>
+            <option>אברהם כהן</option>
+            <option>מרים דוד</option>
+            <option>סומצ׳אי</option>
+            <option>רחל גולן</option>
+            <option>דני אלון</option>
+          </select>
+        </div>
+        <div class="filter-group">
+          <label>שטח:</label>
+          <select>
+            <option>כל השטחים</option>
+            <option>שטח הצפון</option>
+            <option>שטח הדרום</option>
+            <option>שטח המערב</option>
+            <option>חממה 3</option>
+            <option>משתלה</option>
+          </select>
+        </div>
+        <button class="btn btn-ghost">נקה</button>
+      </div>
+
+      <!-- Attendance Table -->
+      <div class="table-wrapper animate-in stagger-2">
+        <table class="att-table">
+          <thead>
+            <tr>
+              <th>עובד</th>
+              <th>שטח</th>
+              <th>שעות</th>
+              <th>סטטוס</th>
+              <th style="width:80px"></th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>
+                <div class="worker-cell">
+                  <div class="worker-avatar-sm">יל</div>
+                  <span class="worker-name">יוסי לוי</span>
+                </div>
+              </td>
+              <td>שטח הצפון</td>
+              <td class="hours-cell">8.5</td>
+              <td><span class="status-badge status-approved">&#x2713; מאושר</span></td>
+              <td>
+                <div class="row-actions">
+                  <button class="row-action-btn" title="ערוך">&#x270E;</button>
+                </div>
+              </td>
+            </tr>
+            <tr>
+              <td>
+                <div class="worker-cell">
+                  <div class="worker-avatar-sm">אכ</div>
+                  <span class="worker-name">אברהם כהן</span>
+                </div>
+              </td>
+              <td>שטח הדרום</td>
+              <td class="hours-cell hours-anomaly">14.0</td>
+              <td><span class="status-badge status-pending">&#x23F0; ממתין</span></td>
+              <td>
+                <div class="row-actions">
+                  <button class="row-action-btn" title="אשר">&#x2713;</button>
+                  <button class="row-action-btn reject" title="דחה">&#x2717;</button>
+                </div>
+              </td>
+            </tr>
+            <tr>
+              <td>
+                <div class="worker-cell">
+                  <div class="worker-avatar-sm">מד</div>
+                  <span class="worker-name">מרים דוד</span>
+                </div>
+              </td>
+              <td>חממה 3</td>
+              <td class="hours-cell">7.0</td>
+              <td><span class="status-badge status-approved">&#x2713; מאושר</span></td>
+              <td>
+                <div class="row-actions">
+                  <button class="row-action-btn" title="ערוך">&#x270E;</button>
+                </div>
+              </td>
+            </tr>
+            <tr>
+              <td>
+                <div class="worker-cell">
+                  <div class="worker-avatar-sm">ס</div>
+                  <span class="worker-name">סומצ׳אי</span>
+                </div>
+              </td>
+              <td>שטח המערב</td>
+              <td class="hours-cell">9.0</td>
+              <td><span class="status-badge status-imported">&#x21E9; יובא</span></td>
+              <td>
+                <div class="row-actions">
+                  <button class="row-action-btn" title="ערוך">&#x270E;</button>
+                </div>
+              </td>
+            </tr>
+            <tr>
+              <td>
+                <div class="worker-cell">
+                  <div class="worker-avatar-sm">רג</div>
+                  <span class="worker-name">רחל גולן</span>
+                </div>
+              </td>
+              <td>משתלה</td>
+              <td class="hours-cell">6.5</td>
+              <td><span class="status-badge status-rejected">&#x2717; נדחה</span></td>
+              <td>
+                <div class="row-actions">
+                  <button class="row-action-btn" title="ערוך">&#x270E;</button>
+                </div>
+              </td>
+            </tr>
+            <tr>
+              <td>
+                <div class="worker-cell">
+                  <div class="worker-avatar-sm">דא</div>
+                  <span class="worker-name">דני אלון</span>
+                </div>
+              </td>
+              <td>שטח הצפון</td>
+              <td class="hours-cell">8.0</td>
+              <td><span class="status-badge status-approved">&#x2713; מאושר</span></td>
+              <td>
+                <div class="row-actions">
+                  <button class="row-action-btn" title="ערוך">&#x270E;</button>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+          <tfoot>
+            <tr>
+              <td>סה״כ</td>
+              <td></td>
+              <td>53.0</td>
+              <td></td>
+              <td></td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+    </main>
+  </div>
+</div>
+
+</body>
+</html>

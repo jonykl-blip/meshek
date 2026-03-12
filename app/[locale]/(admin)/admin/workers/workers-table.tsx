@@ -164,8 +164,8 @@ export function WorkersTable({
                   labels={labels}
                   getRoleLabel={getRoleLabel}
                   getLangLabel={getLangLabel}
-                  onUpdated={() => {
-                    setFeedbackMsg(labels.updated);
+                  onUpdated={(msg) => {
+                    setFeedbackMsg(msg ?? labels.updated);
                     router.refresh();
                     setTimeout(() => setFeedbackMsg(""), 3000);
                   }}
@@ -315,7 +315,7 @@ function WorkerRow({
   labels: Labels;
   getRoleLabel: (role: string) => string;
   getLangLabel: (lang: string) => string;
-  onUpdated: () => void;
+  onUpdated: (msg?: string) => void;
   onArchived: () => void;
 }) {
   const [isEditing, setIsEditing] = useState(false);
@@ -334,12 +334,13 @@ function WorkerRow({
 
   function handleAddAlias() {
     if (!newAlias.trim()) return;
+    setError("");
     startTransition(async () => {
       const result = await addProfileAlias(profile.id, newAlias.trim());
       if (result.success) {
         setNewAlias("");
         setShowAliasInput(false);
-        onUpdated();
+        onUpdated(labels.aliasAdded);
       } else {
         setError(result.error);
       }
@@ -347,10 +348,11 @@ function WorkerRow({
   }
 
   function handleRemoveAlias(aliasId: string) {
+    setError("");
     startTransition(async () => {
       const result = await removeProfileAlias(aliasId);
       if (result.success) {
-        onUpdated();
+        onUpdated(labels.aliasRemoved);
       } else {
         setError(result.error);
       }
@@ -524,7 +526,7 @@ function WorkerRow({
                 {a.alias}
                 <button
                   onClick={() => handleRemoveAlias(a.id)}
-                  className="mr-1 text-xs opacity-60 hover:opacity-100"
+                  className="me-1 text-xs opacity-60 hover:opacity-100"
                   disabled={isPending}
                 >
                   ×

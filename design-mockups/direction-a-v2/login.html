@@ -1,0 +1,618 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Adama v2 — Login | משק פיצביץ׳</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Rubik:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    /* ===== DESIGN TOKENS ===== */
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+    :root {
+      --bg: #F8F5F0;
+      --fg: #251F19;
+      --primary: #5B7A2F;
+      --primary-dark: #4A6526;
+      --primary-light: #6B8C3E;
+      --accent: #D9793A;
+      --accent-brown: #8B6914;
+      --secondary: #EDE8E0;
+      --muted: #7A7168;
+      --border: #DDD6CC;
+      --sidebar-top: #3A5420;
+      --sidebar-bottom: #2E4318;
+      --card: #FFFDF9;
+      --shadow-sm: 0 1px 3px rgba(37,31,25,0.04);
+      --shadow-md: 0 4px 16px rgba(37,31,25,0.06), 0 1px 3px rgba(37,31,25,0.04);
+      --shadow-lg: 0 8px 40px rgba(37,31,25,0.08), 0 2px 6px rgba(37,31,25,0.04);
+      --shadow-xl: 0 16px 56px rgba(37,31,25,0.12), 0 4px 12px rgba(37,31,25,0.06);
+      --radius-sm: 8px;
+      --radius-md: 12px;
+      --radius-lg: 20px;
+      --radius-xl: 28px;
+      --ease: cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    body {
+      font-family: 'Rubik', sans-serif;
+      background: var(--bg);
+      color: var(--fg);
+      line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+
+    /* ===== DIRECTION BAR ===== */
+    .direction-bar {
+      background: linear-gradient(135deg, var(--sidebar-top), var(--sidebar-bottom));
+      color: #fff;
+      padding: 16px 40px;
+      text-align: center;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      box-shadow: 0 2px 20px rgba(37,31,25,0.15);
+    }
+    .direction-bar h1 { font-size: 1.3rem; font-weight: 700; direction: ltr; letter-spacing: 0.3px; }
+    .direction-bar p { font-size: 0.8rem; opacity: 0.7; direction: ltr; margin-top: 2px; }
+
+    /* ===== ANIMATIONS ===== */
+    @keyframes fadeSlideUp {
+      from { opacity: 0; transform: translateY(28px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+    @keyframes logoGlow {
+      0%, 100% { box-shadow: 0 0 30px rgba(107,140,62,0.3), 0 0 60px rgba(139,105,20,0.12); }
+      50% { box-shadow: 0 0 50px rgba(107,140,62,0.45), 0 0 90px rgba(139,105,20,0.2); }
+    }
+    @keyframes shimmer {
+      0% { background-position: -400px 0; }
+      100% { background-position: 400px 0; }
+    }
+    @keyframes float {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-8px); }
+    }
+    @keyframes pulseRing {
+      0% { transform: scale(1); opacity: 0.4; }
+      100% { transform: scale(1.4); opacity: 0; }
+    }
+
+    /* ===== LOGIN SECTION ===== */
+    .login-section {
+      min-height: 100vh;
+      display: flex;
+      direction: ltr;
+    }
+
+    /* Left panel — agricultural landscape */
+    .login-left {
+      flex: 0 0 58%;
+      position: relative;
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    /* Sky layer */
+    .login-left::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background:
+        linear-gradient(180deg,
+          #87CEEB 0%,
+          #B8D4E3 15%,
+          #D4C89E 30%,
+          #8B9A3C 40%,
+          #6B8C3E 48%,
+          #5B7A2F 55%,
+          #4A6526 62%,
+          #3A5420 70%,
+          #2E4318 80%,
+          #1F2E10 100%
+        );
+      z-index: 0;
+    }
+
+    /* Sun glow */
+    .login-left::after {
+      content: '';
+      position: absolute;
+      top: 8%;
+      left: 55%;
+      width: 200px;
+      height: 200px;
+      background: radial-gradient(circle, rgba(255,220,130,0.5) 0%, rgba(255,200,80,0.2) 35%, transparent 70%);
+      border-radius: 50%;
+      z-index: 1;
+    }
+
+    /* Field rows texture */
+    .field-rows {
+      position: absolute;
+      inset: 0;
+      z-index: 1;
+      background:
+        repeating-linear-gradient(
+          175deg,
+          transparent 0px,
+          transparent 18px,
+          rgba(255,255,255,0.03) 18px,
+          rgba(255,255,255,0.03) 20px
+        );
+      opacity: 0.8;
+    }
+
+    /* Mist layer */
+    .mist-layer {
+      position: absolute;
+      bottom: 30%;
+      left: 0;
+      right: 0;
+      height: 120px;
+      background: linear-gradient(180deg, transparent, rgba(255,255,255,0.08), transparent);
+      z-index: 1;
+    }
+
+    /* Hills silhouette */
+    .hills {
+      position: absolute;
+      bottom: 35%;
+      left: 0;
+      right: 0;
+      height: 180px;
+      z-index: 1;
+    }
+    .hills::before {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      left: -5%;
+      width: 60%;
+      height: 100%;
+      background: radial-gradient(ellipse 100% 100% at 50% 100%, rgba(74,101,38,0.4) 0%, transparent 70%);
+    }
+    .hills::after {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      right: -10%;
+      width: 55%;
+      height: 80%;
+      background: radial-gradient(ellipse 100% 100% at 50% 100%, rgba(58,84,32,0.3) 0%, transparent 70%);
+    }
+
+    /* Vignette */
+    .vignette {
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(ellipse at 50% 40%, transparent 40%, rgba(30,40,15,0.3) 100%);
+      z-index: 2;
+    }
+
+    /* Brand content on left */
+    .login-brand {
+      text-align: center;
+      color: #fff;
+      position: relative;
+      z-index: 10;
+      animation: fadeIn 1.2s var(--ease);
+    }
+
+    .login-brand-logo-wrap {
+      display: flex;
+      justify-content: center;
+      margin-bottom: 32px;
+    }
+
+    .login-brand-logo-ring {
+      position: relative;
+      width: 200px;
+      height: 200px;
+    }
+
+    /* Pulse ring behind logo */
+    .login-brand-logo-ring::before {
+      content: '';
+      position: absolute;
+      inset: -12px;
+      border-radius: 50%;
+      border: 2px solid rgba(107,140,62,0.3);
+      animation: pulseRing 3s ease-out infinite;
+    }
+
+    .login-brand-logo-circle {
+      width: 200px;
+      height: 200px;
+      border-radius: 50%;
+      background: radial-gradient(circle at 50% 38%, #FFFDF9 0%, #F0EBE2 50%, #DDD6CC 100%);
+      border: 4px solid rgba(107,140,62,0.6);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      animation: logoGlow 4s ease-in-out infinite, float 6s ease-in-out infinite;
+      overflow: hidden;
+    }
+
+    .login-brand-logo-circle img {
+      width: 180px;
+      height: 180px;
+      object-fit: contain;
+      border-radius: 50%;
+    }
+
+    .login-brand-name {
+      font-size: 3rem;
+      font-weight: 800;
+      line-height: 1.15;
+      margin-bottom: 8px;
+      text-shadow: 0 4px 24px rgba(0,0,0,0.3);
+      letter-spacing: -0.5px;
+    }
+
+    .login-brand-sub {
+      font-size: 1.15rem;
+      font-weight: 400;
+      opacity: 0.8;
+      letter-spacing: 1.5px;
+      text-shadow: 0 2px 12px rgba(0,0,0,0.2);
+    }
+
+    /* Right panel — login form */
+    .login-right {
+      flex: 0 0 42%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: var(--bg);
+      padding: 40px;
+      position: relative;
+    }
+
+    /* Subtle pattern on right panel */
+    .login-right::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background:
+        radial-gradient(circle at 20% 80%, rgba(91,122,47,0.03) 0%, transparent 50%),
+        radial-gradient(circle at 80% 20%, rgba(139,105,20,0.02) 0%, transparent 50%);
+    }
+
+    .login-card {
+      width: 100%;
+      max-width: 400px;
+      background: rgba(255,253,249,0.85);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border-radius: var(--radius-xl);
+      padding: 48px 40px;
+      box-shadow: var(--shadow-xl);
+      border: 1px solid rgba(221,214,204,0.5);
+      position: relative;
+      z-index: 1;
+      animation: fadeSlideUp 0.8s var(--ease) 0.3s both;
+    }
+
+    /* Gradient accent line at top of card */
+    .login-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 32px;
+      right: 32px;
+      height: 3px;
+      background: linear-gradient(90deg, var(--primary), var(--accent), var(--accent-brown));
+      border-radius: 0 0 2px 2px;
+    }
+
+    .login-card h2 {
+      font-size: 1.6rem;
+      font-weight: 700;
+      margin-bottom: 6px;
+      text-align: right;
+      direction: rtl;
+      color: var(--fg);
+    }
+
+    .login-card .login-subtitle {
+      font-size: 0.9rem;
+      color: var(--muted);
+      margin-bottom: 36px;
+      text-align: right;
+      direction: rtl;
+    }
+
+    .form-group {
+      margin-bottom: 22px;
+      direction: rtl;
+    }
+
+    .form-group label {
+      display: block;
+      font-size: 0.82rem;
+      font-weight: 600;
+      color: var(--fg);
+      margin-bottom: 7px;
+      letter-spacing: 0.2px;
+    }
+
+    .form-group input {
+      width: 100%;
+      height: 50px;
+      padding: 0 18px;
+      border: 1.5px solid var(--border);
+      border-radius: var(--radius-md);
+      background: var(--bg);
+      font-family: 'Rubik', sans-serif;
+      font-size: 0.95rem;
+      color: var(--fg);
+      direction: rtl;
+      transition: all 0.25s var(--ease);
+    }
+
+    .form-group input:focus {
+      outline: none;
+      border-color: var(--primary);
+      box-shadow: 0 0 0 4px rgba(91,122,47,0.1);
+      background: #fff;
+    }
+
+    .form-group input::placeholder {
+      color: #B8B0A5;
+    }
+
+    .login-options {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 28px;
+      direction: rtl;
+    }
+
+    .login-remember {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.82rem;
+      color: var(--muted);
+      cursor: pointer;
+    }
+
+    .login-remember input[type="checkbox"] {
+      width: 16px;
+      height: 16px;
+      accent-color: var(--primary);
+      cursor: pointer;
+    }
+
+    .login-forgot a {
+      font-size: 0.82rem;
+      color: var(--primary);
+      text-decoration: none;
+      font-weight: 500;
+      transition: color 0.2s;
+    }
+
+    .login-forgot a:hover {
+      color: var(--primary-dark);
+      text-decoration: underline;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      border: none;
+      cursor: pointer;
+      font-family: 'Rubik', sans-serif;
+      font-weight: 600;
+      transition: all 0.25s var(--ease);
+      text-decoration: none;
+    }
+
+    .btn:active { transform: scale(0.97); }
+
+    .btn-primary {
+      background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+      color: #fff;
+      height: 50px;
+      padding: 0 32px;
+      border-radius: var(--radius-md);
+      font-size: 1rem;
+      box-shadow: 0 4px 16px rgba(91,122,47,0.25);
+    }
+
+    .btn-primary:hover {
+      background: linear-gradient(135deg, var(--primary-dark), #3A5420);
+      box-shadow: 0 6px 24px rgba(91,122,47,0.35);
+      transform: translateY(-1px);
+    }
+
+    .login-submit {
+      width: 100%;
+      margin-bottom: 24px;
+      letter-spacing: 0.3px;
+    }
+
+    .login-divider {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      margin-bottom: 24px;
+      direction: rtl;
+    }
+
+    .login-divider::before,
+    .login-divider::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: var(--border);
+    }
+
+    .login-divider span {
+      font-size: 0.78rem;
+      color: var(--muted);
+      white-space: nowrap;
+    }
+
+    .btn-magic {
+      width: 100%;
+      height: 50px;
+      background: var(--card);
+      color: var(--fg);
+      border: 1.5px solid var(--border);
+      border-radius: var(--radius-md);
+      font-size: 0.9rem;
+      font-weight: 500;
+      margin-bottom: 24px;
+    }
+
+    .btn-magic:hover {
+      background: var(--secondary);
+      border-color: var(--primary-light);
+    }
+
+    .btn-magic svg {
+      width: 18px;
+      height: 18px;
+    }
+
+    .login-register {
+      text-align: center;
+      font-size: 0.85rem;
+      color: var(--muted);
+      direction: rtl;
+    }
+
+    .login-register a {
+      color: var(--primary);
+      font-weight: 600;
+      text-decoration: none;
+    }
+
+    .login-register a:hover {
+      text-decoration: underline;
+    }
+
+    /* ===== RESPONSIVE ===== */
+    @media (max-width: 900px) {
+      .login-section {
+        flex-direction: column;
+      }
+      .login-left {
+        flex: none;
+        min-height: 340px;
+      }
+      .login-right {
+        flex: none;
+        padding: 32px 24px;
+      }
+      .login-brand-logo-circle {
+        width: 140px;
+        height: 140px;
+      }
+      .login-brand-logo-circle img {
+        width: 120px;
+        height: 120px;
+      }
+      .login-brand-logo-ring {
+        width: 140px;
+        height: 140px;
+      }
+      .login-brand-name {
+        font-size: 2.2rem;
+      }
+      .login-card {
+        padding: 36px 28px;
+      }
+    }
+  </style>
+</head>
+<body>
+
+<!-- Direction Title Bar -->
+<div class="direction-bar">
+  <h1>Direction A: Adama v2 &#8212; &#x05D0;&#x05D3;&#x05DE;&#x05D4;</h1>
+  <p>Premium Enterprise Agricultural Platform</p>
+</div>
+
+<!-- Login Section -->
+<section class="login-section">
+  <!-- Left: Agricultural Landscape -->
+  <div class="login-left">
+    <div class="field-rows"></div>
+    <div class="hills"></div>
+    <div class="mist-layer"></div>
+    <div class="vignette"></div>
+
+    <div class="login-brand">
+      <div class="login-brand-logo-wrap">
+        <div class="login-brand-logo-ring">
+          <div class="login-brand-logo-circle">
+            <img src="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wCEAAkGBxAQEhASEhIWFhUWGBcTFxUXFRcZFxYaFxIWFxkYFhsYHSggGholGxgYIjEhJSkrLi4uFx8zODMtNygtLisBCgoKDg0OGhAQGy0lHiYrLSstLS01LS0tLS0rLS0tLS0rLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS03Lf/AABEIAOEA4QMBIgACEQEDEQH/xAAbAAEAAwADAQAAAAAAAAAAAAAABAUGAQMHAv/EAEMQAAEDAgQCBgcFBQgCAwAAAAEAAhEDBAUSITEGQRNRYXGBkQciMaGxwdEUI0JSYlNyguHwFTNDY4KSwvEXJBZUov/EABkBAQADAQEAAAAAAAAAAAAAAAABAgMEBf/EACcRAAICAgIBBAICAwAAAAAAAAABAhEDMRIhQQQTImEyURSBI0Jx/9oADAMBAAIRAxEAPwD3FERAEREAREQBERAEREAREQBERAEREAREQBERAEREAREQBERAEREAREQBERAEREAREQBERAEREAREQBF8vqAakgd5Uc4jQ/a0/wDe36qLFkpF0Uryk/2ajHdzgfgV3SpByi4lcoAiIgCIiAIiIAiIgCIiAIiIAiIgCIiAIiIAiIgC+SYXRiF7ToMNSo7K0e/sHWV5xjnENe9OSmC1mwpgy58nTNHw2VJzUSkpqJqsX4yt6Mtp/eu29X2Qe/n4LK3nE97XOVri2fw0xr3TvKtsC4KJipcmDoRTb/yPyC0Qr2loMrGtEcmCT4/zWUm6uTpFalLfRgxw5fV/WNN5nnVcB4+sZ9ykN4Fu/8AKH+s+WjVvbfEW1KT6jB7M6HrHWqA8SVzyYPA/VZTligk230OETPVOCbwT6rHdWV4k9W8KNGIWkn72mByJLm+G4W8wTFalZzmvDYAnSZ37SvscQUS5zHAgAxmiQVKliaUk6HtrwzMYZxzUaWtrMDxzc3Rw8NitjheL0Lls0ng9bdnN7CDqFXYhw7aXYzthruT6ce8bFYvE8GurB+cHSfVqs+BHLxWnKUe32hco70eprlZThjiwVyKNeG1dgdmv+juxatbRkmujRNPQREViQiIgCIiAIiIAiIgCIiAIiIAiIgC6bq4ZTY57yA1okk8l3Lz/AI+xjO/7O0+qyC/eC7k3Tq3VZy4qyspUrKnF8Sq4hWa1oMTFNg/iPbEknsW2wTBKNjT6R5BqR6zzy/S3s95XRwbgooU+me37x7Ry9lvV3ncqBi1+6u8nUMaYA6tYk9q5MmRYlye2Uiq+TNBXuBc0H9C4h3VsdOR71j4Xfb3D6L8zDr/EJ5hfTm9LUIpNMuMwPwnnr1SuHNk92n5Jbs78GusnSMOz2nzAMfRV0rSWfDQ3qO8G/VWDcDth+Ce8n6rVelyzik/BPFmYw+76LpnbOLcre8n5BdDbYlucEQIBk8+zrWouOHqDvZlp7D9VQ3+E1KIzCHM/MOXeOXeqZMGSC+StIhpom8OWx6Vzg71WjUgmHE/EK5F/QqudRMGREEeq7rAndZg3uSkKVMwDq93Mk8h2clBGkQf5K8fU+0lGP9k2fPFnDX2f76mT0U7bmnPOd8s8+SvOC+IjXHQ1T940aO/O0fMKzwW9+0U3MqCYGV0jRwI+KwnEGGvsa7XMMAnNSM6iIkHumO5dikqU46ZR/HtaPU1yq/AsSbdUWVRudHDqcNCP661YLpTvs2QREUgIiIAiIgCIiAIiIAiIgCIiAiYreihRqVT+FpMdZ5DzXnHCmHfarmahzAHpn/qMyAf9XwWl9Il0W0adMbvdqOxuvxhfXo/tMlB1QkHO6BHIN0j4rCXynX6MpdyoubzGKVF4Y6dpkCQO/mq/ErGlcS+k5ufmPzeHIqsv7ppqOIEmT6wMyNoj6dSgOeZnWfL3hcOX1N3GStFmzsZQObINXk5Y1BHfP9aK+ub6jh7IIz1XCSBAJ7ydh1Lp4ZpF9R1RxnKIBPWf5LK8Q1pua7nE5g4gAjSBAbz00kpiSxw5rb0bYMam+zRWfGwJ+8pZGzGYOmO8QFDxHiRlO46SmTW0I19VjJiOjjcxuSss4nUHfeYjXqJXD26mJPbBVnnm1R2+zBM1h46frNBv+8/RTOEMadWIt+jGVjCS6Z5gARHOfcsnaYRWqMdVa2GNmXOIA0GsTurzgbEKNIuY8w6oQGnlA2BPIkyr48k3JcmUyY4cXxROx/DOhcHN9h3/AOT1dyjYdhxrGdGsG7jt3DrK12JW/SU3t7DHeNlhi8kAEmBsOrwWHqcUceS66Z57VM1X9q2tBuRhmOTRPmdl1cS2Tby1Lm7gdIw85A1HiJCzIMDcStPwrXlj6Z/CZ16na/XzW2D1DyS4PQu+jNej3EMlV1EnSoMw7HAfEj4L0NeW3rGWd5ImWVQ6NvVOunKId7l6i0rrxPqv0Rj1RyiItjQIiIAiIgCIiAIiIAiIgCIiAwHpIqzUoNEyGud2QSB8lfYVXbb4dTqOBIbTDiBuc3/azfpHb/7FM/5fwefqtDXcP7MBEkdC3v0AXP8A7Sf0Uxq8hnbjFrVwJZTqN8WkfGQof9ot/K6PBV1xWLoEAAbGNfEhLimWy0tIcDrJ+S82STdno/xsf6NNhHFNK3a5uRziTMiOrtVVxBfUbip0tNpaTo4Egg6biOfX3KC+nUphpc0tnVs6eI6u9dbGEyRrl1OvbHdqYHitOb48PBeGKMe0cAGJ06hPZ/2tVhfEtva020m0nmNS71fWJ3KyT9/6GvNfbcuaXSG88sTtsJ0UQm4PovOCls1WMcWUrijUpCm9uYQDIgEGdezRZajUAe0uHMOMbnVfDyNSNBOg8efbC+T18gk8kpvsRxxiqRu//nVIf4L/ADCzj8RaS4ta4gy6OYG+qqnMyn1gdpERzEg9oX1ToVC0vDXFoOVxbt3Hnr26JklLJ+Rk/T4y6ssYoMMua4xtAEz16rRYFj9CrVFNlJzXOB1JHLXYLBUaDnkBoOvM7aa7q/4Qtct0yTtm0g/l3HJXwNxaSRSeDHGLaOr0g0Yuids1Jp74Lm/ILf4TUz0KDjzpsPmwFYf0hibhmhMUtY/fctpw82LW2H+VT/gC7ofmzzo/kywREWxqEREAREQBERAEREAREQBERAYX0lUNbep+8zzgj5q04b+/w/o51yvpfGPiF3cbWfS2ryBJZFQeG/uVH6Ob8A1aBO46RvwPyKwarJ/0zvjkKvDOGbmvEtyN5ud8huVraWDWtkx1ap945upe/UzGzRyWhXnnGWMmvU6JnsMOv6nfy281nKEMMb8nbGU8rrwU2IXj7iq6o4SXGAByGwDe4e9TcXtfs1KnQ/G6KtU9XJjfDXxVpwVhQM3FTRjJLZ2ke07uHxCoMQu33NV7/wBo6GjnEw0eS5nGo29s6E7lS0iLrA0HXPPRSK9CKNF35n1PJoaFIx6kGVjTb/htazybrPiVJxOmGW+Hhw0Lajo/ecD8wqcdluV19layj9w93VUaPNhPyUaNNuY17YMa+fkrawozZ3ZGuV9N3vg+4rqwW26b7RS/E6lnb+9TcCPcSPFHG6HLZ3Wlp9ptnQJq2+oHN1I6x3tMx5KNgWKG2qtfu0+q9vW36jdd/DV79nuGEmA71HDsd9DCl8X4N9nqZ2CKdQz+646kd3MeKuk+PNbRW1y4PTNJiHDVvctD6TsmYSC32DPW1ROGMAq29w51TUBhDXAyDJGnkPeonA2M5T9medD/AHZ7dy35hbS6rimx73bNBcfALrhGE6mcs5ShcXo8343qtq3TmsnM0CmddCYBgAagy4r0izpZGMZ+VrW+QAXmeAUjc3rHkyS51VwjYb8+0wvUVfF23I48fds5REWxqEREAREQBERAEREAREQBERAfL2AggiQdCO9eVXVu/D7r1TrTdmbP4mH46SD3L1dZ7jDBDc087B97T1b+oc2/TtCzyRtWik42rRMu67ri1c63dq9ktPPtHfuO9ed4NhbrmsKYBAB9cx7IG89qn8IY/9mf0VWeiedy/hun+OTSfqvQbe1psc97GgGpBcR+KBosXBZWmzbDnqLRRcXXDbe1FFmmcdGB+kD1vd8VnODMP6W5a4j1aQz/6tmjzk+C++NLw1KzhoG0z0e+pMBzoHVy8FoOFLXoLR9U7vBqHsAHqjyWb+ef6R0fhi+2YfF6xfWrOnd7o8yIV7xtSyMsm/lpkeQYqCybnq0wdy9vvdrK03pF9q37n/FqyirhJmr6nFEfhmkHWt+N/UnTrDSfkq7hKvlu6B6yW/7mkK84AYHMum8jA82lZSxcadam9ix49zoR9KDG3NE7iWy6G4qsEgE529od1HsMhbXC3MvrMNqamMjjzDm/iHbsVA4+sc1OnWaNWHK79123kfiVD9H1d+es2CWOGU+5Bw+ZW0VwyuPhmUnyxqXlEHBOHarroscCG0nZnOGgP5Q09vuEq14/xcNa23adXQ6pHJvIeJ+HarziHGqdnTLjq86MZzJ6z2DmVgcFw6pf3Jc4ktkPqv1G/wCEdp2jqV+KguEfJx58rm6NP6PcMLKTq7t6mjZ/IOfifdC1y+KbA0AAQAIBXbXRGPFUVSoIiKxIREQBERAEREAREQBERAEREAXBXKIDGcX8MF+avQHr/jYPxdrf1f131XDvFDrYinVl1Lt9umZ1HaAvRys7xBwtSuJez7uoRBI2f+8PnusZQafKJnKD3E5v8Ftb9oqMdBP+IyNRzDh/RU3HgWWtZrGk+pkDQORhukdi87fTvMPfMup8pGrHjyg+Oq0GG8eaRXpd7majxB+qqpR7vpsss+uXgpeF6Oa6og7hxdHcCVd+kU+tb6cn/8VdW2P2FQteHsDtYLhld26ld92LG5LS91J5AIH3g577HsVFh/xuKZ0/yE5qRR+jo6V+9vwWbvcPqOua7KbHOIe7YTEmd9ua3lrc4dag9HUoszbw8En3kqHecaWlOck1D+lsDzKPEuCjJ6I/kKMnJeS7NsKtEU6g9poDh4KnxXHLawZ0dJoLxoGDYGN3nl8VlcV4wuK4ys+6DjADdXn/V29nUpGC8JVqxzV5Yzt/vHD5d51V+d/iv7OV5W+olbbW91iVaSZP4nkerTHZ8gvSsIw2nbU206Y0G5O7j1ldthY0qDBTptDWjkPiTzPapMLSEOO9kxhW9hERaFwiIgCIiAIiIAiIgCIiAIiIAiIgCIiAIiID4q02uBa4Ag7giQe8LPX/BlpUktaaZ/QdPI6LSKHe4lRokCo8NJ1Gh+SrJJ7IaT2Yy44BqA+pWaf3mkHzChngW7HOkT15iP+K3lti9vUz5KgJaMzuwdfcu77dSimc4ipAYfzSJEeCz9qDKe3FmBp8B3J3fSHi46eQVlacAUx/e1nO7GjKPmVrTeU5qNzCWAOcPyggmT5FQ28QWhj75u8ayB71PtQQUIo+8OwW3t/7umAdsxXeZVggK5WiRdfQREUkhERAEREAREQBERAEREAREQBERAERcEwgOUUSzxKhWJFKqx5GpDXAx3wpUqE7Byi4RSDlVlzeEXNGjAyvY95JGstLYA81ZKtusOL7ilVkZW03sI1k5yNiO5QyGVtwP/avI/8Aqt/iqLqYCaGEkCQHU5jl9yRqr2wwyjQDhTZGb2iSXF0bSXEkqI7hu1MwwtG8NqPa2ZnRodAVOLK0dNm8C7vncgynPg1xUe1p5sNc5wkvpvqGet0uVxb4XRpsfTYyGvnNqZdIgy4mSY7VW47b2NJlIV8zWAdEwB1SIiYIYddBzSqXZNUWeDEmhRJ/I3+EKaoOD3VGrSaaBmmPUGhHs6RrqpqutEo5RcIpJOUXCIDlERAEREAREQBERAEREAREQBddcS13cfguxcIDF8F4LWpsuXOzUnv9RkjURrmg8pKg2PFF1QuOjuzLQcjxAGXqcI3HPuXoULG+kPC2GmLgaPaWtP6g4wPIrGUXGNrwZyTS6IePcSXIujSoVAGyxg0BkmJM+KkcU4jiFCo5zCRRAZ62VpEka9u6q+CMFFd/TF8dE9vqxObSd50W04mw59zQdSZAcS3U7aOBKrFSlFsqrkmyl4Xxe6uKF2S7NUaPu4A3yGPfCq6t9jLGlzmuAAJJys0A3K0vDWCfYGVC+oHZoc4xDW5R1lfeOYpbut7horMJNN4ADhqcp0VuL49smnXbKfgnHLi5rVGVX5mhmYCANcwHJRuJMWv7OtHSZqZOZhLRqObHdo+Ch+jqq1tw8OIGanlEnc5hoO1a3iEWtxTfRqVWNcNiXCWOGyrG3DZCtx2UfEXFbuit327speCXaAkRAynxXxjdpdXVlaOympULi90ACAWuj5LJ2tvT6YU6zy1uYsL2QQDMAidC2ea9hphtNgEgNa0CeUAbpC53Yj87s82o1cTsqRAa6nTBmS1pALj9Va4JjN7cULotdmqtyZIaJ1OvuU/jPFrd1q9jarXOdlgNIJ9qeSh+jRhy3B5S0T3AolUlFMhKpUmVTOJL9tZtOo+Dna1zS1siSNPIq842xW7tn0zSdlplsEwDLpPXrtC+brhCpVun13VGtYXh4ABLjEdwGy7+N8LFwaBNanTy5/bMTOXby96VLiyalTKAY1ipp9Nr0cTnyNiJifNXfA+M17l9YVX5g0NI0A3J6l1XVajRw11A1qb3hpb6pmSXzoN+ai+jMHPcHsZ8SojaklZCtSSs36IEXSbhERAEREAREQBERAEREAREQBZ3jxhdZvABJzM0Ak+2OpaJcKJK1RDVqjHejak5rLjM0j127gj8PatkiKIx4qhFUqI9/airTqUyYD2lhI3GYQsp/4+o/tn/7WrZrhHBS2HFPZlcO4Kp0atOqKryWHMAQ2CmI8E0q1WpVNV4LzmIAGmi1S5Ue3HVEcFoxn/j+l+2f5NWlZh4FDoMxIydHm57RKnLhSoRWkFFLRjWej+iN6zyO5oWowzD6VvTFOk2GjXrJJ3JPMqWiKEVoKKWjiFe8RcOsvenzPc3JmiADOaN57ldrhS0n0yWrMaPR/R/bP8mmrx4PhNK1ZkpA66kkyXHrJU9cqFCK0iFFLQREViwREQBERAEREAREQBERAEREAREQBERAEREAREQBERAEREAREQBERAEREAREQBERAEREAREQBERAEREAREQBERAEREAREQBERAEREAREQBERAEREAREQBERAEREB/9k=" alt="משק פיצביץ׳ לוגו">
+          </div>
+        </div>
+      </div>
+      <div class="login-brand-name">משק פיצביץ׳</div>
+      <div class="login-brand-sub">ניהול חקלאי חכם</div>
+    </div>
+  </div>
+
+  <!-- Right: Login Form -->
+  <div class="login-right">
+    <div class="login-card">
+      <h2>כניסה למערכת</h2>
+      <p class="login-subtitle">הזינו את פרטי החשבון שלכם</p>
+
+      <div class="form-group">
+        <label>אימייל</label>
+        <input type="email" placeholder="user@meshek.co.il">
+      </div>
+
+      <div class="form-group">
+        <label>סיסמה</label>
+        <input type="password" placeholder="&#x2022;&#x2022;&#x2022;&#x2022;&#x2022;&#x2022;&#x2022;&#x2022;">
+      </div>
+
+      <div class="login-options">
+        <label class="login-remember">
+          <input type="checkbox"> זכור אותי
+        </label>
+        <div class="login-forgot">
+          <a href="#">שכחת סיסמה?</a>
+        </div>
+      </div>
+
+      <button class="btn btn-primary login-submit">התחברות</button>
+
+      <div class="login-divider">
+        <span>או</span>
+      </div>
+
+      <button class="btn btn-magic">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
+          <polyline points="22,6 12,13 2,6"/>
+        </svg>
+        שליחת קישור כניסה למייל
+      </button>
+
+      <p class="login-register">אין לך חשבון? <a href="#">הרשמה</a></p>
+    </div>
+  </div>
+</section>
+
+</body>
+</html>

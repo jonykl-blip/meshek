@@ -370,10 +370,5 @@
       "success": "סיום שיפט ✅ — {worker}, {area}, {hours} שעות",
       "noOpenShift": "אין שיפט פתוח — שלח /clockin [שטח] להתחלה"
     }
-  },
-  "protected": {
-    "notice": "זהו דף מוגן שניתן לראות רק כמשתמש מאומת",
-    "userDetails": "פרטי המשתמש שלך",
-    "nextSteps": "שלבים הבאים"
   }
 }
