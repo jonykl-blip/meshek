@@ -80,7 +80,7 @@ export function CropsTable({
         />
       )}
 
-      <div className="overflow-x-auto rounded-lg border">
+      <div className="overflow-x-auto rounded-lg border shadow-md bg-card">
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b bg-muted/50">
@@ -145,7 +145,7 @@ function CreateCropForm({
   }
 
   return (
-    <div className="mb-6 rounded-lg border p-4" style={{ maxWidth: 400 }}>
+    <div className="mb-6 max-w-md rounded-lg border bg-card p-4 shadow-sm">
       <div className="space-y-4">
         <div>
           <Label>{labels.name}</Label>
@@ -250,8 +250,8 @@ function CropRow({
 
   return (
     <>
-      <tr className="border-b last:border-b-0">
-        <td className="px-4 py-3 text-lg font-bold">{item.name}</td>
+      <tr className="border-b last:border-b-0 transition-colors hover:bg-muted/30">
+        <td className="px-4 py-3 text-base font-semibold">{item.name}</td>
         <td className="px-4 py-3">
           <div className="flex gap-2">
             <Button size="sm" variant="outline" onClick={() => setIsEditing(true)}>

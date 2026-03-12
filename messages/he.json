@@ -35,8 +35,8 @@
   "auth": {
     "signUpSuccess": {
       "title": "תודה על ההרשמה!",
-      "description": "בדוק את המייל שלך לאישור",
-      "content": "נרשמת בהצלחה. אנא בדוק את המייל שלך לאישור החשבון לפני ההתחברות."
+      "description": "החשבון נוצר בהצלחה",
+      "content": "כעת ניתן להתחבר עם פרטי החשבון שלך."
     },
     "error": {
       "title": "מצטערים, משהו השתבש.",
@@ -52,8 +52,8 @@
     "signUp": "הרשמה",
     "logout": "יציאה",
     "greeting": "שלום, {email}!",
-    "loginTitle": "כניסה",
-    "loginDescription": "הזן את האימייל שלך להתחברות לחשבון",
+    "loginTitle": "כניסה למערכת",
+    "loginDescription": "הזינו את פרטי החשבון שלכם",
     "emailLabel": "אימייל",
     "passwordLabel": "סיסמה",
     "forgotPassword": "שכחת את הסיסמה?",
@@ -65,7 +65,14 @@
     "passwordMismatch": "הסיסמאות אינן תואמות",
     "creatingAccount": "יוצר חשבון...",
     "hasAccount": "כבר יש לך חשבון?",
-    "anErrorOccurred": "אירעה שגיאה"
+    "anErrorOccurred": "אירעה שגיאה",
+    "enterEmailFirst": "יש להזין אימייל לפני שליחת קישור",
+    "rememberMe": "זכור אותי",
+    "orDivider": "או",
+    "magicLinkButton": "שליחת קישור כניסה למייל",
+    "magicLinkSent": "קישור נשלח למייל!",
+    "brandName": "משק פילצביץ'",
+    "brandSubtitle": "ניהול חקלאי חכם"
   },
   "dashboard": {
     "title": "לוח הבקרה",

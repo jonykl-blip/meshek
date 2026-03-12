@@ -101,7 +101,7 @@ export default async function PayrollPage({
   };
 
   return (
-    <main className="container mx-auto p-4 md:p-6">
+    <main className="mx-auto max-w-4xl p-6">
       <div className="space-y-4">
         <h1 className="text-2xl font-bold">{t("title")}</h1>
 

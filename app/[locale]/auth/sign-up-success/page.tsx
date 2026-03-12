@@ -8,6 +8,7 @@ import {
 } from "@/components/ui/card";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { routing } from "@/i18n/routing";
+import { Link } from "@/i18n/navigation";
 
 export function generateStaticParams() {
   return routing.locales.map((locale) => ({ locale }));
@@ -22,6 +23,7 @@ export default async function Page({
   setRequestLocale(locale);
 
   const t = await getTranslations("auth.signUpSuccess");
+  const tAuth = await getTranslations("auth");
   return (
     <div className="flex min-h-svh w-full items-center justify-center p-6 md:p-10">
       <div className="w-full max-w-sm">
@@ -41,8 +43,14 @@ export default async function Page({
               <CardTitle className="text-2xl">{t("title")}</CardTitle>
               <CardDescription>{t("description")}</CardDescription>
             </CardHeader>
-            <CardContent>
+            <CardContent className="flex flex-col gap-4">
               <p className="text-sm text-muted-foreground">{t("content")}</p>
+              <Link
+                href="/auth/login"
+                className="inline-block w-full rounded-md bg-primary px-4 py-2 text-center text-sm font-medium text-primary-foreground hover:bg-primary/90"
+              >
+                {tAuth("loginTitle")}
+              </Link>
             </CardContent>
           </Card>
         </div>

@@ -100,7 +100,7 @@ function getStatusBadgeClassName(status: string): string {
     case "pending":
       return "bg-amber-100 text-amber-800 border-amber-200";
     case "approved":
-      return "bg-green-100 text-green-800 border-green-200";
+      return "bg-[#4A6741] text-white";
     case "rejected":
       return "bg-red-100 text-red-800 border-red-200";
     default:
@@ -338,7 +338,7 @@ export function ReviewQueue({
               feedback?.recordId === record.id ? feedback : null;
 
             return (
-              <Card key={record.id}>
+              <Card key={record.id} className="shadow-md">
                 <CardContent className="p-4">
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0 flex-1">

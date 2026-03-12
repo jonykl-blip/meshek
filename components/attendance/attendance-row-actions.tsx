@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
   dashboardApproveRecord,
@@ -85,7 +84,7 @@ export function AttendanceRowActions({
   }
 
   return (
-    <div className="flex items-center gap-1">
+    <div className="row-actions flex items-center gap-1 opacity-0 translate-x-2 transition-all duration-200 group-hover:opacity-100 group-hover:translate-x-0">
       {feedback ? (
         <span
           className={`text-xs ${feedback.type === "success" ? "text-green-600" : "text-red-600"}`}
@@ -94,24 +93,24 @@ export function AttendanceRowActions({
         </span>
       ) : (
         <>
-          <Button
-            size="sm"
-            variant="default"
-            className="h-7 bg-green-600 hover:bg-green-700 text-white"
+          <button
+            type="button"
+            className="w-[30px] h-[30px] rounded-[var(--radius-sm)] bg-[rgba(91,122,47,0.12)] text-primary flex items-center justify-center hover:bg-primary hover:text-white transition-colors duration-150 disabled:opacity-50"
             disabled={isPending}
             onClick={handleApprove}
+            aria-label={labels.approve}
           >
-            {labels.approve}
-          </Button>
-          <Button
-            size="sm"
-            variant="destructive"
-            className="h-7"
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg>
+          </button>
+          <button
+            type="button"
+            className="w-[30px] h-[30px] rounded-[var(--radius-sm)] bg-[rgba(192,57,43,0.10)] text-destructive flex items-center justify-center hover:bg-destructive hover:text-white transition-colors duration-150 disabled:opacity-50"
             disabled={isPending}
             onClick={handleReject}
+            aria-label={labels.reject}
           >
-            {labels.reject}
-          </Button>
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
+          </button>
         </>
       )}
     </div>

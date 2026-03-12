@@ -34,7 +34,7 @@ export function PayrollTable({
 
   return (
     <div className="space-y-2">
-      <div className="overflow-x-auto rounded-lg border">
+      <div className="overflow-x-auto rounded-lg border shadow-md bg-card">
         <table className="w-full text-sm">
           <thead className="border-b bg-muted/50">
             <tr>
@@ -80,7 +80,7 @@ export function PayrollTable({
               </tr>
             ))}
           </tbody>
-          <tfoot className="border-t bg-muted/30 font-semibold">
+          <tfoot className="border-t bg-muted/50 font-semibold">
             <tr>
               <td className="px-4 py-3 text-start" colSpan={2}>
                 {labels.grandTotal}

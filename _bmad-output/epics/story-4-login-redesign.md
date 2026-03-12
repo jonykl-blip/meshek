@@ -82,20 +82,31 @@ Form elements:
 - Card padding reduces
 - Form must be visible without scrolling on standard mobile viewport (375x667)
 
+## Status: done
+
 ## Acceptance Criteria
 
-- [ ] Split-pane layout renders correctly on desktop (1280px+)
-- [ ] Agricultural landscape displays with sky, hills, fields, mist, sun glow
-- [ ] Logo displays in glowing cream circle with float animation
-- [ ] Brand name and subtitle render below logo in white
-- [ ] Form card has glass-morphism effect with gradient top accent
-- [ ] All form inputs styled per mockup (50px height, focus rings)
-- [ ] Email/password login still works end-to-end
-- [ ] Magic link login still works end-to-end
-- [ ] Forgot password and sign-up links navigate correctly
-- [ ] Error states display correctly (wrong password, expired link)
-- [ ] Mobile: stacks vertically, landscape ≤ 200px, form visible without scroll
-- [ ] All cross-cutting ACs from epic (build, lint, RTL, logo)
+- [x] Split-pane layout renders correctly on desktop (1280px+)
+- [x] Agricultural landscape displays with sky, hills, fields, mist, sun glow
+- [x] Logo displays in glowing cream circle with float animation
+- [x] Brand name and subtitle render below logo in white
+- [x] Form card has glass-morphism effect with gradient top accent
+- [x] All form inputs styled per mockup (50px height, focus rings)
+- [x] Email/password login still works end-to-end
+- [x] Magic link login still works end-to-end
+- [x] Forgot password and sign-up links navigate correctly
+- [x] Error states display correctly (wrong password, expired link)
+- [x] Mobile: stacks vertically, landscape ≤ 200px, form visible without scroll
+- [x] All cross-cutting ACs from epic (build, lint, RTL, logo)
+
+## Code Review Notes (2026-03-12)
+
+**Issues found and fixed:**
+- H1: Added missing `@keyframes fadeSlideUp` and `@keyframes fadeIn` (card entry and brand animations were silently broken)
+- H2: Fixed magic link error showing field label instead of error message — added `enterEmailFirst` i18n key
+- M2: Removed non-functional "Remember me" checkbox (no backing implementation)
+- M4: Hidden brand subtitle on mobile to prevent overflow in 200px max-height panel
+- L1: Replaced hardcoded hex colors with CSS custom properties in card accent gradient
 
 ## Technical Notes
 

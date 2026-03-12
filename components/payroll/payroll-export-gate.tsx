@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { Link } from "@/i18n/navigation";
+import { Download } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -81,6 +82,7 @@ export function PayrollExportGate({
         variant="default"
         disabled={isPending}
       >
+        <Download className="h-4 w-4" />
         {isPending ? labels.exporting : labels.exportCsv}
       </Button>
 

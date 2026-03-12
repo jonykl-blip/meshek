@@ -77,9 +77,13 @@ export function AttendanceFilters({
       ? labels.activeFilters.replace("{count}", String(activeCount))
       : labels.filterLabel;
 
+  const inputClasses =
+    "bg-[var(--card)] border-[1.5px] border-border rounded-[var(--radius-sm)] px-2 py-1 text-sm focus:border-primary focus:ring-1 focus:ring-primary/20 focus:outline-none disabled:opacity-50";
+
   return (
     <div
-      className={`flex flex-wrap items-end gap-3 rounded-lg border bg-muted/30 p-3 transition-opacity${isPending ? " opacity-60" : ""}`}
+      className={`flex flex-wrap items-end gap-3 rounded-[var(--radius-lg)] border border-[rgba(221,214,204,0.5)] bg-secondary p-3 animate-fade-slide-up transition-opacity${isPending ? " opacity-60" : ""}`}
+      style={{ animationDelay: "0.05s" }}
     >
       <div className="flex items-center gap-2">
         <span className="text-sm font-medium">{filterBadgeLabel}</span>
@@ -107,7 +111,7 @@ export function AttendanceFilters({
             max={currentFilters.toDate}
             disabled={isPending}
             onChange={(e) => updateFilter("from", e.target.value)}
-            className="rounded border bg-background px-2 py-1 text-sm disabled:opacity-50"
+            className={inputClasses}
           />
         </div>
 
@@ -122,7 +126,7 @@ export function AttendanceFilters({
             min={currentFilters.fromDate}
             disabled={isPending}
             onChange={(e) => updateFilter("to", e.target.value)}
-            className="rounded border bg-background px-2 py-1 text-sm disabled:opacity-50"
+            className={inputClasses}
           />
         </div>
 
@@ -135,7 +139,7 @@ export function AttendanceFilters({
             value={currentFilters.workerId}
             disabled={isPending}
             onChange={(e) => updateFilter("workerId", e.target.value)}
-            className="rounded border bg-background px-2 py-1 text-sm disabled:opacity-50"
+            className={inputClasses}
           >
             <option value="">{labels.allWorkers}</option>
             {workers.map((w) => (
@@ -155,7 +159,7 @@ export function AttendanceFilters({
             value={currentFilters.areaId}
             disabled={isPending}
             onChange={(e) => updateFilter("areaId", e.target.value)}
-            className="rounded border bg-background px-2 py-1 text-sm disabled:opacity-50"
+            className={inputClasses}
           >
             <option value="">{labels.allAreas}</option>
             {areas.map((a) => (

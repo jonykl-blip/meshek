@@ -1,6 +1,6 @@
 import { Fragment } from "react";
-import { Badge } from "@/components/ui/badge";
 import type { DailyAttendanceRecord } from "@/app/actions/attendance";
+import { getInitials } from "@/lib/format";
 import {
   AttendanceRowActions,
   type AttendanceRowActionsLabels,
@@ -48,35 +48,60 @@ const rangeDateFormatter = new Intl.DateTimeFormat("he-IL", {
 
 const numberFormatter = new Intl.NumberFormat("he-IL");
 
-function getStatusBadge(
-  status: DailyAttendanceRecord["status"],
-  labels: AttendanceTableLabels
-) {
-  switch (status) {
-    case "approved":
-      return (
-        <Badge
-          variant="default"
-          className="bg-[#4A6741] hover:bg-[#4A6741]/80"
-        >
-          {labels.approved}
-        </Badge>
-      );
-    case "pending":
-      return (
-        <Badge className="bg-amber-100 text-amber-800 border-amber-200">
-          {labels.pending}
-        </Badge>
-      );
-    case "rejected":
-      return (
-        <Badge className="bg-red-100 text-red-800 border-red-200">
-          {labels.rejected}
-        </Badge>
-      );
-    default:
-      return <Badge variant="secondary">{labels.imported}</Badge>;
-  }
+function StatusBadge({
+  status,
+  labels,
+}: {
+  status: DailyAttendanceRecord["status"];
+  labels: AttendanceTableLabels;
+}) {
+  const styles: Record<string, string> = {
+    approved:
+      "bg-[var(--status-approved-bg)] text-[var(--status-approved-text)]",
+    pending:
+      "bg-[var(--status-pending-bg)] text-[var(--status-pending-text)]",
+    rejected:
+      "bg-[var(--status-rejected-bg)] text-[var(--status-rejected-text)]",
+    imported:
+      "bg-[var(--status-imported-bg)] text-[var(--status-imported-text)]",
+  };
+
+  const labelMap: Record<string, string> = {
+    approved: labels.approved,
+    pending: labels.pending,
+    rejected: labels.rejected,
+    imported: labels.imported,
+  };
+
+  const key = status ?? "imported";
+
+  return (
+    <span
+      className={`inline-block rounded-full px-2.5 py-0.5 text-xs font-semibold ${styles[key] ?? styles.imported}`}
+    >
+      {labelMap[key] ?? labels.imported}
+    </span>
+  );
+}
+
+function WorkerCell({
+  name,
+  fallback,
+}: {
+  name: string | null;
+  fallback: string;
+}) {
+  const displayName = name ?? fallback;
+  const initials = name ? getInitials(name) : "?";
+
+  return (
+    <div className="flex items-center gap-2">
+      <span className="w-8 h-8 rounded-full bg-secondary flex items-center justify-center text-xs font-semibold text-foreground/70 shrink-0">
+        {initials}
+      </span>
+      <span>{displayName}</span>
+    </div>
+  );
 }
 
 function RecordRow({
@@ -84,16 +109,20 @@ function RecordRow({
   labels,
   actionLabels,
   hasPendingRecords,
+  isEven,
 }: {
   record: DailyAttendanceRecord;
   labels: AttendanceTableLabels;
   actionLabels: AttendanceRowActionsLabels;
   hasPendingRecords: boolean;
+  isEven: boolean;
 }) {
   return (
-    <tr className="border-b last:border-b-0">
+    <tr
+      className={`group border-b last:border-b-0 transition-colors duration-200 hover:bg-[rgba(237,232,224,0.45)] hover:border-s-[3px] hover:border-s-accent${isEven ? " bg-[rgba(237,232,224,0.18)]" : ""}`}
+    >
       <td className="px-4 py-3">
-        {record.worker_name ?? labels.unknownWorker}
+        <WorkerCell name={record.worker_name} fallback={labels.unknownWorker} />
       </td>
       <td className="px-4 py-3">{record.area_name ?? labels.noArea}</td>
       <td className="px-4 py-3">
@@ -101,7 +130,9 @@ function RecordRow({
           ? numberFormatter.format(record.total_hours)
           : "—"}
       </td>
-      <td className="px-4 py-3">{getStatusBadge(record.status, labels)}</td>
+      <td className="px-4 py-3">
+        <StatusBadge status={record.status} labels={labels} />
+      </td>
       {hasPendingRecords && (
         <td className="px-4 py-3">
           <AttendanceRowActions
@@ -172,93 +203,100 @@ export function AttendanceTable({
           {labels.emptyState}
         </p>
       ) : (
-        <div className="overflow-x-auto rounded-lg border">
-          <table className="w-full text-sm">
-            <thead className="border-b bg-muted/50">
-              <tr>
-                <th className="px-4 py-3 text-start font-medium">
-                  {labels.worker}
-                </th>
-                <th className="px-4 py-3 text-start font-medium">
-                  {labels.area}
-                </th>
-                <th className="px-4 py-3 text-start font-medium">
-                  {labels.hours}
-                </th>
-                <th className="px-4 py-3 text-start font-medium">
-                  {labels.status}
-                </th>
-                {hasPendingRecords && (
-                  <th className="px-4 py-3 text-start font-medium">
-                    {labels.actions}
+        <div
+          className="overflow-hidden rounded-[var(--radius-lg)] border border-[rgba(221,214,204,0.4)] bg-[var(--card)] shadow-md animate-fade-slide-up"
+          style={{ animationDelay: "0.1s" }}
+        >
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b">
+                  <th className="px-4 py-3 text-start text-[0.68rem] font-semibold uppercase tracking-wider text-muted-foreground sticky top-[56px] z-20 bg-[var(--card)]/95 backdrop-blur-sm">
+                    {labels.worker}
                   </th>
-                )}
-              </tr>
-            </thead>
-            <tbody>
-              {isMultiDay
-                ? sortedDates.map((date) => {
-                    const dayRecords = groupedByDate[date];
-                    const dayTotal = dayRecords.reduce(
-                      (sum, r) => sum + (r.total_hours ?? 0),
-                      0
-                    );
-                    const dayLabel = dateFormatter.format(
-                      new Date(date + "T00:00:00")
-                    );
-                    return (
-                      <Fragment key={date}>
-                        <tr className="bg-muted/30">
-                          <td
-                            colSpan={colCount}
-                            className="px-4 py-2 text-sm font-semibold"
-                          >
-                            {dayLabel}
-                          </td>
-                        </tr>
-                        {dayRecords.map((record) => (
-                          <RecordRow
-                            key={record.id}
-                            record={record}
-                            labels={labels}
-                            actionLabels={actionLabels}
-                            hasPendingRecords={hasPendingRecords}
-                          />
-                        ))}
-                        <tr className="border-t bg-muted/20 text-sm font-medium">
-                          <td className="px-4 py-2">{labels.totalHours}</td>
-                          <td className="px-4 py-2" />
-                          <td className="px-4 py-2">
-                            {numberFormatter.format(dayTotal)}
-                          </td>
-                          <td className="px-4 py-2" />
-                          {hasPendingRecords && <td className="px-4 py-2" />}
-                        </tr>
-                      </Fragment>
-                    );
-                  })
-                : records.map((record) => (
-                    <RecordRow
-                      key={record.id}
-                      record={record}
-                      labels={labels}
-                      actionLabels={actionLabels}
-                      hasPendingRecords={hasPendingRecords}
-                    />
-                  ))}
-            </tbody>
-            <tfoot className="border-t bg-muted/50 font-medium">
-              <tr>
-                <td className="px-4 py-3">{labels.totalHours}</td>
-                <td className="px-4 py-3" />
-                <td className="px-4 py-3">
-                  {numberFormatter.format(totalHours)}
-                </td>
-                <td className="px-4 py-3" />
-                {hasPendingRecords && <td className="px-4 py-3" />}
-              </tr>
-            </tfoot>
-          </table>
+                  <th className="px-4 py-3 text-start text-[0.68rem] font-semibold uppercase tracking-wider text-muted-foreground sticky top-[56px] z-20 bg-[var(--card)]/95 backdrop-blur-sm">
+                    {labels.area}
+                  </th>
+                  <th className="px-4 py-3 text-start text-[0.68rem] font-semibold uppercase tracking-wider text-muted-foreground sticky top-[56px] z-20 bg-[var(--card)]/95 backdrop-blur-sm">
+                    {labels.hours}
+                  </th>
+                  <th className="px-4 py-3 text-start text-[0.68rem] font-semibold uppercase tracking-wider text-muted-foreground sticky top-[56px] z-20 bg-[var(--card)]/95 backdrop-blur-sm">
+                    {labels.status}
+                  </th>
+                  {hasPendingRecords && (
+                    <th className="px-4 py-3 text-start text-[0.68rem] font-semibold uppercase tracking-wider text-muted-foreground sticky top-[56px] z-20 bg-[var(--card)]/95 backdrop-blur-sm">
+                      {labels.actions}
+                    </th>
+                  )}
+                </tr>
+              </thead>
+              <tbody>
+                {isMultiDay
+                  ? sortedDates.map((date) => {
+                      const dayRecords = groupedByDate[date];
+                      const dayTotal = dayRecords.reduce(
+                        (sum, r) => sum + (r.total_hours ?? 0),
+                        0
+                      );
+                      const dayLabel = dateFormatter.format(
+                        new Date(date + "T00:00:00")
+                      );
+                      return (
+                        <Fragment key={date}>
+                          <tr className="bg-muted/30">
+                            <td
+                              colSpan={colCount}
+                              className="px-4 py-2 text-sm font-semibold"
+                            >
+                              {dayLabel}
+                            </td>
+                          </tr>
+                          {dayRecords.map((record, idx) => (
+                            <RecordRow
+                              key={record.id}
+                              record={record}
+                              labels={labels}
+                              actionLabels={actionLabels}
+                              hasPendingRecords={hasPendingRecords}
+                              isEven={idx % 2 === 0}
+                            />
+                          ))}
+                          <tr className="border-t bg-muted/20 text-sm font-medium">
+                            <td className="px-4 py-2">{labels.totalHours}</td>
+                            <td className="px-4 py-2" />
+                            <td className="px-4 py-2">
+                              {numberFormatter.format(dayTotal)}
+                            </td>
+                            <td className="px-4 py-2" />
+                            {hasPendingRecords && <td className="px-4 py-2" />}
+                          </tr>
+                        </Fragment>
+                      );
+                    })
+                  : records.map((record, idx) => (
+                      <RecordRow
+                        key={record.id}
+                        record={record}
+                        labels={labels}
+                        actionLabels={actionLabels}
+                        hasPendingRecords={hasPendingRecords}
+                        isEven={idx % 2 === 0}
+                      />
+                    ))}
+              </tbody>
+              <tfoot className="border-t bg-muted/50 font-medium">
+                <tr>
+                  <td className="px-4 py-3">{labels.totalHours}</td>
+                  <td className="px-4 py-3" />
+                  <td className="px-4 py-3">
+                    {numberFormatter.format(totalHours)}
+                  </td>
+                  <td className="px-4 py-3" />
+                  {hasPendingRecords && <td className="px-4 py-3" />}
+                </tr>
+              </tfoot>
+            </table>
+          </div>
         </div>
       )}
     </div>

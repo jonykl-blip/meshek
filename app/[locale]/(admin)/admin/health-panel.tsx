@@ -69,7 +69,7 @@ export function HealthPanel({
       )}
 
       <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-        <Card>
+        <Card className="shadow-sm">
           <CardHeader>
             <CardTitle className="text-sm font-medium">
               {labels.totalRecords}
@@ -88,7 +88,7 @@ export function HealthPanel({
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="shadow-sm">
           <CardHeader>
             <CardTitle className="text-sm font-medium">
               {labels.pendingRecords}
@@ -101,7 +101,7 @@ export function HealthPanel({
 
         <Card
           className={
-            isHighRate ? "border-amber-500 bg-amber-50" : ""
+            isHighRate ? "shadow-sm border-amber-500 bg-amber-50" : "shadow-sm"
           }
         >
           <CardHeader>

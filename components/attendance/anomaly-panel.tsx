@@ -20,22 +20,22 @@ export function AnomalyPanel({
 
   if (!hasExcessive && !hasStale) {
     return (
-      <div className="rounded-lg border border-green-200 bg-green-50 p-3 text-sm text-green-700 text-start">
+      <div className="rounded-[var(--radius-lg)] border border-[rgba(91,122,47,0.2)] bg-[rgba(91,122,47,0.08)] p-4 shadow-md text-sm text-green-700 text-start animate-fade-slide-up">
         {labels.allClear}
       </div>
     );
   }
 
   return (
-    <div className="rounded-lg border p-4 space-y-4">
+    <div className="rounded-[var(--radius-lg)] border border-[rgba(221,214,204,0.4)] bg-[var(--card)] p-4 shadow-md space-y-4 animate-fade-slide-up">
       {hasExcessive && (
         <section>
-          <h3 className="text-sm font-semibold text-red-600 mb-2 text-start">
+          <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2 text-start">
             {labels.excessiveHoursHeading}
           </h3>
           <ul className="space-y-1">
             {data.excessiveHours.map((r) => (
-              <li key={r.id} className="text-sm text-start">
+              <li key={r.id} className="text-sm text-start rounded-[var(--radius-sm)] bg-[rgba(192,57,43,0.10)] px-3 py-1.5">
                 {r.worker_name ?? labels.unknownWorker} —{" "}
                 {r.area_name ?? labels.unknownArea} —{" "}
                 {r.work_date} —{" "}
@@ -47,12 +47,12 @@ export function AnomalyPanel({
       )}
       {hasStale && (
         <section>
-          <h3 className="text-sm font-semibold text-amber-600 mb-2 text-start">
+          <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2 text-start">
             {labels.stalePendingHeading}
           </h3>
           <ul className="space-y-1">
             {data.stalePending.map((r) => (
-              <li key={r.id} className="text-sm text-start">
+              <li key={r.id} className="text-sm text-start rounded-[var(--radius-sm)] bg-[rgba(196,155,48,0.12)] px-3 py-1.5">
                 {r.worker_name ?? labels.unknownWorker} —{" "}
                 {r.area_name ?? labels.unknownArea} —{" "}
                 {r.work_date} —{" "}

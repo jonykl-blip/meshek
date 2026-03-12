@@ -95,6 +95,333 @@
   pointer-events: none;
 }
 
+/* ===== LOGIN PAGE — LANDSCAPE & GLASS CARD ===== */
+
+@keyframes logoGlow {
+  0%, 100% { box-shadow: 0 0 30px rgba(107,140,62,0.3), 0 0 60px rgba(139,105,20,0.12); }
+  50% { box-shadow: 0 0 50px rgba(107,140,62,0.45), 0 0 90px rgba(139,105,20,0.2); }
+}
+
+@keyframes loginFloat {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-8px); }
+}
+
+@keyframes pulseRing {
+  0% { transform: scale(1); opacity: 0.4; }
+  100% { transform: scale(1.4); opacity: 0; }
+}
+
+@keyframes fadeSlideUp {
+  from { opacity: 0; transform: translateY(28px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+/* Split-pane container */
+.login-section {
+  min-height: 100vh;
+  display: flex;
+  direction: ltr;
+}
+
+/* Left panel — agricultural landscape */
+.login-left {
+  flex: 0 0 58%;
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Sky layer */
+.login-left::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(180deg,
+      #87CEEB 0%,
+      #B8D4E3 15%,
+      #D4C89E 30%,
+      #8B9A3C 40%,
+      #6B8C3E 48%,
+      #5B7A2F 55%,
+      #4A6526 62%,
+      #3A5420 70%,
+      #2E4318 80%,
+      #1F2E10 100%
+    );
+  z-index: 0;
+}
+
+/* Sun glow */
+.login-left::after {
+  content: '';
+  position: absolute;
+  top: 8%;
+  left: 55%;
+  width: 200px;
+  height: 200px;
+  background: radial-gradient(circle, rgba(255,220,130,0.5) 0%, rgba(255,200,80,0.2) 35%, transparent 70%);
+  border-radius: 50%;
+  z-index: 1;
+}
+
+/* Field rows texture */
+.login-field-rows {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  background:
+    repeating-linear-gradient(
+      175deg,
+      transparent 0px,
+      transparent 18px,
+      rgba(255,255,255,0.03) 18px,
+      rgba(255,255,255,0.03) 20px
+    );
+  opacity: 0.8;
+}
+
+/* Mist layer */
+.login-mist {
+  position: absolute;
+  bottom: 30%;
+  left: 0;
+  right: 0;
+  height: 120px;
+  background: linear-gradient(180deg, transparent, rgba(255,255,255,0.08), transparent);
+  z-index: 1;
+}
+
+/* Hills silhouette */
+.login-hills {
+  position: absolute;
+  bottom: 35%;
+  left: 0;
+  right: 0;
+  height: 180px;
+  z-index: 1;
+}
+.login-hills::before {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: -5%;
+  width: 60%;
+  height: 100%;
+  background: radial-gradient(ellipse 100% 100% at 50% 100%, rgba(74,101,38,0.4) 0%, transparent 70%);
+}
+.login-hills::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  right: -10%;
+  width: 55%;
+  height: 80%;
+  background: radial-gradient(ellipse 100% 100% at 50% 100%, rgba(58,84,32,0.3) 0%, transparent 70%);
+}
+
+/* Vignette */
+.login-vignette {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse at 50% 40%, transparent 40%, rgba(30,40,15,0.3) 100%);
+  z-index: 2;
+}
+
+/* Brand content on left */
+.login-brand {
+  text-align: center;
+  color: #fff;
+  position: relative;
+  z-index: 10;
+  animation: fadeIn 1.2s var(--ease);
+}
+
+.login-brand-logo-wrap {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 32px;
+}
+
+.login-brand-logo-ring {
+  position: relative;
+  width: 200px;
+  height: 200px;
+}
+
+/* Pulse ring behind logo */
+.login-brand-logo-ring::before {
+  content: '';
+  position: absolute;
+  inset: -12px;
+  border-radius: 50%;
+  border: 2px solid rgba(107,140,62,0.3);
+  animation: pulseRing 3s ease-out infinite;
+}
+
+.login-brand-logo-circle {
+  width: 200px;
+  height: 200px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 50% 38%, #FFFDF9 0%, #F0EBE2 50%, #DDD6CC 100%);
+  border: 4px solid rgba(107,140,62,0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: logoGlow 4s ease-in-out infinite, loginFloat 6s ease-in-out infinite;
+  overflow: hidden;
+  will-change: transform, box-shadow;
+}
+
+.login-brand-logo-circle img {
+  width: 180px;
+  height: 180px;
+  object-fit: contain;
+  border-radius: 50%;
+}
+
+.login-brand-name {
+  font-size: 3rem;
+  font-weight: 800;
+  line-height: 1.15;
+  margin-bottom: 8px;
+  text-shadow: 0 4px 24px rgba(0,0,0,0.3);
+  letter-spacing: -0.5px;
+}
+
+.login-brand-sub {
+  font-size: 1.15rem;
+  font-weight: 400;
+  opacity: 0.8;
+  letter-spacing: 1.5px;
+  text-shadow: 0 2px 12px rgba(0,0,0,0.2);
+}
+
+/* Right panel — login form */
+.login-right {
+  flex: 0 0 42%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: hsl(var(--background));
+  padding: 40px;
+  position: relative;
+}
+
+/* Subtle pattern on right panel */
+.login-right::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(circle at 20% 80%, rgba(91,122,47,0.03) 0%, transparent 50%),
+    radial-gradient(circle at 80% 20%, rgba(139,105,20,0.02) 0%, transparent 50%);
+}
+
+/* Glass-morphism card */
+.login-card {
+  width: 100%;
+  max-width: 400px;
+  background: rgba(255,253,249,0.85);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-radius: var(--radius-xl);
+  padding: 48px 40px;
+  box-shadow: var(--shadow-xl);
+  border: 1px solid rgba(221,214,204,0.5);
+  position: relative;
+  z-index: 1;
+  animation: fadeSlideUp 0.8s var(--ease) 0.3s both;
+}
+
+/* Gradient accent line at top of card */
+.login-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 32px;
+  right: 32px;
+  height: 3px;
+  background: linear-gradient(90deg, hsl(var(--primary)), hsl(var(--accent)), #8B6914);
+  border-radius: 0 0 2px 2px;
+}
+
+/* Divider with "or" text */
+.login-divider {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin: 24px 0;
+  direction: rtl;
+}
+.login-divider::before,
+.login-divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: hsl(var(--border));
+}
+.login-divider span {
+  font-size: 0.78rem;
+  color: hsl(var(--muted-foreground));
+  white-space: nowrap;
+}
+
+/* ===== LOGIN RESPONSIVE ===== */
+@media (max-width: 900px) {
+  .login-section {
+    flex-direction: column;
+  }
+  .login-left {
+    flex: none;
+    max-height: 200px;
+  }
+  .login-right {
+    flex: none;
+    padding: 32px 24px;
+  }
+  .login-brand-logo-circle {
+    width: 140px;
+    height: 140px;
+  }
+  .login-brand-logo-circle img {
+    width: 120px;
+    height: 120px;
+  }
+  .login-brand-logo-ring {
+    width: 140px;
+    height: 140px;
+  }
+  .login-brand-logo-wrap {
+    margin-bottom: 16px;
+  }
+  .login-brand-name {
+    font-size: 2.2rem;
+  }
+  .login-brand-sub {
+    display: none;
+  }
+  .login-card {
+    padding: 36px 28px;
+  }
+}
+
+/* Touch device: always show row actions (no hover on mobile/gloved hands) */
+@media (hover: none) {
+  .row-actions {
+    opacity: 1 !important;
+    transform: none !important;
+  }
+}
+
 /* Sidebar KPI pill */
 .sidebar-kpi-pill {
   display: flex;

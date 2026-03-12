@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState, useTransition, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import {
   createWorkerProfile,
@@ -13,6 +13,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
+import { getInitials } from "@/lib/format";
 import {
   Select,
   SelectContent,
@@ -101,7 +102,14 @@ export function WorkersTable({
 }) {
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [feedbackMsg, setFeedbackMsg] = useState("");
+  const feedbackTimer = useRef<ReturnType<typeof setTimeout>>(null);
   const router = useRouter();
+
+  const showFeedback = useCallback((msg: string) => {
+    if (feedbackTimer.current) clearTimeout(feedbackTimer.current);
+    setFeedbackMsg(msg);
+    feedbackTimer.current = setTimeout(() => setFeedbackMsg(""), 3000);
+  }, []);
 
   function getRoleLabel(role: string) {
     const key = ROLE_MAP[role];
@@ -130,14 +138,13 @@ export function WorkersTable({
           onClose={() => setShowCreateForm(false)}
           onSuccess={(msg) => {
             setShowCreateForm(false);
-            setFeedbackMsg(msg);
+            showFeedback(msg);
             router.refresh();
-            setTimeout(() => setFeedbackMsg(""), 3000);
           }}
         />
       )}
 
-      <div className="overflow-x-auto rounded-lg border">
+      <div className="overflow-x-auto rounded-lg border shadow-md bg-card">
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b bg-muted/50">
@@ -165,14 +172,12 @@ export function WorkersTable({
                   getRoleLabel={getRoleLabel}
                   getLangLabel={getLangLabel}
                   onUpdated={(msg) => {
-                    setFeedbackMsg(msg ?? labels.updated);
+                    showFeedback(msg ?? labels.updated);
                     router.refresh();
-                    setTimeout(() => setFeedbackMsg(""), 3000);
                   }}
                   onArchived={() => {
-                    setFeedbackMsg(labels.archived);
+                    showFeedback(labels.archived);
                     router.refresh();
-                    setTimeout(() => setFeedbackMsg(""), 3000);
                   }}
                 />
               ))
@@ -229,7 +234,7 @@ function CreateWorkerForm({
   }
 
   return (
-    <div className="mb-6 rounded-lg border p-4" style={{ maxWidth: 400 }}>
+    <div className="mb-6 max-w-md rounded-lg border bg-card p-4 shadow-sm">
       <div className="space-y-4">
         <div>
           <Label>{labels.name}</Label>
@@ -491,9 +496,21 @@ function WorkerRow({
   return (
     <>
       <tr className="border-b last:border-b-0">
-        <td className="px-4 py-3 text-lg font-bold">{profile.full_name}</td>
         <td className="px-4 py-3">
-          <Badge variant="outline">{getRoleLabel(profile.role)}</Badge>
+          <div className="flex items-center gap-2">
+            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-accent to-[#c56a2e]">
+              <span className="text-xs font-bold text-white">{getInitials(profile.full_name)}</span>
+            </div>
+            <span className="text-base font-semibold">{profile.full_name}</span>
+          </div>
+        </td>
+        <td className="px-4 py-3">
+          <Badge className={
+            profile.role === "owner" ? "bg-primary/15 text-primary border-primary/30" :
+            profile.role === "admin" ? "bg-accent/15 text-accent border-accent/30" :
+            profile.role === "manager" ? "bg-amber-100 text-amber-800 border-amber-200" :
+            "bg-muted text-muted-foreground border-border"
+          }>{getRoleLabel(profile.role)}</Badge>
         </td>
         <td className="px-4 py-3" dir="ltr">
           {profile.hourly_rate != null ? `₪${Number(profile.hourly_rate).toFixed(2)}` : "—"}
