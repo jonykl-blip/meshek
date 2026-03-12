@@ -27,7 +27,7 @@ export function AnomalyPanel({
   }
 
   return (
-    <div className="rounded-[var(--radius-lg)] border border-[rgba(221,214,204,0.4)] bg-[var(--card)] p-4 shadow-md space-y-4 animate-fade-slide-up">
+    <div className="rounded-[var(--radius-lg)] border border-[rgba(221,214,204,0.4)] bg-card p-4 shadow-md space-y-4 animate-fade-slide-up">
       {hasExcessive && (
         <section>
           <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2 text-start">

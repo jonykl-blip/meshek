@@ -5,6 +5,7 @@ import {
   AttendanceRowActions,
   type AttendanceRowActionsLabels,
 } from "./attendance-row-actions";
+import type { EditRecordDialogLabels } from "./edit-record-dialog";
 
 export interface AttendanceTableLabels {
   title: string;
@@ -29,6 +30,8 @@ interface AttendanceTableProps {
   records: DailyAttendanceRecord[];
   labels: AttendanceTableLabels;
   actionLabels: AttendanceRowActionsLabels;
+  editLabels: EditRecordDialogLabels;
+  areas: { id: string; name: string }[];
   currentDate?: string;
   isMultiDay?: boolean;
 }
@@ -108,13 +111,17 @@ function RecordRow({
   record,
   labels,
   actionLabels,
-  hasPendingRecords,
+  editLabels,
+  areas,
+  hasEditableRecords,
   isEven,
 }: {
   record: DailyAttendanceRecord;
   labels: AttendanceTableLabels;
   actionLabels: AttendanceRowActionsLabels;
-  hasPendingRecords: boolean;
+  editLabels: EditRecordDialogLabels;
+  areas: { id: string; name: string }[];
+  hasEditableRecords: boolean;
   isEven: boolean;
 }) {
   return (
@@ -133,14 +140,19 @@ function RecordRow({
       <td className="px-4 py-3">
         <StatusBadge status={record.status} labels={labels} />
       </td>
-      {hasPendingRecords && (
+      {hasEditableRecords && (
         <td className="px-4 py-3">
           <AttendanceRowActions
             recordId={record.id}
             status={record.status}
             profileId={record.profile_id}
             areaId={record.area_id}
+            totalHours={record.total_hours}
+            areaName={record.area_name}
+            workerName={record.worker_name}
+            areas={areas}
             labels={actionLabels}
+            editLabels={editLabels}
           />
         </td>
       )}
@@ -152,10 +164,12 @@ export function AttendanceTable({
   records,
   labels,
   actionLabels,
+  editLabels,
+  areas,
   currentDate,
   isMultiDay = false,
 }: AttendanceTableProps) {
-  const hasPendingRecords = records.some((r) => r.status === "pending");
+  const hasEditableRecords = records.some((r) => r.status !== "rejected");
 
   let headerDateDisplay: string | null = null;
   if (!isMultiDay && currentDate) {
@@ -187,7 +201,7 @@ export function AttendanceTable({
   }
 
   const totalHours = records.reduce((sum, r) => sum + (r.total_hours ?? 0), 0);
-  const colCount = hasPendingRecords ? 5 : 4;
+  const colCount = hasEditableRecords ? 5 : 4;
 
   return (
     <div className="space-y-4">
@@ -204,27 +218,27 @@ export function AttendanceTable({
         </p>
       ) : (
         <div
-          className="overflow-hidden rounded-[var(--radius-lg)] border border-[rgba(221,214,204,0.4)] bg-[var(--card)] shadow-md animate-fade-slide-up"
+          className="overflow-hidden rounded-[var(--radius-lg)] border border-[rgba(221,214,204,0.4)] bg-card shadow-md animate-fade-slide-up"
           style={{ animationDelay: "0.1s" }}
         >
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b">
-                  <th className="px-4 py-3 text-start text-[0.68rem] font-semibold uppercase tracking-wider text-muted-foreground sticky top-[56px] z-20 bg-[var(--card)]/95 backdrop-blur-sm">
+                  <th className="px-4 py-3 text-start text-[0.68rem] font-semibold uppercase tracking-wider text-muted-foreground sticky top-[56px] z-20 bg-card/95 backdrop-blur-sm">
                     {labels.worker}
                   </th>
-                  <th className="px-4 py-3 text-start text-[0.68rem] font-semibold uppercase tracking-wider text-muted-foreground sticky top-[56px] z-20 bg-[var(--card)]/95 backdrop-blur-sm">
+                  <th className="px-4 py-3 text-start text-[0.68rem] font-semibold uppercase tracking-wider text-muted-foreground sticky top-[56px] z-20 bg-card/95 backdrop-blur-sm">
                     {labels.area}
                   </th>
-                  <th className="px-4 py-3 text-start text-[0.68rem] font-semibold uppercase tracking-wider text-muted-foreground sticky top-[56px] z-20 bg-[var(--card)]/95 backdrop-blur-sm">
+                  <th className="px-4 py-3 text-start text-[0.68rem] font-semibold uppercase tracking-wider text-muted-foreground sticky top-[56px] z-20 bg-card/95 backdrop-blur-sm">
                     {labels.hours}
                   </th>
-                  <th className="px-4 py-3 text-start text-[0.68rem] font-semibold uppercase tracking-wider text-muted-foreground sticky top-[56px] z-20 bg-[var(--card)]/95 backdrop-blur-sm">
+                  <th className="px-4 py-3 text-start text-[0.68rem] font-semibold uppercase tracking-wider text-muted-foreground sticky top-[56px] z-20 bg-card/95 backdrop-blur-sm">
                     {labels.status}
                   </th>
-                  {hasPendingRecords && (
-                    <th className="px-4 py-3 text-start text-[0.68rem] font-semibold uppercase tracking-wider text-muted-foreground sticky top-[56px] z-20 bg-[var(--card)]/95 backdrop-blur-sm">
+                  {hasEditableRecords && (
+                    <th className="px-4 py-3 text-start text-[0.68rem] font-semibold uppercase tracking-wider text-muted-foreground sticky top-[56px] z-20 bg-card/95 backdrop-blur-sm">
                       {labels.actions}
                     </th>
                   )}
@@ -257,7 +271,9 @@ export function AttendanceTable({
                               record={record}
                               labels={labels}
                               actionLabels={actionLabels}
-                              hasPendingRecords={hasPendingRecords}
+                              editLabels={editLabels}
+                              areas={areas}
+                              hasEditableRecords={hasEditableRecords}
                               isEven={idx % 2 === 0}
                             />
                           ))}
@@ -268,7 +284,7 @@ export function AttendanceTable({
                               {numberFormatter.format(dayTotal)}
                             </td>
                             <td className="px-4 py-2" />
-                            {hasPendingRecords && <td className="px-4 py-2" />}
+                            {hasEditableRecords && <td className="px-4 py-2" />}
                           </tr>
                         </Fragment>
                       );
@@ -279,7 +295,9 @@ export function AttendanceTable({
                         record={record}
                         labels={labels}
                         actionLabels={actionLabels}
-                        hasPendingRecords={hasPendingRecords}
+                        editLabels={editLabels}
+                        areas={areas}
+                        hasEditableRecords={hasEditableRecords}
                         isEven={idx % 2 === 0}
                       />
                     ))}
@@ -292,7 +310,7 @@ export function AttendanceTable({
                     {numberFormatter.format(totalHours)}
                   </td>
                   <td className="px-4 py-3" />
-                  {hasPendingRecords && <td className="px-4 py-3" />}
+                  {hasEditableRecords && <td className="px-4 py-3" />}
                 </tr>
               </tfoot>
             </table>

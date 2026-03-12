@@ -70,7 +70,7 @@ export default {
       },
       keyframes: {
         fadeSlideUp: {
-          from: { opacity: "0", transform: "translateY(20px)" },
+          from: { opacity: "0", transform: "translateY(28px)" },
           to: { opacity: "1", transform: "translateY(0)" },
         },
         fadeIn: {

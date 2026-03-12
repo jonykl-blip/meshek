@@ -6,6 +6,10 @@ import {
   dashboardApproveRecord,
   dashboardRejectRecord,
 } from "@/app/actions/attendance";
+import {
+  EditRecordDialog,
+  type EditRecordDialogLabels,
+} from "./edit-record-dialog";
 
 export interface AttendanceRowActionsLabels {
   approve: string;
@@ -14,6 +18,7 @@ export interface AttendanceRowActionsLabels {
   statusPending: string;
   approveSuccess: string;
   rejectSuccess: string;
+  edit: string;
 }
 
 interface AttendanceRowActionsProps {
@@ -21,7 +26,12 @@ interface AttendanceRowActionsProps {
   status: string;
   profileId: string | null;
   areaId: string | null;
+  totalHours: number | null;
+  areaName: string | null;
+  workerName: string | null;
+  areas: { id: string; name: string }[];
   labels: AttendanceRowActionsLabels;
+  editLabels: EditRecordDialogLabels;
 }
 
 export function AttendanceRowActions({
@@ -29,7 +39,12 @@ export function AttendanceRowActions({
   status,
   profileId,
   areaId,
+  totalHours,
+  areaName: _areaName,
+  workerName,
+  areas,
   labels,
+  editLabels,
 }: AttendanceRowActionsProps) {
   const [isPending, startTransition] = useTransition();
   const [feedback, setFeedback] = useState<{
@@ -37,25 +52,19 @@ export function AttendanceRowActions({
     type: "success" | "error";
   } | null>(null);
 
-  if (status !== "pending" && !feedback) return null;
+  const isEditable = status !== "rejected";
+  const isPendingStatus = status === "pending";
+  const isClean = profileId !== null && areaId !== null;
 
-  if (status !== "pending" && feedback) {
+  if (!isEditable && !feedback) return null;
+
+  if (!isEditable && feedback) {
     return (
       <span
         className={`text-xs ${feedback.type === "success" ? "text-green-600" : "text-red-600"}`}
       >
         {feedback.message}
       </span>
-    );
-  }
-
-  const isClean = profileId !== null && areaId !== null;
-
-  if (!isClean) {
-    return (
-      <Badge className="bg-amber-100 text-amber-800 border-amber-200">
-        {labels.pendingResolution}
-      </Badge>
     );
   }
 
@@ -83,6 +92,17 @@ export function AttendanceRowActions({
     });
   }
 
+  const editButton = (
+    <button
+      type="button"
+      className="w-[30px] h-[30px] rounded-[var(--radius-sm)] bg-[rgba(59,130,246,0.10)] text-blue-600 flex items-center justify-center hover:bg-blue-600 hover:text-white transition-colors duration-150 disabled:opacity-50"
+      disabled={isPending}
+      aria-label={labels.edit}
+    >
+      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z" /><path d="m15 5 4 4" /></svg>
+    </button>
+  );
+
   return (
     <div className="row-actions flex items-center gap-1 opacity-0 translate-x-2 transition-all duration-200 group-hover:opacity-100 group-hover:translate-x-0">
       {feedback ? (
@@ -93,24 +113,42 @@ export function AttendanceRowActions({
         </span>
       ) : (
         <>
-          <button
-            type="button"
-            className="w-[30px] h-[30px] rounded-[var(--radius-sm)] bg-[rgba(91,122,47,0.12)] text-primary flex items-center justify-center hover:bg-primary hover:text-white transition-colors duration-150 disabled:opacity-50"
-            disabled={isPending}
-            onClick={handleApprove}
-            aria-label={labels.approve}
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg>
-          </button>
-          <button
-            type="button"
-            className="w-[30px] h-[30px] rounded-[var(--radius-sm)] bg-[rgba(192,57,43,0.10)] text-destructive flex items-center justify-center hover:bg-destructive hover:text-white transition-colors duration-150 disabled:opacity-50"
-            disabled={isPending}
-            onClick={handleReject}
-            aria-label={labels.reject}
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
-          </button>
+          {isPendingStatus && !isClean && (
+            <Badge className="bg-amber-100 text-amber-800 border-amber-200">
+              {labels.pendingResolution}
+            </Badge>
+          )}
+          {isPendingStatus && isClean && (
+            <>
+              <button
+                type="button"
+                className="w-[30px] h-[30px] rounded-[var(--radius-sm)] bg-[rgba(91,122,47,0.12)] text-primary flex items-center justify-center hover:bg-primary hover:text-white transition-colors duration-150 disabled:opacity-50"
+                disabled={isPending}
+                onClick={handleApprove}
+                aria-label={labels.approve}
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg>
+              </button>
+              <button
+                type="button"
+                className="w-[30px] h-[30px] rounded-[var(--radius-sm)] bg-[rgba(192,57,43,0.10)] text-destructive flex items-center justify-center hover:bg-destructive hover:text-white transition-colors duration-150 disabled:opacity-50"
+                disabled={isPending}
+                onClick={handleReject}
+                aria-label={labels.reject}
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
+              </button>
+            </>
+          )}
+          <EditRecordDialog
+            recordId={recordId}
+            currentHours={totalHours}
+            currentAreaId={areaId}
+            workerName={workerName}
+            areas={areas}
+            labels={editLabels}
+            trigger={editButton}
+          />
         </>
       )}
     </div>

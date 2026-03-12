@@ -93,6 +93,7 @@ export default async function DashboardPage({
   const tAddRecord = await getTranslations("dashboard.addRecord");
 
   const tActions = await getTranslations("dashboard.actions");
+  const tEditRecord = await getTranslations("dashboard.editRecord");
 
   const attendanceLabels = {
     title: tAttendance("title"),
@@ -118,6 +119,7 @@ export default async function DashboardPage({
     statusPending: tActions("statusPending"),
     approveSuccess: tActions("approveSuccess"),
     rejectSuccess: tActions("rejectSuccess"),
+    edit: tActions("edit"),
   };
 
   const filterLabels = {
@@ -170,6 +172,22 @@ export default async function DashboardPage({
     validationFutureDate: tAddRecord("validationFutureDate"),
   };
 
+  const editRecordLabels = {
+    modalTitle: tEditRecord("modalTitle"),
+    areaLabel: tEditRecord("areaLabel"),
+    areaPlaceholder: tEditRecord("areaPlaceholder"),
+    hoursLabel: tEditRecord("hoursLabel"),
+    hoursDecrease: tEditRecord("hoursDecrease"),
+    hoursIncrease: tEditRecord("hoursIncrease"),
+    saveButton: tEditRecord("saveButton"),
+    cancel: tEditRecord("cancel"),
+    saving: tEditRecord("saving"),
+    editSuccess: tEditRecord("editSuccess"),
+    excessiveHoursWarning: tEditRecord("excessiveHoursWarning"),
+    validationHoursRange: tEditRecord("validationHoursRange"),
+    validationHoursStep: tEditRecord("validationHoursStep"),
+  };
+
   const currentFilters = {
     fromDate,
     toDate,
@@ -206,6 +224,8 @@ export default async function DashboardPage({
             records={attendanceResult.data}
             labels={attendanceLabels}
             actionLabels={actionLabels}
+            editLabels={editRecordLabels}
+            areas={areasResult.success ? areasResult.data : []}
             currentDate={fromDate !== toDate ? undefined : fromDate}
             isMultiDay={fromDate !== toDate}
           />

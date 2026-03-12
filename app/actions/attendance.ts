@@ -623,6 +623,83 @@ export async function dashboardRejectRecord(
   return { success: true, data: { id: recordId, status: "rejected" } };
 }
 
+export async function dashboardEditRecord(
+  recordId: string,
+  updates: { total_hours?: number; area_id?: string }
+): Promise<ActionResult<{ id: string }>> {
+  const supabase = await createClient();
+  const { user, error: authError } = await verifyDashboardCaller(supabase);
+  if (!user) return { success: false, error: authError };
+
+  if (updates.total_hours === undefined && updates.area_id === undefined) {
+    return { success: false, error: "אין שדות לעדכון" };
+  }
+
+  if (
+    updates.total_hours !== undefined &&
+    (isNaN(updates.total_hours) || updates.total_hours < 0 || updates.total_hours > 24)
+  ) {
+    return { success: false, error: "שעות עבודה חייבות להיות בין 0 ל-24" };
+  }
+
+  const { data: before } = await supabase
+    .from("attendance_logs")
+    .select("id, total_hours, area_id, status")
+    .eq("id", recordId)
+    .single();
+
+  if (!before) return { success: false, error: "רשומה לא נמצאה" };
+
+  if (before.status === "rejected") {
+    return { success: false, error: "לא ניתן לערוך רשומה שנדחתה" };
+  }
+
+  const updatePayload: Record<string, unknown> = {};
+  const beforeDiff: Record<string, unknown> = {};
+  const afterDiff: Record<string, unknown> = {};
+
+  if (updates.total_hours !== undefined) {
+    updatePayload.total_hours = updates.total_hours;
+    beforeDiff.total_hours = before.total_hours;
+    afterDiff.total_hours = updates.total_hours;
+  }
+  if (updates.area_id !== undefined) {
+    updatePayload.area_id = updates.area_id;
+    beforeDiff.area_id = before.area_id;
+    afterDiff.area_id = updates.area_id;
+  }
+
+  const { error } = await supabase
+    .from("attendance_logs")
+    .update(updatePayload)
+    .eq("id", recordId);
+
+  if (error) {
+    const msg = error.code === "23503" ? "שטח לא נמצא במערכת" : error.message;
+    return { success: false, error: msg };
+  }
+
+  try {
+    await logAudit({
+      actorId: user.id,
+      tableName: "attendance_logs",
+      recordId,
+      action: "edit",
+      before: beforeDiff,
+      after: afterDiff,
+    });
+  } catch (auditErr) {
+    console.error("[dashboardEditRecord] Audit log failed:", auditErr);
+    revalidateDashboard();
+    revalidateAdminReview();
+    return { success: false, error: "הפעולה בוצעה אך תיעוד הביקורת נכשל" };
+  }
+
+  revalidateDashboard();
+  revalidateAdminReview();
+  return { success: true, data: { id: recordId } };
+}
+
 export interface DailyAttendanceRecord {
   id: string;
   worker_name: string | null;

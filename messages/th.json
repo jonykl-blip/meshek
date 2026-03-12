@@ -143,7 +143,23 @@
       "rejectSuccess": "הרשומה נדחתה",
       "actionError": "שגיאה בביצוע הפעולה",
       "actionsColumn": "פעולות",
-      "unknownWorker": "לא מזוהה"
+      "unknownWorker": "לא מזוהה",
+      "edit": "עריכה"
+    },
+    "editRecord": {
+      "modalTitle": "עריכת רשומה",
+      "areaLabel": "שטח",
+      "areaPlaceholder": "בחר שטח",
+      "hoursLabel": "שעות",
+      "hoursDecrease": "הפחת חצי שעה",
+      "hoursIncrease": "הוסף חצי שעה",
+      "saveButton": "שמור",
+      "cancel": "ביטול",
+      "saving": "שומר...",
+      "editSuccess": "הרשומה עודכנה",
+      "excessiveHoursWarning": "חריגה מ-12 שעות",
+      "validationHoursRange": "שעות חייבות להיות בין 0.5 ל-24",
+      "validationHoursStep": "שעות חייבות להיות בכפולות של 0.5"
     }
   },
   "admin": {

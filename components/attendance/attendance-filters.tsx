@@ -78,7 +78,7 @@ export function AttendanceFilters({
       : labels.filterLabel;
 
   const inputClasses =
-    "bg-[var(--card)] border-[1.5px] border-border rounded-[var(--radius-sm)] px-2 py-1 text-sm focus:border-primary focus:ring-1 focus:ring-primary/20 focus:outline-none disabled:opacity-50";
+    "bg-card border-[1.5px] border-border rounded-[var(--radius-sm)] px-2 py-1 text-sm focus:border-primary focus:ring-1 focus:ring-primary/20 focus:outline-none disabled:opacity-50";
 
   return (
     <div
