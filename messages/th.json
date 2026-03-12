@@ -5,7 +5,8 @@
     "error": "שגיאה",
     "poweredBy": "מופעל על ידי",
     "envVarRequired": "משתני סביבה של Supabase נדרשים",
-    "copyright": "משק © {year}"
+    "copyright": "משק © {year}",
+    "brandName": "משק פילצביץ'"
   },
   "home": {
     "heroTitle": "משק - ניהול חקלאי",

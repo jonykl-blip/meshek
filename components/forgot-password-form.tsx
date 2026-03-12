@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Link } from "@/i18n/navigation";
 import { useState } from "react";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 
 export function ForgotPasswordForm({
   className,
@@ -19,6 +19,7 @@ export function ForgotPasswordForm({
   const [success, setSuccess] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const t = useTranslations("auth");
+  const locale = useLocale();
 
   const handleForgotPassword = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -28,7 +29,7 @@ export function ForgotPasswordForm({
 
     try {
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: `${window.location.origin}/auth/update-password`,
+        redirectTo: `${window.location.origin}/${locale}/auth/update-password`,
       });
       if (error) throw error;
       setSuccess(true);
@@ -75,13 +76,13 @@ export function ForgotPasswordForm({
                     required
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    className="h-[50px] rounded-md border-[1.5px] bg-background text-[0.95rem] focus-visible:border-primary focus-visible:ring-primary/10"
+                    className="auth-input"
                   />
                 </div>
                 {error && <p className="text-sm text-red-500">{error}</p>}
                 <Button
                   type="submit"
-                  className="h-[50px] w-full rounded-md bg-gradient-to-br from-primary to-[#4A6526] text-base font-semibold shadow-[0_4px_16px_rgba(91,122,47,0.25)] hover:from-[#4A6526] hover:to-[#3A5420] hover:shadow-[0_6px_24px_rgba(91,122,47,0.35)]"
+                  className="auth-btn-primary"
                   disabled={isLoading}
                 >
                   {isLoading ? t("sending") : t("sendResetEmail")}

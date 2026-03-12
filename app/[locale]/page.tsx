@@ -125,7 +125,7 @@ export default async function Home({
               <Button
                 asChild
                 size="lg"
-                className="mt-2 h-[50px] px-8 rounded-md bg-gradient-to-br from-primary to-[#4A6526] text-base font-semibold shadow-[0_4px_16px_rgba(91,122,47,0.25)] hover:from-[#4A6526] hover:to-[#3A5420] hover:shadow-[0_6px_24px_rgba(91,122,47,0.35)]"
+                className="auth-btn-primary mt-2 w-auto px-8"
               >
                 <Link href="/auth/login">{t("signInCta")}</Link>
               </Button>

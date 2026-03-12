@@ -35,7 +35,7 @@ export default async function Page({
         <p className="text-sm text-muted-foreground text-center mb-6">{t("content")}</p>
         <Link
           href="/auth/login"
-          className="block h-[50px] w-full rounded-md bg-gradient-to-br from-primary to-[#4A6526] text-center text-base font-semibold text-primary-foreground leading-[50px] shadow-[0_4px_16px_rgba(91,122,47,0.25)] hover:from-[#4A6526] hover:to-[#3A5420] hover:shadow-[0_6px_24px_rgba(91,122,47,0.35)]"
+          className="auth-btn-primary block text-center leading-[50px]"
         >
           {tAuth("loginTitle")}
         </Link>

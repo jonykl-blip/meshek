@@ -451,6 +451,36 @@
   border-radius: 0 0 2px 2px;
 }
 
+/* Reusable auth button — gradient primary */
+.auth-btn-primary {
+  height: 50px;
+  width: 100%;
+  border-radius: var(--radius-md);
+  background: linear-gradient(to bottom right, hsl(var(--primary)), #4A6526);
+  font-size: 1rem;
+  font-weight: 600;
+  color: hsl(var(--primary-foreground));
+  box-shadow: 0 4px 16px rgba(91,122,47,0.25);
+  transition: all 0.2s;
+}
+.auth-btn-primary:hover {
+  background: linear-gradient(to bottom right, #4A6526, #3A5420);
+  box-shadow: 0 6px 24px rgba(91,122,47,0.35);
+}
+
+/* Reusable auth input — premium styling */
+.auth-input {
+  height: 50px;
+  border-radius: var(--radius-md);
+  border-width: 1.5px;
+  background: hsl(var(--background));
+  font-size: 0.95rem;
+}
+.auth-input:focus-visible {
+  border-color: hsl(var(--primary));
+  --tw-ring-color: hsl(var(--primary) / 0.1);
+}
+
 @media (max-width: 500px) {
   .auth-section {
     padding: 16px;

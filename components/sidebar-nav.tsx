@@ -83,6 +83,7 @@ interface SidebarNavProps {
 export default function SidebarNav({ role, fullName, kpis }: SidebarNavProps) {
   const pathname = usePathname();
   const t = useTranslations("sidebar");
+  const tCommon = useTranslations("common");
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
 
@@ -115,7 +116,7 @@ export default function SidebarNav({ role, fullName, kpis }: SidebarNavProps) {
       <div className="relative z-[1] flex flex-col items-center pt-7 pb-4 px-5">
         <Link href="/">
           {collapsed ? (
-            <span className="text-lg font-bold">מ</span>
+            <span className="text-lg font-bold">{tCommon("appName").charAt(0)}</span>
           ) : (
             <>
               <div className="w-[56px] h-[56px] rounded-full flex items-center justify-center overflow-hidden mx-auto"
@@ -134,7 +135,7 @@ export default function SidebarNav({ role, fullName, kpis }: SidebarNavProps) {
                   priority
                 />
               </div>
-              <p className="text-[0.9rem] font-bold text-white/95 text-center mt-2">משק פילצביץ&apos;</p>
+              <p className="text-[0.9rem] font-bold text-white/95 text-center mt-2">{tCommon("brandName")}</p>
             </>
           )}
         </Link>
