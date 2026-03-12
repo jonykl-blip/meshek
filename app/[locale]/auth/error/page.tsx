@@ -1,6 +1,12 @@
+import Image from "next/image";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { getTranslations, setRequestLocale } from "next-intl/server";
+import { routing } from "@/i18n/routing";
 import { Suspense } from "react";
+
+export function generateStaticParams() {
+  return routing.locales.map((locale) => ({ locale }));
+}
 
 const ERROR_KEYS = [
   "no_user",
@@ -45,6 +51,16 @@ export default async function Page({
     <div className="flex min-h-svh w-full items-center justify-center p-6 md:p-10">
       <div className="w-full max-w-sm">
         <div className="flex flex-col gap-6">
+          <div className="flex justify-center">
+            <Image
+              src="/images/meshek-logo.jpeg"
+              alt="משק פילצביץ'"
+              width={120}
+              height={120}
+              className="h-16 w-auto"
+              priority
+            />
+          </div>
           <Card>
             <CardHeader>
               <CardTitle className="text-2xl">{t("title")}</CardTitle>

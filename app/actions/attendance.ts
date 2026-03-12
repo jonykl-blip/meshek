@@ -6,16 +6,25 @@ import { logAudit } from "@/lib/audit";
 import { verifyAdminCaller, verifyDashboardCaller, type ActionResult } from "@/lib/auth-helpers";
 import { workerProfileSchema } from "@/lib/validators/worker-profile";
 import { revalidatePath } from "next/cache";
+import { routing } from "@/i18n/routing";
 import crypto from "crypto";
 
 function revalidateAdminReview() {
-  revalidatePath("/he/admin/review");
-  revalidatePath("/th/admin/review");
+  for (const locale of routing.locales) {
+    revalidatePath(`/${locale}/admin/review`);
+  }
 }
 
 function revalidateAdminWorkers() {
-  revalidatePath("/he/admin/workers");
-  revalidatePath("/th/admin/workers");
+  for (const locale of routing.locales) {
+    revalidatePath(`/${locale}/admin/workers`);
+  }
+}
+
+function revalidateDashboard() {
+  for (const locale of routing.locales) {
+    revalidatePath(`/${locale}/dashboard`);
+  }
 }
 
 export interface PendingRecord {
@@ -105,6 +114,74 @@ export async function getPendingRecords(): Promise<
       };
     })
   );
+
+  return { success: true, data: records };
+}
+
+export async function getReviewRecords(
+  showAll: boolean
+): Promise<ActionResult<PendingRecord[]>> {
+  const supabase = await createClient();
+  const { user, error: authError } = await verifyAdminCaller(supabase);
+  if (!user) return { success: false, error: authError };
+
+  let query = supabase
+    .from("attendance_logs")
+    .select(
+      `
+      id,
+      profile_id,
+      area_id,
+      work_date,
+      total_hours,
+      voice_ref_url,
+      raw_transcript,
+      status,
+      created_at,
+      profiles!attendance_logs_profile_id_fkey ( full_name ),
+      areas!attendance_logs_area_id_fkey ( name )
+    `
+    )
+    .order("work_date", { ascending: false })
+    .order("created_at", { ascending: false });
+
+  if (!showAll) {
+    query = query.eq("status", "pending").limit(500);
+  } else {
+    query = query.limit(200);
+  }
+
+  const { data, error } = await query;
+
+  if (error) return { success: false, error: error.message };
+
+  const records: PendingRecord[] = (data ?? []).map((row) => {
+    let voiceSignedUrl: string | null = null;
+
+    if (row.voice_ref_url) {
+      const storagePath = extractVoiceStoragePath(row.voice_ref_url);
+      if (storagePath) {
+        voiceSignedUrl = `/api/audio/${storagePath}`;
+      }
+    }
+
+    const profile = row.profiles as unknown as { full_name: string } | null;
+    const area = row.areas as unknown as { name: string } | null;
+
+    return {
+      id: row.id,
+      profile_id: row.profile_id,
+      area_id: row.area_id,
+      work_date: row.work_date,
+      total_hours: row.total_hours,
+      voice_signed_url: voiceSignedUrl,
+      raw_transcript: row.raw_transcript,
+      status: row.status,
+      created_at: row.created_at,
+      worker_name: profile?.full_name ?? null,
+      area_name: area?.name ?? null,
+    };
+  });
 
   return { success: true, data: records };
 }
@@ -439,14 +516,124 @@ export async function rejectRecord(
   return { success: true, data: { id: recordId } };
 }
 
+export async function dashboardApproveRecord(
+  recordId: string
+): Promise<ActionResult<{ id: string; status: string }>> {
+  const supabase = await createClient();
+  const { user, error: authError } = await verifyDashboardCaller(supabase);
+  if (!user) return { success: false, error: authError };
+
+  const { data: before } = await supabase
+    .from("attendance_logs")
+    .select("id, profile_id, area_id, status")
+    .eq("id", recordId)
+    .single();
+
+  if (!before) return { success: false, error: "רשומה לא נמצאה" };
+
+  if (before.status !== "pending") {
+    return { success: false, error: "ניתן לאשר רק רשומות ממתינות" };
+  }
+
+  if (before.profile_id === null || before.area_id === null) {
+    return {
+      success: false,
+      error: "לא ניתן לאשר רשומה עם עובד או שטח לא מזוהה",
+    };
+  }
+
+  const { error } = await supabase
+    .from("attendance_logs")
+    .update({ status: "approved" })
+    .eq("id", recordId);
+
+  if (error) return { success: false, error: error.message };
+
+  try {
+    await logAudit({
+      actorId: user.id,
+      tableName: "attendance_logs",
+      recordId,
+      action: "approve",
+      before: { status: before.status },
+      after: { status: "approved" },
+    });
+  } catch (auditErr) {
+    console.error("[dashboardApproveRecord] Audit log failed:", auditErr);
+    revalidateDashboard();
+    revalidateAdminReview();
+    return { success: false, error: "הפעולה בוצעה אך תיעוד הביקורת נכשל" };
+  }
+
+  revalidateDashboard();
+  revalidateAdminReview();
+  return { success: true, data: { id: recordId, status: "approved" } };
+}
+
+export async function dashboardRejectRecord(
+  recordId: string
+): Promise<ActionResult<{ id: string; status: string }>> {
+  const supabase = await createClient();
+  const { user, error: authError } = await verifyDashboardCaller(supabase);
+  if (!user) return { success: false, error: authError };
+
+  const { data: before } = await supabase
+    .from("attendance_logs")
+    .select("id, profile_id, area_id, status")
+    .eq("id", recordId)
+    .single();
+
+  if (!before) return { success: false, error: "רשומה לא נמצאה" };
+
+  if (before.status !== "pending") {
+    return { success: false, error: "ניתן לדחות רק רשומות ממתינות" };
+  }
+
+  if (before.profile_id === null || before.area_id === null) {
+    return {
+      success: false,
+      error: "לא ניתן לדחות רשומה עם עובד או שטח לא מזוהה",
+    };
+  }
+
+  const { error } = await supabase
+    .from("attendance_logs")
+    .update({ status: "rejected" })
+    .eq("id", recordId);
+
+  if (error) return { success: false, error: error.message };
+
+  try {
+    await logAudit({
+      actorId: user.id,
+      tableName: "attendance_logs",
+      recordId,
+      action: "reject",
+      before: { status: before.status },
+      after: { status: "rejected" },
+    });
+  } catch (auditErr) {
+    console.error("[dashboardRejectRecord] Audit log failed:", auditErr);
+    revalidateDashboard();
+    revalidateAdminReview();
+    return { success: false, error: "הפעולה בוצעה אך תיעוד הביקורת נכשל" };
+  }
+
+  revalidateDashboard();
+  revalidateAdminReview();
+  return { success: true, data: { id: recordId, status: "rejected" } };
+}
+
 export interface DailyAttendanceRecord {
   id: string;
-  worker_name: string;
+  worker_name: string | null;
   area_name: string | null;
   work_date: string;
   total_hours: number;
-  status: "approved" | "imported";
+  status: "approved" | "imported" | "pending" | "rejected";
   source: string;
+  profile_id: string | null;
+  area_id: string | null;
 }
 
 export async function getDailyAttendance(params?: {
@@ -485,9 +672,9 @@ export async function getDailyAttendance(params?: {
   let query = supabase
     .from("attendance_logs")
     .select(
-      "id, work_date, total_hours, status, source, profiles(full_name), areas(name)"
+      "id, profile_id, area_id, work_date, total_hours, status, source, profiles(full_name), areas(name)"
     )
-    .in("status", ["approved", "imported"]);
+    .in("status", ["approved", "imported", "pending"]);
 
   if (fromDate === toDate) {
     query = query.eq("work_date", fromDate);
@@ -512,13 +699,15 @@ export async function getDailyAttendance(params?: {
     id: row.id,
     worker_name:
       (row.profiles as unknown as { full_name: string } | null)?.full_name ??
-      "לא ידוע",
+      null,
     area_name:
       (row.areas as unknown as { name: string } | null)?.name ?? null,
     work_date: row.work_date,
     total_hours: row.total_hours,
-    status: row.status as "approved" | "imported",
+    status: row.status as DailyAttendanceRecord["status"],
     source: row.source,
+    profile_id: row.profile_id,
+    area_id: row.area_id,
   }));
 
   return { success: true, data: records };
@@ -615,6 +804,148 @@ export async function getAnomalies(params?: {
     data: {
       excessiveHours: (excessResult.data ?? []).map(toAnomalyRecord),
       stalePending: (staleResult.data ?? []).map(toAnomalyRecord),
+    },
+  };
+}
+
+export async function createManualAttendance(input: {
+  profileId: string;
+  workDate: string;
+  areaId: string;
+  totalHours: number;
+}): Promise<
+  ActionResult<{
+    id: string;
+    status: string;
+    duplicate?: { id: string; total_hours: number };
+  }>
+> {
+  const supabase = await createClient();
+  const { user, role, error: authError } = await verifyDashboardCaller(supabase);
+  if (!user) return { success: false, error: authError };
+
+  const { profileId, workDate, areaId, totalHours } = input;
+
+  // Validate date format
+  const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
+  if (!dateRegex.test(workDate)) {
+    return { success: false, error: "תאריך לא תקין" };
+  }
+
+  // Validate not future date (Jerusalem TZ)
+  const todayJerusalem = new Date().toLocaleDateString("en-CA", {
+    timeZone: "Asia/Jerusalem",
+  });
+  if (workDate > todayJerusalem) {
+    return { success: false, error: "לא ניתן לבחור תאריך עתידי" };
+  }
+
+  // Validate hours
+  if (totalHours < 0.5 || totalHours > 24) {
+    return { success: false, error: "שעות חייבות להיות בין 0.5 ל-24" };
+  }
+  if (Math.round(totalHours * 2) !== totalHours * 2) {
+    return { success: false, error: "שעות חייבות להיות בכפולות של 0.5" };
+  }
+
+  // Validate worker exists, is active, and has worker role
+  const { data: workerProfile } = await supabase
+    .from("profiles")
+    .select("id")
+    .eq("id", profileId)
+    .eq("is_active", true)
+    .eq("role", "worker")
+    .single();
+
+  if (!workerProfile) {
+    return { success: false, error: "עובד לא נמצא או לא פעיל" };
+  }
+
+  // Validate area exists and is active
+  const { data: area } = await supabase
+    .from("areas")
+    .select("id")
+    .eq("id", areaId)
+    .eq("is_active", true)
+    .single();
+
+  if (!area) {
+    return { success: false, error: "שטח לא נמצא או לא פעיל" };
+  }
+
+  // Duplicate check (warn, don't block)
+  const { data: existingRecord } = await supabase
+    .from("attendance_logs")
+    .select("id, total_hours")
+    .eq("profile_id", profileId)
+    .eq("work_date", workDate)
+    .eq("area_id", areaId)
+    .limit(1)
+    .maybeSingle();
+
+  // Determine status based on caller role
+  const status = role === "owner" || role === "admin" ? "approved" : "pending";
+
+  // Insert record
+  const { data: inserted, error: insertError } = await supabase
+    .from("attendance_logs")
+    .insert({
+      profile_id: profileId,
+      area_id: areaId,
+      work_date: workDate,
+      total_hours: totalHours,
+      status,
+      source: "manual",
+    })
+    .select("id")
+    .single();
+
+  if (insertError) {
+    const msg =
+      insertError.code === "23503"
+        ? "עובד או שטח לא נמצאו במערכת"
+        : insertError.message;
+    return { success: false, error: msg };
+  }
+
+  // Audit log
+  try {
+    await logAudit({
+      actorId: user.id,
+      tableName: "attendance_logs",
+      recordId: inserted.id,
+      action: "create",
+      before: null,
+      after: {
+        profile_id: profileId,
+        area_id: areaId,
+        work_date: workDate,
+        total_hours: totalHours,
+        status,
+        source: "manual",
+      },
+    });
+  } catch (auditErr) {
+    console.error("[createManualAttendance] Audit log failed:", auditErr);
+    revalidateDashboard();
+    return { success: false as const, error: "הפעולה בוצעה אך תיעוד הביקורת נכשל" };
+  }
+
+  revalidateDashboard();
+
+  return {
+    success: true,
+    data: {
+      id: inserted.id,
+      status,
+      ...(existingRecord
+        ? {
+            duplicate: {
+              id: existingRecord.id,
+              total_hours: existingRecord.total_hours,
+            },
+          }
+        : {}),
     },
   };
 }

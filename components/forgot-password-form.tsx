@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { cn } from "@/lib/utils";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -46,6 +47,16 @@ export function ForgotPasswordForm({
 
   return (
     <div className={cn("flex flex-col gap-6", className)} {...props}>
+      <div className="flex justify-center">
+        <Image
+          src="/images/meshek-logo.jpeg"
+          alt="משק פילצביץ'"
+          width={120}
+          height={120}
+          className="h-16 w-auto"
+          priority
+        />
+      </div>
       {success ? (
         <Card>
           <CardHeader>

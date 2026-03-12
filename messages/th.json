@@ -92,12 +92,51 @@
       "clearAll": "נקה הכל",
       "activeFilters": "סינון ({count})"
     },
+    "addRecord": {
+      "buttonLabel": "+ הוספת רשומה",
+      "modalTitle": "הוספת רשומת נוכחות",
+      "workerLabel": "עובד",
+      "workerPlaceholder": "בחר עובד...",
+      "workerSearchPlaceholder": "חפש עובד...",
+      "workerSearchEmpty": "לא נמצא עובד",
+      "dateLabel": "תאריך",
+      "areaLabel": "שטח",
+      "areaPlaceholder": "בחר שטח...",
+      "hoursLabel": "שעות",
+      "hoursDecrease": "הפחת שעות",
+      "hoursIncrease": "הוסף שעות",
+      "saveButton": "שמור רשומה",
+      "saveAndAddAnother": "שמור והוסף עוד",
+      "cancel": "ביטול",
+      "saving": "שומר...",
+      "successApproved": "הרשומה נשמרה",
+      "successPending": "הרשומה נשמרה — ממתינה לאישור",
+      "duplicateWarning": "קיימת כבר רשומה לעובד זה באותו תאריך ושטח",
+      "duplicateHours": "שעות קיימות",
+      "excessiveHoursWarning": "חריגה מ-12 שעות",
+      "validationRequired": "שדה חובה",
+      "validationHoursRange": "שעות חייבות להיות בין 0.5 ל-24",
+      "validationHoursStep": "שעות חייבות להיות בכפולות של 0.5",
+      "validationFutureDate": "לא ניתן לבחור תאריך עתידי"
+    },
     "anomalies": {
       "allClear": "אין חריגות ✅",
       "excessiveHoursHeading": "שעות חריגות (מעל 12)",
       "stalePendingHeading": "ממתין לאישור — מעל 24 שעות",
       "unknownWorker": "לא מזוהה",
       "unknownArea": "לא צוין"
+    },
+    "actions": {
+      "approve": "אשר",
+      "reject": "דחה",
+      "pendingResolution": "ממתין לפתרון",
+      "statusPending": "ממתין",
+      "statusRejected": "נדחה",
+      "approveSuccess": "הרשומה אושרה",
+      "rejectSuccess": "הרשומה נדחתה",
+      "actionError": "שגיאה בביצוע הפעולה",
+      "actionsColumn": "פעולות",
+      "unknownWorker": "לא מזוהה"
     }
   },
   "admin": {
@@ -150,9 +189,6 @@
       "aliases": "כינויים",
       "addAlias": "הוסף כינוי",
       "removeAlias": "הסר כינוי",
-      "photo": "תמונה",
-      "uploadPhoto": "העלה תמונה",
-      "noPhoto": "אין תמונה",
       "archiveConfirm": "האם לגנוז את {name}?",
       "archiveDescription": "רשומות הנוכחות ישמרו",
       "confirm": "אישור",
@@ -172,9 +208,7 @@
       "validation": {
         "nameRequired": "שם השטח הוא שדה חובה",
         "cropRequired": "יש לבחור גידול",
-        "aliasRequired": "שם הכינוי הוא שדה חובה",
-        "photoType": "יש להעלות קובץ תמונה בלבד",
-        "photoSize": "גודל התמונה חייב להיות עד 5MB"
+        "aliasRequired": "שם הכינוי הוא שדה חובה"
       }
     },
     "health": {
@@ -182,7 +216,7 @@
       "totalRecords": "סה״כ רשומות החודש",
       "pendingRecords": "רשומות ממתינות",
       "unmatchedRate": "אחוז אי-התאמה",
-      "unmatchedRateHigh": "אחוז אי-התאמה גבוה — יש לבדוק את תור הרשומות הממתינות",
+      "unmatchedRateHigh": "אחוז אי-התאמה גבוה — יש לבדוק את רשומות ממתינות לאישור",
       "loadError": "שגיאה בטעינת נתוני בריאות המערכת",
       "staleAlert": "הרשימות לא עודכנו מזה 30 יום — יש לבדוק אם יש עובדים או שטחים חסרים",
       "workersLastUpdated": "רשימת עובדים עודכנה לאחרונה",
@@ -191,8 +225,8 @@
       "daysAgo": "לפני {days} ימים"
     },
     "review": {
-      "title": "תור רשומות ממתינות",
-      "emptyState": "אין רשומות ממתינות לאישור ✅",
+      "title": "רשומות ממתינות לאישור",
+      "emptyState": "אין רשומות ממתינות לאישור",
       "worker": "עובד",
       "area": "שטח",
       "date": "תאריך",
@@ -231,7 +265,14 @@
       "edited": "הרשומה עודכנה",
       "editHours": "שעות עבודה",
       "editArea": "שטח עבודה",
-      "cannotApproveUnresolved": "לא ניתן לאשר — יש להתאים עובד ושטח קודם"
+      "cannotApproveUnresolved": "לא ניתן לאשר — יש להתאים עובד ושטח קודם",
+      "noChanges": "אין שינויים לשמירה",
+      "showAll": "הצג הכל",
+      "pendingOnly": "ממתינות בלבד",
+      "statusPending": "ממתין",
+      "statusApproved": "אושר",
+      "statusRejected": "נדחה",
+      "statusImported": "יובא"
     },
     "crops": {
       "title": "ניהול גידולים",

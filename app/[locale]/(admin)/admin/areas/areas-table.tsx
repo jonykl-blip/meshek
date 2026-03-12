@@ -9,7 +9,6 @@ import {
   archiveArea,
   addAreaAlias,
   removeAreaAlias,
-  uploadAreaPhoto,
   type Area,
 } from "@/app/actions/areas";
 import { Input } from "@/components/ui/input";
@@ -46,9 +45,6 @@ interface Labels {
   aliases: string;
   addAlias: string;
   removeAlias: string;
-  photo: string;
-  uploadPhoto: string;
-  noPhoto: string;
   archiveConfirm: string;
   archiveDescription: string;
   confirm: string;
@@ -120,14 +116,13 @@ export function AreasTable({
               <th className="px-4 py-3 text-start font-medium">{labels.name}</th>
               <th className="px-4 py-3 text-start font-medium">{labels.crop}</th>
               <th className="px-4 py-3 text-start font-medium">{labels.aliases}</th>
-              <th className="px-4 py-3 text-start font-medium">{labels.photo}</th>
               <th className="px-4 py-3 text-start font-medium">{labels.actions}</th>
             </tr>
           </thead>
           <tbody>
             {areas.length === 0 ? (
               <tr>
-                <td colSpan={5} className="px-4 py-8 text-center text-muted-foreground">
+                <td colSpan={4} className="px-4 py-8 text-center text-muted-foreground">
                   {labels.noAreas}
                 </td>
               </tr>
@@ -304,7 +299,6 @@ function AreaRow({
   const [isPending, startTransition] = useTransition();
   const [newAlias, setNewAlias] = useState("");
   const [showAliasInput, setShowAliasInput] = useState(false);
-  const fileInputRef = useRef<HTMLInputElement>(null);
 
   function handleSave() {
     setError("");
@@ -363,21 +357,6 @@ function AreaRow({
     });
   }
 
-  function handlePhotoUpload(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    const fd = new FormData();
-    fd.append("file", file);
-    startTransition(async () => {
-      const result = await uploadAreaPhoto(area.id, fd);
-      if (result.success) {
-        onFeedback(labels.updated);
-      } else {
-        setError(result.error);
-      }
-    });
-  }
-
   if (isEditing) {
     return (
       <tr className="border-b last:border-b-0 bg-muted/20">
@@ -405,7 +384,6 @@ function AreaRow({
             </SelectContent>
           </Select>
         </td>
-        <td className="px-4 py-3" />
         <td className="px-4 py-3" />
         <td className="px-4 py-3">
           <div className="flex flex-col gap-1">
@@ -472,33 +450,6 @@ function AreaRow({
             )}
           </div>
           {error && <span className="text-sm text-red-600">{error}</span>}
-        </td>
-        <td className="px-4 py-3">
-          {area.photo_url ? (
-            <img
-              src={area.photo_url}
-              alt={area.name}
-              className="h-12 w-12 rounded object-cover"
-            />
-          ) : (
-            <span className="text-xs text-muted-foreground">{labels.noPhoto}</span>
-          )}
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept="image/*"
-            className="hidden"
-            onChange={handlePhotoUpload}
-          />
-          <Button
-            size="sm"
-            variant="ghost"
-            className="mt-1 h-6 px-2 text-xs"
-            onClick={() => fileInputRef.current?.click()}
-            disabled={isPending}
-          >
-            {labels.uploadPhoto}
-          </Button>
         </td>
         <td className="px-4 py-3">
           <div className="flex gap-2">

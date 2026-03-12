@@ -1,0 +1,1250 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Direction B: Sapir — ספיר | Meshek Design Mockup</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      font-family: 'Heebo', sans-serif;
+      background: #F7F8FA;
+      color: #141821;
+      line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+
+    /* ========== Direction Title Bar ========== */
+    .direction-bar {
+      background: #111827;
+      color: #fff;
+      padding: 14px 32px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      border-bottom: 1px solid rgba(255,255,255,0.08);
+    }
+
+    .direction-bar h1 {
+      font-size: 15px;
+      font-weight: 600;
+      letter-spacing: 0.02em;
+    }
+
+    .direction-bar p {
+      font-size: 13px;
+      color: rgba(255,255,255,0.5);
+    }
+
+    /* ========== Section Divider ========== */
+    .section-divider {
+      background: linear-gradient(to left, #2570C0, #2EA37A);
+      height: 3px;
+      position: relative;
+    }
+
+    .section-divider::after {
+      content: attr(data-label);
+      position: absolute;
+      top: 50%;
+      right: 50%;
+      transform: translate(50%, -50%);
+      background: #111827;
+      color: #fff;
+      font-size: 12px;
+      font-weight: 600;
+      padding: 6px 20px;
+      border-radius: 20px;
+      letter-spacing: 0.05em;
+      white-space: nowrap;
+    }
+
+    /* ========== Animations ========== */
+    @keyframes fadeInUp {
+      from {
+        opacity: 0;
+        transform: translateY(4px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .fade-in {
+      animation: fadeInUp 200ms ease-out both;
+    }
+
+    .fade-in-d1 { animation-delay: 50ms; }
+    .fade-in-d2 { animation-delay: 100ms; }
+    .fade-in-d3 { animation-delay: 150ms; }
+    .fade-in-d4 { animation-delay: 200ms; }
+    .fade-in-d5 { animation-delay: 250ms; }
+
+    /* ========== SECTION 1: LOGIN ========== */
+    .login-section {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #F7F8FA;
+      padding: 40px 20px;
+    }
+
+    .login-wrapper {
+      width: 100%;
+      max-width: 420px;
+    }
+
+    .login-logo {
+      text-align: center;
+      margin-bottom: 32px;
+    }
+
+    .login-logo h1 {
+      font-size: 36px;
+      font-weight: 700;
+      color: #141821;
+      letter-spacing: -0.02em;
+    }
+
+    .login-logo p {
+      font-size: 14px;
+      color: #6B7080;
+      margin-top: 4px;
+    }
+
+    .login-card {
+      background: #FFFFFF;
+      border-radius: 16px;
+      box-shadow: 0 4px 24px rgba(0, 0, 0, 0.08), 0 1px 3px rgba(0, 0, 0, 0.04);
+      padding: 40px 36px;
+      border: 1px solid #E1E3E8;
+    }
+
+    .form-group {
+      margin-bottom: 20px;
+    }
+
+    .form-label {
+      display: block;
+      font-size: 13px;
+      font-weight: 500;
+      color: #141821;
+      margin-bottom: 6px;
+    }
+
+    .form-input {
+      width: 100%;
+      height: 44px;
+      border: 1px solid #E1E3E8;
+      border-radius: 10px;
+      padding: 0 14px;
+      font-family: 'Heebo', sans-serif;
+      font-size: 14px;
+      color: #141821;
+      background: #FFFFFF;
+      transition: all 150ms ease;
+      outline: none;
+      direction: rtl;
+    }
+
+    .form-input::placeholder {
+      color: #6B7080;
+    }
+
+    .form-input:focus {
+      border-color: #2570C0;
+      box-shadow: 0 0 0 3px rgba(37, 112, 192, 0.12);
+    }
+
+    .forgot-link {
+      display: block;
+      text-align: start;
+      font-size: 13px;
+      color: #2570C0;
+      text-decoration: none;
+      margin-bottom: 24px;
+      transition: color 150ms;
+    }
+
+    .forgot-link:hover {
+      color: #1E5A9A;
+    }
+
+    .btn-primary {
+      width: 100%;
+      height: 48px;
+      background: #2570C0;
+      color: #FFFFFF;
+      border: none;
+      border-radius: 10px;
+      font-family: 'Heebo', sans-serif;
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 150ms ease;
+    }
+
+    .btn-primary:hover {
+      background: #1E5A9A;
+    }
+
+    .btn-primary:active {
+      transform: scale(0.98);
+    }
+
+    .signup-link {
+      text-align: center;
+      margin-top: 20px;
+      font-size: 14px;
+      color: #6B7080;
+    }
+
+    .signup-link a {
+      color: #2570C0;
+      text-decoration: none;
+      font-weight: 500;
+      transition: color 150ms;
+    }
+
+    .signup-link a:hover {
+      color: #1E5A9A;
+    }
+
+    /* ========== SECTION 2: HOMEPAGE ========== */
+    .homepage-section {
+      min-height: 100vh;
+      background: #F7F8FA;
+    }
+
+    .homepage-nav {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 16px 40px;
+      background: #FFFFFF;
+      border-bottom: 1px solid #E1E3E8;
+    }
+
+    .homepage-nav-logo {
+      font-size: 22px;
+      font-weight: 700;
+      color: #141821;
+    }
+
+    .homepage-nav-auth {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .homepage-nav-auth a {
+      font-size: 14px;
+      color: #6B7080;
+      text-decoration: none;
+      transition: color 150ms;
+    }
+
+    .homepage-nav-auth a:hover {
+      color: #141821;
+    }
+
+    .btn-nav {
+      height: 36px;
+      padding: 0 16px;
+      background: #2570C0;
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      font-family: 'Heebo', sans-serif;
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 150ms;
+    }
+
+    .btn-nav:hover {
+      background: #1E5A9A;
+    }
+
+    .btn-nav:active {
+      transform: scale(0.98);
+    }
+
+    .homepage-hero {
+      text-align: center;
+      padding: 80px 20px 48px;
+    }
+
+    .hero-logo-icon {
+      width: 64px;
+      height: 64px;
+      background: #2570C0;
+      border-radius: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 24px;
+      color: #fff;
+      font-size: 28px;
+      font-weight: 700;
+    }
+
+    .homepage-hero h1 {
+      font-size: 36px;
+      font-weight: 700;
+      color: #141821;
+      letter-spacing: -0.02em;
+    }
+
+    .homepage-hero p {
+      font-size: 18px;
+      color: #6B7080;
+      margin-top: 8px;
+      max-width: 480px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+
+    .hero-cta {
+      margin-top: 32px;
+    }
+
+    .btn-hero {
+      height: 48px;
+      padding: 0 32px;
+      background: #2570C0;
+      color: #fff;
+      border: none;
+      border-radius: 10px;
+      font-family: 'Heebo', sans-serif;
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 150ms;
+    }
+
+    .btn-hero:hover {
+      background: #1E5A9A;
+      box-shadow: 0 4px 12px rgba(37, 112, 192, 0.25);
+    }
+
+    .btn-hero:active {
+      transform: scale(0.98);
+    }
+
+    .homepage-content {
+      max-width: 880px;
+      margin: 0 auto;
+      padding: 0 40px 80px;
+    }
+
+    .section-header {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      margin-bottom: 20px;
+      margin-top: 48px;
+    }
+
+    .section-header span {
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      color: #6B7080;
+      white-space: nowrap;
+    }
+
+    .section-header::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: #E1E3E8;
+    }
+
+    .cards-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+      gap: 12px;
+    }
+
+    .home-card {
+      background: #FFFFFF;
+      border-radius: 12px;
+      padding: 20px;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+      cursor: pointer;
+      transition: all 150ms ease;
+      text-decoration: none;
+      color: inherit;
+      display: block;
+    }
+
+    .home-card:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    }
+
+    .card-icon {
+      width: 40px;
+      height: 40px;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 12px;
+      font-size: 18px;
+    }
+
+    .card-icon.sapphire {
+      background: rgba(37, 112, 192, 0.1);
+      color: #2570C0;
+    }
+
+    .card-icon.teal {
+      background: rgba(46, 163, 122, 0.1);
+      color: #2EA37A;
+    }
+
+    .card-icon.slate {
+      background: rgba(107, 112, 128, 0.1);
+      color: #6B7080;
+    }
+
+    .home-card h3 {
+      font-size: 14px;
+      font-weight: 600;
+      color: #141821;
+    }
+
+    .home-card p {
+      font-size: 12px;
+      color: #6B7080;
+      margin-top: 2px;
+    }
+
+    /* ========== SECTION 3: DASHBOARD ========== */
+    .dashboard-section {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: row-reverse;
+      background: #F7F8FA;
+    }
+
+    /* Sidebar (right in RTL) */
+    .sidebar {
+      width: 240px;
+      min-height: 100vh;
+      background: #111827;
+      display: flex;
+      flex-direction: column;
+      flex-shrink: 0;
+      position: relative;
+    }
+
+    .sidebar-logo {
+      padding: 20px 20px 16px;
+      font-size: 22px;
+      font-weight: 700;
+      color: #FFFFFF;
+      letter-spacing: -0.02em;
+    }
+
+    .sidebar-kpi {
+      padding: 0 16px 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .kpi-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 8px 10px;
+      border-radius: 8px;
+    }
+
+    .kpi-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    .kpi-dot.amber { background: #D4A017; }
+    .kpi-dot.teal { background: #2EA37A; }
+    .kpi-dot.red { background: #DC3545; }
+
+    .kpi-label {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: rgba(255, 255, 255, 0.4);
+      flex: 1;
+    }
+
+    .kpi-value {
+      font-size: 18px;
+      font-weight: 600;
+      color: #FFFFFF;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .sidebar-divider {
+      height: 1px;
+      background: rgba(255, 255, 255, 0.08);
+      margin: 4px 16px 12px;
+    }
+
+    .sidebar-section-label {
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      color: rgba(255, 255, 255, 0.3);
+      padding: 12px 20px 6px;
+      font-weight: 600;
+    }
+
+    .sidebar-nav {
+      padding: 0 8px;
+      flex: 1;
+    }
+
+    .nav-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 9px 12px;
+      margin: 1px 0;
+      border-radius: 8px;
+      color: rgba(255, 255, 255, 0.55);
+      font-size: 14px;
+      font-weight: 400;
+      cursor: pointer;
+      transition: all 150ms ease;
+      text-decoration: none;
+    }
+
+    .nav-item:hover {
+      color: #FFFFFF;
+      background: rgba(255, 255, 255, 0.06);
+    }
+
+    .nav-item.active {
+      background: #2570C0;
+      color: #FFFFFF;
+      font-weight: 500;
+    }
+
+    .nav-item svg {
+      width: 18px;
+      height: 18px;
+      flex-shrink: 0;
+      opacity: 0.7;
+    }
+
+    .nav-item.active svg {
+      opacity: 1;
+    }
+
+    .sidebar-user {
+      padding: 16px;
+      border-top: 1px solid rgba(255, 255, 255, 0.08);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .user-avatar {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background: #374151;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: rgba(255,255,255,0.6);
+      font-size: 13px;
+      font-weight: 600;
+      flex-shrink: 0;
+    }
+
+    .user-name {
+      font-size: 13px;
+      color: rgba(255, 255, 255, 0.8);
+      font-weight: 500;
+      flex: 1;
+    }
+
+    .user-settings {
+      color: rgba(255, 255, 255, 0.3);
+      cursor: pointer;
+      transition: color 150ms;
+    }
+
+    .user-settings:hover {
+      color: rgba(255, 255, 255, 0.6);
+    }
+
+    /* Main Content */
+    .main-content {
+      flex: 1;
+      min-height: 100vh;
+      padding: 32px 40px;
+      overflow-y: auto;
+    }
+
+    .main-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 28px;
+    }
+
+    .main-title h1 {
+      font-size: 26px;
+      font-weight: 700;
+      color: #141821;
+    }
+
+    .main-title p {
+      font-size: 14px;
+      color: #6B7080;
+      margin-top: 2px;
+    }
+
+    .btn-add {
+      height: 40px;
+      padding: 0 20px;
+      background: #2570C0;
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      font-family: 'Heebo', sans-serif;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 150ms;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .btn-add:hover {
+      background: #1E5A9A;
+    }
+
+    .btn-add:active {
+      transform: scale(0.98);
+    }
+
+    /* Anomaly Panel */
+    .anomaly-panel {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      margin-bottom: 24px;
+    }
+
+    .anomaly-card {
+      background: #FFFFFF;
+      border-radius: 10px;
+      padding: 14px 18px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+      border-right: 4px solid transparent;
+    }
+
+    .anomaly-card.red {
+      border-right-color: #DC3545;
+    }
+
+    .anomaly-card.amber {
+      border-right-color: #D4A017;
+    }
+
+    .anomaly-icon {
+      width: 32px;
+      height: 32px;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 15px;
+      flex-shrink: 0;
+    }
+
+    .anomaly-icon.red {
+      background: rgba(220, 53, 69, 0.08);
+      color: #DC3545;
+    }
+
+    .anomaly-icon.amber {
+      background: rgba(212, 160, 23, 0.1);
+      color: #D4A017;
+    }
+
+    .anomaly-text {
+      font-size: 13px;
+      font-weight: 500;
+      color: #141821;
+    }
+
+    .anomaly-text span {
+      color: #6B7080;
+      font-weight: 400;
+    }
+
+    /* Filter Bar */
+    .filter-bar {
+      background: #FFFFFF;
+      border-radius: 12px;
+      padding: 16px 20px;
+      margin-bottom: 20px;
+      display: flex;
+      align-items: flex-end;
+      gap: 14px;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+    }
+
+    .filter-group {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      flex: 1;
+    }
+
+    .filter-label {
+      font-size: 11px;
+      font-weight: 600;
+      color: #6B7080;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+
+    .filter-input {
+      height: 36px;
+      border: 1px solid #E1E3E8;
+      border-radius: 8px;
+      padding: 0 10px;
+      font-family: 'Heebo', sans-serif;
+      font-size: 13px;
+      color: #141821;
+      background: #FFFFFF;
+      outline: none;
+      transition: all 150ms;
+      direction: rtl;
+      width: 100%;
+    }
+
+    .filter-input:focus {
+      border-color: #2570C0;
+      box-shadow: 0 0 0 2px rgba(37, 112, 192, 0.1);
+    }
+
+    .btn-clear {
+      height: 36px;
+      padding: 0 16px;
+      background: #F0F1F4;
+      color: #6B7080;
+      border: none;
+      border-radius: 8px;
+      font-family: 'Heebo', sans-serif;
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 150ms;
+      white-space: nowrap;
+    }
+
+    .btn-clear:hover {
+      background: #E1E3E8;
+      color: #141821;
+    }
+
+    /* Attendance Table */
+    .table-container {
+      background: #FFFFFF;
+      border-radius: 12px;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+      overflow: hidden;
+    }
+
+    .att-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .att-table thead th {
+      background: rgba(240, 241, 244, 0.5);
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: #6B7080;
+      padding: 12px 20px;
+      text-align: right;
+      border-bottom: 1px solid #E1E3E8;
+    }
+
+    .att-table tbody td {
+      padding: 14px 20px;
+      font-size: 14px;
+      color: #141821;
+      border-bottom: 1px solid rgba(225, 227, 232, 0.5);
+      transition: background 150ms ease;
+    }
+
+    .att-table tbody tr {
+      transition: background 150ms ease;
+    }
+
+    .att-table tbody tr:hover {
+      background: rgba(37, 112, 192, 0.03);
+    }
+
+    .att-table tbody tr:last-child td {
+      border-bottom: none;
+    }
+
+    .worker-name {
+      font-weight: 500;
+    }
+
+    .hours-cell {
+      font-weight: 500;
+      font-variant-numeric: tabular-nums;
+    }
+
+    /* Status Badges */
+    .status-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 12px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 500;
+      white-space: nowrap;
+    }
+
+    .status-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    .status-approved {
+      background: rgba(46, 163, 122, 0.08);
+      color: #1E7A5A;
+    }
+
+    .status-approved .status-dot {
+      background: #2EA37A;
+    }
+
+    .status-pending {
+      background: rgba(212, 160, 23, 0.1);
+      color: #9A7B25;
+    }
+
+    .status-pending .status-dot {
+      background: #D4A017;
+    }
+
+    .status-rejected {
+      background: rgba(220, 53, 69, 0.08);
+      color: #A02030;
+    }
+
+    .status-rejected .status-dot {
+      background: #DC3545;
+    }
+
+    .status-imported {
+      background: rgba(37, 112, 192, 0.08);
+      color: #1E5A9A;
+    }
+
+    .status-imported .status-dot {
+      background: #2570C0;
+    }
+
+    .table-footer {
+      background: rgba(240, 241, 244, 0.4);
+      padding: 12px 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-top: 1px solid #E1E3E8;
+    }
+
+    .table-footer-total {
+      font-size: 14px;
+      font-weight: 600;
+      color: #141821;
+    }
+
+    .table-footer-count {
+      font-size: 13px;
+      color: #6B7080;
+    }
+
+    /* SVG icon helpers */
+    .icon-inline {
+      display: inline-block;
+      vertical-align: middle;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Direction Title Bar -->
+  <div class="direction-bar">
+    <h1>Direction B: Sapir — ספיר</h1>
+    <p>Premium SaaS Dashboard — Linear / Vercel inspired</p>
+  </div>
+
+  <!-- ================================================================== -->
+  <!-- SECTION 1: LOGIN PAGE -->
+  <!-- ================================================================== -->
+  <section class="login-section">
+    <div class="login-wrapper fade-in">
+      <div class="login-logo">
+        <h1>מֶשֶׁק</h1>
+        <p>מערכת ניהול חקלאית</p>
+      </div>
+      <div class="login-card">
+        <div class="form-group">
+          <label class="form-label">כתובת דוא״ל</label>
+          <input type="email" class="form-input" placeholder="you@example.com" dir="ltr" style="text-align: left;">
+        </div>
+        <div class="form-group">
+          <label class="form-label">סיסמה</label>
+          <input type="password" class="form-input" placeholder="••••••••" dir="ltr" style="text-align: left;">
+        </div>
+        <a href="#" class="forgot-link">שכחת סיסמה?</a>
+        <button class="btn-primary">התחברות</button>
+        <div class="signup-link">
+          אין לך חשבון? <a href="#">הרשמה</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <div class="section-divider" data-label="דף הבית"></div>
+
+  <!-- ================================================================== -->
+  <!-- SECTION 2: HOMEPAGE -->
+  <!-- ================================================================== -->
+  <section class="homepage-section">
+    <nav class="homepage-nav">
+      <div class="homepage-nav-logo">מֶשֶׁק</div>
+      <div class="homepage-nav-auth">
+        <a href="#">אודות</a>
+        <button class="btn-nav">התחברות</button>
+      </div>
+    </nav>
+
+    <div class="homepage-hero fade-in">
+      <div class="hero-logo-icon">מ</div>
+      <h1>מֶשֶׁק</h1>
+      <p>מערכת ניהול חקלאית משולבת</p>
+      <div class="hero-cta">
+        <button class="btn-hero">כניסה למערכת</button>
+      </div>
+    </div>
+
+    <div class="homepage-content">
+      <!-- ניהול Section -->
+      <div class="section-header fade-in fade-in-d1">
+        <span>ניהול</span>
+      </div>
+      <div class="cards-grid fade-in fade-in-d2">
+        <a href="#" class="home-card">
+          <div class="card-icon sapphire">
+            <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+          </div>
+          <h3>עובדים</h3>
+          <p>ניהול צוות</p>
+        </a>
+        <a href="#" class="home-card">
+          <div class="card-icon sapphire">
+            <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/></svg>
+          </div>
+          <h3>שטחים</h3>
+          <p>מפת חלקות</p>
+        </a>
+        <a href="#" class="home-card">
+          <div class="card-icon sapphire">
+            <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
+          </div>
+          <h3>ציוד</h3>
+          <p>כלים וציוד</p>
+        </a>
+        <a href="#" class="home-card">
+          <div class="card-icon sapphire">
+            <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+          </div>
+          <h3>גידולים</h3>
+          <p>סוגי יבולים</p>
+        </a>
+      </div>
+
+      <!-- כספים Section -->
+      <div class="section-header fade-in fade-in-d3">
+        <span>כספים</span>
+      </div>
+      <div class="cards-grid fade-in fade-in-d3">
+        <a href="#" class="home-card">
+          <div class="card-icon teal">
+            <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+          </div>
+          <h3>שכר</h3>
+          <p>חישוב ויצוא</p>
+        </a>
+      </div>
+
+      <!-- דוחות ותפעול Section -->
+      <div class="section-header fade-in fade-in-d4">
+        <span>דוחות ותפעול</span>
+      </div>
+      <div class="cards-grid fade-in fade-in-d5">
+        <a href="#" class="home-card">
+          <div class="card-icon slate">
+            <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+          </div>
+          <h3>נוכחות</h3>
+          <p>דוחות שעות</p>
+        </a>
+        <a href="#" class="home-card">
+          <div class="card-icon slate">
+            <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+          </div>
+          <h3>סקירת רשומות</h3>
+          <p>אישור ועריכה</p>
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <div class="section-divider" data-label="לוח בקרה"></div>
+
+  <!-- ================================================================== -->
+  <!-- SECTION 3: DASHBOARD -->
+  <!-- ================================================================== -->
+  <section class="dashboard-section">
+    <!-- Sidebar (renders on the right in RTL) -->
+    <aside class="sidebar">
+      <div class="sidebar-logo">מֶשֶׁק</div>
+
+      <!-- KPI Block -->
+      <div class="sidebar-kpi">
+        <div class="kpi-item">
+          <span class="kpi-dot amber"></span>
+          <span class="kpi-label">ממתינים</span>
+          <span class="kpi-value">3</span>
+        </div>
+        <div class="kpi-item">
+          <span class="kpi-dot teal"></span>
+          <span class="kpi-label">אושרו היום</span>
+          <span class="kpi-value">12</span>
+        </div>
+        <div class="kpi-item">
+          <span class="kpi-dot red"></span>
+          <span class="kpi-label">חריגות</span>
+          <span class="kpi-value">1</span>
+        </div>
+      </div>
+
+      <div class="sidebar-divider"></div>
+
+      <!-- Navigation -->
+      <nav class="sidebar-nav">
+        <div class="sidebar-section-label">ניהול</div>
+        <a href="#" class="nav-item">
+          <svg fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+          עובדים
+        </a>
+        <a href="#" class="nav-item">
+          <svg fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/></svg>
+          שטחים
+        </a>
+        <a href="#" class="nav-item">
+          <svg fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
+          ציוד
+        </a>
+        <a href="#" class="nav-item">
+          <svg fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+          גידולים
+        </a>
+
+        <div class="sidebar-section-label">כספים</div>
+        <a href="#" class="nav-item">
+          <svg fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+          שכר
+        </a>
+
+        <div class="sidebar-section-label">דוחות ותפעול</div>
+        <a href="#" class="nav-item">
+          <svg fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+          ניהול מערכת
+        </a>
+        <a href="#" class="nav-item active">
+          <svg fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+          נוכחות
+        </a>
+        <a href="#" class="nav-item">
+          <svg fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+          סקירת רשומות
+        </a>
+      </nav>
+
+      <!-- User -->
+      <div class="sidebar-user">
+        <div class="user-avatar">יק</div>
+        <span class="user-name">יוני קליין</span>
+        <span class="user-settings">
+          <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+        </span>
+      </div>
+    </aside>
+
+    <!-- Main Content -->
+    <div class="main-content">
+      <!-- Header -->
+      <div class="main-header fade-in">
+        <div class="main-title">
+          <h1>נוכחות</h1>
+          <p>12 מרץ 2026</p>
+        </div>
+        <button class="btn-add">
+          <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          הוספת רשומה
+        </button>
+      </div>
+
+      <!-- Anomaly Panel -->
+      <div class="anomaly-panel fade-in fade-in-d1">
+        <div class="anomaly-card red">
+          <div class="anomaly-icon red">
+            <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+          </div>
+          <span class="anomaly-text">שעות חריגות — אברהם כהן — <span>14 שעות</span></span>
+        </div>
+        <div class="anomaly-card amber">
+          <div class="anomaly-icon amber">
+            <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+          </div>
+          <span class="anomaly-text">ממתינים מעל יום — <span>2 רשומות</span></span>
+        </div>
+      </div>
+
+      <!-- Filter Bar -->
+      <div class="filter-bar fade-in fade-in-d2">
+        <div class="filter-group">
+          <span class="filter-label">מתאריך</span>
+          <input type="date" class="filter-input" value="2026-03-12">
+        </div>
+        <div class="filter-group">
+          <span class="filter-label">עד תאריך</span>
+          <input type="date" class="filter-input" value="2026-03-12">
+        </div>
+        <div class="filter-group">
+          <span class="filter-label">עובד</span>
+          <select class="filter-input">
+            <option>כל העובדים</option>
+          </select>
+        </div>
+        <div class="filter-group">
+          <span class="filter-label">שטח</span>
+          <select class="filter-input">
+            <option>כל השטחים</option>
+          </select>
+        </div>
+        <button class="btn-clear">ניקוי</button>
+      </div>
+
+      <!-- Attendance Table -->
+      <div class="table-container fade-in fade-in-d3">
+        <table class="att-table">
+          <thead>
+            <tr>
+              <th>עובד</th>
+              <th>שטח</th>
+              <th>שעות</th>
+              <th>סטטוס</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td class="worker-name">יוסי לוי</td>
+              <td>שטח הצפון</td>
+              <td class="hours-cell">8.5</td>
+              <td><span class="status-badge status-approved"><span class="status-dot"></span>מאושר</span></td>
+            </tr>
+            <tr>
+              <td class="worker-name">אברהם כהן</td>
+              <td>שטח הדרום</td>
+              <td class="hours-cell">14.0</td>
+              <td><span class="status-badge status-pending"><span class="status-dot"></span>ממתין</span></td>
+            </tr>
+            <tr>
+              <td class="worker-name">מרים דוד</td>
+              <td>חממה 3</td>
+              <td class="hours-cell">7.0</td>
+              <td><span class="status-badge status-approved"><span class="status-dot"></span>מאושר</span></td>
+            </tr>
+            <tr>
+              <td class="worker-name">סומצ׳אי</td>
+              <td>שטח המערב</td>
+              <td class="hours-cell">9.0</td>
+              <td><span class="status-badge status-imported"><span class="status-dot"></span>יובא</span></td>
+            </tr>
+            <tr>
+              <td class="worker-name">רחל גולן</td>
+              <td>משתלה</td>
+              <td class="hours-cell">6.5</td>
+              <td><span class="status-badge status-rejected"><span class="status-dot"></span>נדחה</span></td>
+            </tr>
+            <tr>
+              <td class="worker-name">דני אלון</td>
+              <td>שטח הצפון</td>
+              <td class="hours-cell">8.0</td>
+              <td><span class="status-badge status-approved"><span class="status-dot"></span>מאושר</span></td>
+            </tr>
+          </tbody>
+        </table>
+        <div class="table-footer">
+          <span class="table-footer-total">סה״כ שעות: 53.0</span>
+          <span class="table-footer-count">6 רשומות</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+</body>
+</html>

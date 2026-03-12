@@ -3,7 +3,7 @@ import { getTranslations } from "next-intl/server";
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import {
-  getPendingRecords,
+  getReviewRecords,
   getActiveWorkers,
   getActiveAreas,
 } from "@/app/actions/attendance";
@@ -26,11 +26,15 @@ export async function generateMetadata({
 
 export default async function ReviewPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ locale: string }>;
+  searchParams: Promise<{ show?: string }>;
 }) {
   const { locale } = await params;
   setRequestLocale(locale);
+  const { show } = await searchParams;
+  const showAll = show === "all";
   const t = await getTranslations("admin.review");
 
   const supabase = await createClient();
@@ -54,7 +58,7 @@ export default async function ReviewPage({
   }
 
   const [result, workersResult, areasResult] = await Promise.all([
-    getPendingRecords(),
+    getReviewRecords(showAll),
     getActiveWorkers(),
     getActiveAreas(),
   ]);
@@ -65,10 +69,17 @@ export default async function ReviewPage({
       {result.success ? (
         <ReviewQueue
           records={result.data}
+          showAll={showAll}
           workers={workersResult.success ? workersResult.data : []}
           areas={areasResult.success ? areasResult.data : []}
           labels={{
             emptyState: t("emptyState"),
+            showAll: t("showAll"),
+            pendingOnly: t("pendingOnly"),
+            statusPending: t("statusPending"),
+            statusApproved: t("statusApproved"),
+            statusRejected: t("statusRejected"),
+            statusImported: t("statusImported"),
             worker: t("worker"),
             area: t("area"),
             date: t("date"),
@@ -107,6 +118,7 @@ export default async function ReviewPage({
             editHours: t("editHours"),
             editArea: t("editArea"),
             cannotApproveUnresolved: t("cannotApproveUnresolved"),
+            noChanges: t("noChanges"),
           }}
         />
       ) : (

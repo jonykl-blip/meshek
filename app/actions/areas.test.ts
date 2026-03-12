@@ -5,9 +5,6 @@ const mockSupabase = {
     getUser: vi.fn(),
   },
   from: vi.fn(),
-  storage: {
-    from: vi.fn(),
-  },
 };
 
 vi.mock("@/lib/supabase/server", () => ({
@@ -28,7 +25,6 @@ const {
   archiveArea,
   addAreaAlias,
   removeAreaAlias,
-  uploadAreaPhoto,
 } = await import("./areas");
 
 function setupMockChain(results: { data: unknown; error: unknown }[]) {
@@ -36,7 +32,7 @@ function setupMockChain(results: { data: unknown; error: unknown }[]) {
   mockSupabase.from.mockImplementation(() => {
     const result = results[callIndex] ?? { data: null, error: null };
     callIndex++;
-    const builder = {
+    const builder: Record<string, unknown> = {
       select: () => builder,
       eq: () => builder,
       insert: () => builder,
@@ -45,6 +41,8 @@ function setupMockChain(results: { data: unknown; error: unknown }[]) {
       order: () => builder,
       single: () => Promise.resolve(result),
       maybeSingle: () => Promise.resolve(result),
+      then: (resolve: (v: unknown) => unknown, reject?: (e: unknown) => unknown) =>
+        Promise.resolve(result).then(resolve, reject),
     };
     return builder;
   });
@@ -119,20 +117,18 @@ describe("createArea", () => {
   });
 
   it("creates area successfully with optional alias", async () => {
-    const newArea = {
+    const insertedRow = {
       id: "area-1",
       name: "חלקה א",
       crop_id: "a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d",
-      photo_url: null,
       is_active: true,
-      crops: { name: "שקדים" },
-      area_aliases: [],
     };
 
     mockAuthenticatedAdmin();
     setupMockChain([
       { data: { role: "admin" }, error: null },
-      { data: newArea, error: null },
+      { data: insertedRow, error: null },
+      { data: { name: "שקדים" }, error: null },
     ]);
 
     const result = await createArea({
@@ -140,7 +136,14 @@ describe("createArea", () => {
       crop_id: "a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d",
     });
 
-    expect(result).toEqual({ success: true, data: newArea });
+    expect(result).toEqual({
+      success: true,
+      data: {
+        ...insertedRow,
+        crops: { name: "שקדים" },
+        area_aliases: [],
+      },
+    });
   });
 });
 
@@ -154,12 +157,14 @@ describe("updateArea", () => {
       id: "area-1",
       name: "חלקה א",
       crop_id: "a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d",
-      photo_url: null,
       is_active: true,
     };
-    const updatedArea = {
+    const updatedRow = {
       ...beforeArea,
       name: "חלקה ב",
+    };
+    const fullArea = {
+      ...updatedRow,
       crops: { name: "שקדים" },
       area_aliases: [],
     };
@@ -168,7 +173,8 @@ describe("updateArea", () => {
     setupMockChain([
       { data: { role: "admin" }, error: null },
       { data: beforeArea, error: null },
-      { data: updatedArea, error: null },
+      { data: updatedRow, error: null },
+      { data: [fullArea], error: null },
     ]);
 
     const result = await updateArea("area-1", {
@@ -176,7 +182,7 @@ describe("updateArea", () => {
       crop_id: "a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d",
     });
 
-    expect(result).toEqual({ success: true, data: updatedArea });
+    expect(result).toEqual({ success: true, data: fullArea });
   });
 
   it("returns error when area not found", async () => {
@@ -205,7 +211,7 @@ describe("archiveArea", () => {
       id: "area-1",
       name: "חלקה א",
       crop_id: "a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d",
-      photo_url: null,
+
       is_active: true,
     };
 
@@ -296,68 +302,5 @@ describe("removeAreaAlias", () => {
     const result = await removeAreaAlias("missing-id");
 
     expect(result).toEqual({ success: false, error: "כינוי לא נמצא" });
-  });
-});
-
-describe("uploadAreaPhoto", () => {
-  beforeEach(() => {
-    vi.clearAllMocks();
-  });
-
-  it("returns error for non-image file", async () => {
-    mockAuthenticatedAdmin();
-    setupMockChain([{ data: { role: "admin" }, error: null }]);
-
-    const file = new File(["content"], "test.pdf", { type: "application/pdf" });
-    const formData = new FormData();
-    formData.append("file", file);
-
-    const result = await uploadAreaPhoto("area-1", formData);
-
-    expect(result).toEqual({
-      success: false,
-      error: "יש להעלות קובץ תמונה בלבד",
-    });
-  });
-
-  it("returns error for oversized file", async () => {
-    mockAuthenticatedAdmin();
-    setupMockChain([{ data: { role: "admin" }, error: null }]);
-
-    const largeContent = new Uint8Array(6 * 1024 * 1024);
-    const file = new File([largeContent], "large.jpg", { type: "image/jpeg" });
-    const formData = new FormData();
-    formData.append("file", file);
-
-    const result = await uploadAreaPhoto("area-1", formData);
-
-    expect(result).toEqual({
-      success: false,
-      error: "גודל התמונה חייב להיות עד 5MB",
-    });
-  });
-
-  it("uploads photo successfully", async () => {
-    mockAuthenticatedAdmin();
-    setupMockChain([
-      { data: { role: "admin" }, error: null },
-      { data: { id: "area-1", photo_url: null }, error: null }, // before state
-      { data: null, error: null }, // update result
-    ]);
-
-    mockSupabase.storage.from.mockReturnValue({
-      upload: vi.fn().mockResolvedValue({ error: null }),
-    });
-
-    const file = new File(["image data"], "photo.jpg", { type: "image/jpeg" });
-    const formData = new FormData();
-    formData.append("file", file);
-
-    const result = await uploadAreaPhoto("area-1", formData);
-
-    expect(result.success).toBe(true);
-    if (result.success) {
-      expect(result.data.photo_url).toBe("area-1.jpg");
-    }
   });
 });

@@ -1,6 +1,10 @@
 import { Fragment } from "react";
 import { Badge } from "@/components/ui/badge";
 import type { DailyAttendanceRecord } from "@/app/actions/attendance";
+import {
+  AttendanceRowActions,
+  type AttendanceRowActionsLabels,
+} from "./attendance-row-actions";
 
 export interface AttendanceTableLabels {
   title: string;
@@ -13,11 +17,18 @@ export interface AttendanceTableLabels {
   approved: string;
   imported: string;
   noArea: string;
+  pending: string;
+  rejected: string;
+  actions: string;
+  unknownWorker: string;
 }
+
+export type { AttendanceRowActionsLabels };
 
 interface AttendanceTableProps {
   records: DailyAttendanceRecord[];
   labels: AttendanceTableLabels;
+  actionLabels: AttendanceRowActionsLabels;
   currentDate?: string;
   isMultiDay?: boolean;
 }
@@ -37,12 +48,82 @@ const rangeDateFormatter = new Intl.DateTimeFormat("he-IL", {
 
 const numberFormatter = new Intl.NumberFormat("he-IL");
 
+function getStatusBadge(
+  status: DailyAttendanceRecord["status"],
+  labels: AttendanceTableLabels
+) {
+  switch (status) {
+    case "approved":
+      return (
+        <Badge
+          variant="default"
+          className="bg-[#4A6741] hover:bg-[#4A6741]/80"
+        >
+          {labels.approved}
+        </Badge>
+      );
+    case "pending":
+      return (
+        <Badge className="bg-amber-100 text-amber-800 border-amber-200">
+          {labels.pending}
+        </Badge>
+      );
+    case "rejected":
+      return (
+        <Badge className="bg-red-100 text-red-800 border-red-200">
+          {labels.rejected}
+        </Badge>
+      );
+    default:
+      return <Badge variant="secondary">{labels.imported}</Badge>;
+  }
+}
+
+function RecordRow({
+  record,
+  labels,
+  actionLabels,
+  hasPendingRecords,
+}: {
+  record: DailyAttendanceRecord;
+  labels: AttendanceTableLabels;
+  actionLabels: AttendanceRowActionsLabels;
+  hasPendingRecords: boolean;
+}) {
+  return (
+    <tr className="border-b last:border-b-0">
+      <td className="px-4 py-3">
+        {record.worker_name ?? labels.unknownWorker}
+      </td>
+      <td className="px-4 py-3">{record.area_name ?? labels.noArea}</td>
+      <td className="px-4 py-3">
+        {numberFormatter.format(record.total_hours)}
+      </td>
+      <td className="px-4 py-3">{getStatusBadge(record.status, labels)}</td>
+      {hasPendingRecords && (
+        <td className="px-4 py-3">
+          <AttendanceRowActions
+            recordId={record.id}
+            status={record.status}
+            profileId={record.profile_id}
+            areaId={record.area_id}
+            labels={actionLabels}
+          />
+        </td>
+      )}
+    </tr>
+  );
+}
+
 export function AttendanceTable({
   records,
   labels,
+  actionLabels,
   currentDate,
   isMultiDay = false,
 }: AttendanceTableProps) {
+  const hasPendingRecords = records.some((r) => r.status === "pending");
+
   let headerDateDisplay: string | null = null;
   if (!isMultiDay && currentDate) {
     headerDateDisplay = dateFormatter.format(
@@ -73,6 +154,7 @@ export function AttendanceTable({
   }
 
   const totalHours = records.reduce((sum, r) => sum + r.total_hours, 0);
+  const colCount = hasPendingRecords ? 5 : 4;
 
   return (
     <div className="space-y-4">
@@ -104,6 +186,11 @@ export function AttendanceTable({
                 <th className="px-4 py-3 text-start font-medium">
                   {labels.status}
                 </th>
+                {hasPendingRecords && (
+                  <th className="px-4 py-3 text-start font-medium">
+                    {labels.actions}
+                  </th>
+                )}
               </tr>
             </thead>
             <tbody>
@@ -121,40 +208,20 @@ export function AttendanceTable({
                       <Fragment key={date}>
                         <tr className="bg-muted/30">
                           <td
-                            colSpan={4}
+                            colSpan={colCount}
                             className="px-4 py-2 text-sm font-semibold"
                           >
                             {dayLabel}
                           </td>
                         </tr>
                         {dayRecords.map((record) => (
-                          <tr key={record.id} className="border-b">
-                            <td className="px-4 py-3">{record.worker_name}</td>
-                            <td className="px-4 py-3">
-                              {record.area_name ?? labels.noArea}
-                            </td>
-                            <td className="px-4 py-3">
-                              {numberFormatter.format(record.total_hours)}
-                            </td>
-                            <td className="px-4 py-3">
-                              <Badge
-                                variant={
-                                  record.status === "approved"
-                                    ? "default"
-                                    : "secondary"
-                                }
-                                className={
-                                  record.status === "approved"
-                                    ? "bg-[#4A6741] hover:bg-[#4A6741]/80"
-                                    : ""
-                                }
-                              >
-                                {record.status === "approved"
-                                  ? labels.approved
-                                  : labels.imported}
-                              </Badge>
-                            </td>
-                          </tr>
+                          <RecordRow
+                            key={record.id}
+                            record={record}
+                            labels={labels}
+                            actionLabels={actionLabels}
+                            hasPendingRecords={hasPendingRecords}
+                          />
                         ))}
                         <tr className="border-t bg-muted/20 text-sm font-medium">
                           <td className="px-4 py-2">{labels.totalHours}</td>
@@ -163,38 +230,19 @@ export function AttendanceTable({
                             {numberFormatter.format(dayTotal)}
                           </td>
                           <td className="px-4 py-2" />
+                          {hasPendingRecords && <td className="px-4 py-2" />}
                         </tr>
                       </Fragment>
                     );
                   })
                 : records.map((record) => (
-                    <tr key={record.id} className="border-b last:border-b-0">
-                      <td className="px-4 py-3">{record.worker_name}</td>
-                      <td className="px-4 py-3">
-                        {record.area_name ?? labels.noArea}
-                      </td>
-                      <td className="px-4 py-3">
-                        {numberFormatter.format(record.total_hours)}
-                      </td>
-                      <td className="px-4 py-3">
-                        <Badge
-                          variant={
-                            record.status === "approved"
-                              ? "default"
-                              : "secondary"
-                          }
-                          className={
-                            record.status === "approved"
-                              ? "bg-[#4A6741] hover:bg-[#4A6741]/80"
-                              : ""
-                          }
-                        >
-                          {record.status === "approved"
-                            ? labels.approved
-                            : labels.imported}
-                        </Badge>
-                      </td>
-                    </tr>
+                    <RecordRow
+                      key={record.id}
+                      record={record}
+                      labels={labels}
+                      actionLabels={actionLabels}
+                      hasPendingRecords={hasPendingRecords}
+                    />
                   ))}
             </tbody>
             <tfoot className="border-t bg-muted/50 font-medium">
@@ -205,6 +253,7 @@ export function AttendanceTable({
                   {numberFormatter.format(totalHours)}
                 </td>
                 <td className="px-4 py-3" />
+                {hasPendingRecords && <td className="px-4 py-3" />}
               </tr>
             </tfoot>
           </table>

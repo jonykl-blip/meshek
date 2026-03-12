@@ -1,0 +1,1099 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Direction C: Shoresh — שורש | Meshek Design Mockup</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Frank+Ruhl+Libre:wght@700;800;900&family=Heebo:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+  :root {
+    --bg: #F7F6F2;
+    --fg: #181C1A;
+    --primary: #1A6E42;
+    --accent: #E03050;
+    --secondary: #EDE4CF;
+    --muted: #616966;
+    --border: #DDDBCF;
+    --card: #FAFAF7;
+    --sidebar: #164A2E;
+    --approved: #1A6E42;
+    --pending: #C49B30;
+    --rejected: #E03050;
+    --imported: #3070B0;
+    --font-display: 'Frank Ruhl Libre', serif;
+    --font-body: 'Heebo', sans-serif;
+  }
+
+  body {
+    font-family: var(--font-body);
+    background: var(--bg);
+    color: var(--fg);
+    direction: rtl;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* ===== TITLE BAR ===== */
+  .title-bar {
+    background: var(--fg);
+    color: #fff;
+    padding: 14px 32px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+  }
+  .title-bar h1 {
+    font-family: var(--font-display);
+    font-weight: 800;
+    font-size: 18px;
+    letter-spacing: 0.5px;
+  }
+  .title-bar p {
+    font-size: 13px;
+    color: rgba(255,255,255,0.6);
+  }
+  .title-bar .rotating-squares {
+    display: flex;
+    gap: 6px;
+    margin-right: auto;
+    margin-left: 0;
+  }
+  .rotating-squares span {
+    display: inline-block;
+    width: 10px;
+    height: 10px;
+    animation: rotate-square 3s linear infinite;
+  }
+  .rotating-squares span:nth-child(1) { background: var(--primary); animation-delay: 0s; }
+  .rotating-squares span:nth-child(2) { background: var(--pending); animation-delay: 0.4s; }
+  .rotating-squares span:nth-child(3) { background: var(--accent); animation-delay: 0.8s; }
+  @keyframes rotate-square {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+  }
+
+  /* ===== SECTION DIVIDERS ===== */
+  .section-divider {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 24px;
+    padding: 48px 0;
+    background: var(--bg);
+  }
+  .section-divider .shape {
+    font-size: 14px;
+    line-height: 1;
+  }
+  .section-divider .shape:nth-child(1) { color: var(--primary); }
+  .section-divider .shape:nth-child(2) { color: var(--accent); }
+  .section-divider .shape:nth-child(3) { color: var(--muted); }
+  .section-divider .line {
+    width: 80px;
+    height: 2px;
+    background: var(--border);
+  }
+
+  /* ===== ANIMATIONS ===== */
+  @keyframes slide-in-rtl {
+    from { opacity: 0; transform: translateX(12px); }
+    to { opacity: 1; transform: translateX(0); }
+  }
+  @keyframes slide-down {
+    from { opacity: 0; transform: translateY(-8px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes bounce-in {
+    0% { transform: scale(0.8); }
+    50% { transform: scale(1.08); }
+    100% { transform: scale(1); }
+  }
+  .animate-slide { animation: slide-in-rtl 250ms ease-out both; }
+  .animate-slide-d1 { animation: slide-in-rtl 250ms ease-out 80ms both; }
+  .animate-slide-d2 { animation: slide-in-rtl 250ms ease-out 160ms both; }
+  .animate-slide-d3 { animation: slide-in-rtl 250ms ease-out 240ms both; }
+  .animate-slide-down { animation: slide-down 350ms ease-out both; }
+
+  /* ============================================================
+     SECTION 1: LOGIN
+     ============================================================ */
+  .login-section {
+    display: flex;
+    min-height: 100vh;
+    direction: rtl;
+  }
+
+  /* Right half — emerald branding */
+  .login-brand {
+    flex: 1;
+    background: var(--primary);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    overflow: hidden;
+  }
+  /* Decorative geometric circles */
+  .login-brand::before,
+  .login-brand::after {
+    content: '';
+    position: absolute;
+    border-radius: 50%;
+    border: 2px solid rgba(255,255,255,0.08);
+  }
+  .login-brand::before {
+    width: 400px; height: 400px;
+    top: -80px; right: -100px;
+    background: rgba(255,255,255,0.04);
+  }
+  .login-brand::after {
+    width: 300px; height: 300px;
+    bottom: -60px; left: -80px;
+    background: rgba(255,255,255,0.06);
+  }
+  .login-brand .geo-hex {
+    position: absolute;
+    width: 200px; height: 200px;
+    border: 2px solid rgba(255,255,255,0.1);
+    transform: rotate(30deg);
+    border-radius: 20px;
+    top: 50%; left: 15%;
+  }
+  .login-brand .geo-circle2 {
+    position: absolute;
+    width: 160px; height: 160px;
+    border: 1.5px solid rgba(255,255,255,0.06);
+    border-radius: 50%;
+    bottom: 20%; right: 10%;
+  }
+  .login-brand .geo-circle3 {
+    position: absolute;
+    width: 500px; height: 500px;
+    border: 1px solid rgba(255,255,255,0.05);
+    border-radius: 50%;
+    top: 30%; left: -20%;
+  }
+  .login-brand-content {
+    position: relative;
+    z-index: 1;
+    text-align: center;
+  }
+  .login-brand-content .logo-text {
+    font-family: var(--font-display);
+    font-weight: 900;
+    font-size: 72px;
+    color: #fff;
+    line-height: 1.1;
+    margin-bottom: 12px;
+  }
+  .login-brand-content .logo-sub {
+    font-family: var(--font-body);
+    font-weight: 400;
+    font-size: 20px;
+    color: rgba(255,255,255,0.8);
+  }
+
+  /* Left half — form */
+  .login-form-side {
+    flex: 1;
+    background: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 48px;
+  }
+  .login-form-container {
+    width: 100%;
+    max-width: 380px;
+  }
+  .login-form-container h2 {
+    font-family: var(--font-display);
+    font-weight: 800;
+    font-size: 32px;
+    color: var(--fg);
+    margin-bottom: 32px;
+  }
+  .form-group {
+    margin-bottom: 20px;
+  }
+  .form-group label {
+    display: block;
+    font-family: var(--font-body);
+    font-weight: 500;
+    font-size: 14px;
+    color: var(--fg);
+    margin-bottom: 6px;
+  }
+  .form-group input {
+    width: 100%;
+    height: 48px;
+    border: 2px solid var(--border);
+    border-radius: 6px;
+    padding: 0 14px;
+    font-family: var(--font-body);
+    font-size: 15px;
+    color: var(--fg);
+    background: #fff;
+    transition: border-color 200ms ease;
+    direction: rtl;
+  }
+  .form-group input:focus {
+    outline: none;
+    border-color: var(--primary);
+  }
+  .forgot-link {
+    display: block;
+    text-align: left;
+    font-size: 13px;
+    color: var(--primary);
+    text-decoration: none;
+    margin-bottom: 28px;
+    font-weight: 500;
+  }
+  .forgot-link:hover { text-decoration: underline; }
+  .login-btn {
+    width: 100%;
+    height: 52px;
+    background: var(--primary);
+    color: #fff;
+    border: none;
+    border-radius: 6px;
+    font-family: var(--font-body);
+    font-weight: 600;
+    font-size: 16px;
+    cursor: pointer;
+    transition: background 150ms ease;
+  }
+  .login-btn:hover { background: #155A36; }
+  .login-btn:active { transform: translateY(1px); }
+  .register-link {
+    display: block;
+    text-align: center;
+    margin-top: 24px;
+    font-size: 14px;
+    color: var(--muted);
+  }
+  .register-link a {
+    color: var(--primary);
+    text-decoration: none;
+    font-weight: 600;
+  }
+  .register-link a:hover { text-decoration: underline; }
+
+  /* ============================================================
+     SECTION 2: HOMEPAGE
+     ============================================================ */
+  .homepage-section {
+    min-height: 100vh;
+    background: var(--bg);
+    position: relative;
+    overflow: hidden;
+  }
+  /* CSS geometric background — aerial crop circles */
+  .homepage-section::before {
+    content: '';
+    position: absolute;
+    width: 600px; height: 600px;
+    border-radius: 50%;
+    background: rgba(26,110,66,0.05);
+    top: -200px; right: -100px;
+  }
+  .homepage-section::after {
+    content: '';
+    position: absolute;
+    width: 400px; height: 400px;
+    border-radius: 50%;
+    background: rgba(26,110,66,0.08);
+    top: 200px; left: -150px;
+  }
+  .homepage-bg-circle3 {
+    position: absolute;
+    width: 300px; height: 300px;
+    border-radius: 50%;
+    background: rgba(26,110,66,0.12);
+    bottom: 100px; right: 30%;
+    pointer-events: none;
+  }
+
+  /* Nav */
+  .home-nav {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 20px 48px;
+    position: relative;
+    z-index: 1;
+  }
+  .home-nav .nav-logo {
+    font-family: var(--font-display);
+    font-weight: 900;
+    font-size: 28px;
+    color: var(--primary);
+  }
+  .home-nav .nav-auth {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    font-size: 14px;
+    color: var(--muted);
+  }
+  .home-nav .nav-auth a {
+    color: var(--primary);
+    text-decoration: none;
+    font-weight: 500;
+  }
+
+  /* Hero */
+  .home-hero {
+    text-align: center;
+    padding: 80px 48px 48px;
+    position: relative;
+    z-index: 1;
+  }
+  .home-hero h1 {
+    font-family: var(--font-display);
+    font-weight: 900;
+    font-size: 56px;
+    color: var(--fg);
+    margin-bottom: 12px;
+  }
+  .home-hero p {
+    font-family: var(--font-body);
+    font-size: 20px;
+    color: var(--muted);
+    margin-bottom: 36px;
+  }
+  .cta-btn {
+    display: inline-block;
+    background: var(--accent);
+    color: #fff;
+    border: none;
+    height: 56px;
+    line-height: 56px;
+    padding: 0 40px;
+    font-family: var(--font-body);
+    font-weight: 600;
+    font-size: 18px;
+    border-radius: 6px;
+    cursor: pointer;
+    text-decoration: none;
+    transition: background 150ms ease;
+  }
+  .cta-btn:hover { background: #C82845; }
+  .cta-btn:active { transform: translateY(1px); }
+
+  /* Content sections */
+  .home-content {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 0 48px 80px;
+    position: relative;
+    z-index: 1;
+  }
+  .section-header {
+    margin-top: 64px;
+    margin-bottom: 24px;
+  }
+  .section-header h2 {
+    font-family: var(--font-display);
+    font-weight: 800;
+    font-size: 28px;
+    color: var(--fg);
+    margin-bottom: 8px;
+  }
+  .section-header .accent-bar {
+    width: 40px;
+    height: 3px;
+    background: var(--accent);
+    border-radius: 2px;
+  }
+
+  /* Geometric divider between homepage content sections */
+  .geo-divider {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+    padding: 32px 0;
+  }
+  .geo-divider span {
+    font-size: 12px;
+    line-height: 1;
+  }
+  .geo-divider span:nth-child(1) { color: var(--primary); }
+  .geo-divider span:nth-child(2) { color: var(--accent); }
+  .geo-divider span:nth-child(3) { color: var(--muted); }
+
+  /* Cards grid */
+  .cards-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 16px;
+  }
+  .home-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-right: 4px solid var(--primary);
+    border-radius: 8px;
+    padding: 20px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    transition: border-color 200ms ease;
+    cursor: pointer;
+  }
+  .home-card:hover {
+    border-color: var(--primary);
+  }
+  .home-card .card-icon {
+    width: 44px;
+    height: 44px;
+    background: var(--primary);
+    color: #fff;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+    flex-shrink: 0;
+  }
+  .home-card .card-label {
+    font-family: var(--font-body);
+    font-weight: 600;
+    font-size: 15px;
+    color: var(--fg);
+  }
+
+  /* ============================================================
+     SECTION 3: DASHBOARD
+     ============================================================ */
+  .dashboard-section {
+    min-height: 100vh;
+    display: flex;
+    direction: rtl;
+  }
+
+  /* Sidebar */
+  .sidebar {
+    width: 200px;
+    background: var(--sidebar);
+    color: #fff;
+    display: flex;
+    flex-direction: column;
+    flex-shrink: 0;
+    padding: 20px 0;
+    position: relative;
+  }
+  .sidebar-logo {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 8px 16px 20px;
+  }
+  .sidebar-logo .logo-hex {
+    width: 48px;
+    height: 48px;
+    background: rgba(255,255,255,0.12);
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: var(--font-display);
+    font-weight: 900;
+    font-size: 24px;
+    color: #fff;
+    transform: rotate(-5deg);
+  }
+
+  /* KPI block */
+  .sidebar-kpi {
+    display: flex;
+    justify-content: space-around;
+    padding: 12px 12px 16px;
+    gap: 4px;
+  }
+  .kpi-item {
+    text-align: center;
+    flex: 1;
+  }
+  .kpi-item .kpi-val {
+    font-family: var(--font-body);
+    font-weight: 700;
+    font-size: 24px;
+    line-height: 1.2;
+  }
+  .kpi-item .kpi-label {
+    font-family: var(--font-body);
+    font-weight: 500;
+    font-size: 10px;
+    letter-spacing: 1.2px;
+    text-transform: uppercase;
+    color: rgba(255,255,255,0.5);
+    margin-top: 2px;
+  }
+  .kpi-pending .kpi-val { color: var(--pending); }
+  .kpi-approved .kpi-val { color: #fff; }
+  .kpi-anomaly .kpi-val { color: var(--accent); }
+
+  .sidebar-divider {
+    height: 1px;
+    background: rgba(224, 48, 80, 0.3);
+    margin: 8px 16px;
+  }
+
+  /* Nav items */
+  .sidebar-section-label {
+    font-family: var(--font-body);
+    font-weight: 600;
+    font-size: 10px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: rgba(255,255,255,0.35);
+    padding: 16px 20px 6px;
+  }
+  .sidebar-nav-item {
+    display: block;
+    padding: 9px 20px;
+    font-family: var(--font-body);
+    font-weight: 500;
+    font-size: 13px;
+    color: rgba(255,255,255,0.7);
+    text-decoration: none;
+    transition: background 150ms ease;
+    cursor: pointer;
+  }
+  .sidebar-nav-item:hover {
+    background: rgba(255,255,255,0.08);
+  }
+  .sidebar-nav-item.active {
+    background: var(--accent);
+    color: #fff;
+    border-radius: 6px;
+    margin: 2px 12px;
+    padding: 9px 12px;
+    font-weight: 600;
+    animation: bounce-in 400ms cubic-bezier(0.34, 1.56, 0.64, 1) both;
+  }
+
+  /* Main content */
+  .main-content {
+    flex: 1;
+    background: var(--bg);
+    padding: 28px 36px;
+    overflow-y: auto;
+  }
+
+  .main-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 24px;
+  }
+  .main-header-right {
+    display: flex;
+    align-items: baseline;
+    gap: 16px;
+  }
+  .main-header h1 {
+    font-family: var(--font-display);
+    font-weight: 800;
+    font-size: 28px;
+    color: var(--fg);
+  }
+  .main-header .date-label {
+    font-family: var(--font-body);
+    font-size: 14px;
+    color: var(--muted);
+  }
+  .add-btn {
+    background: var(--accent);
+    color: #fff;
+    border: none;
+    height: 40px;
+    padding: 0 20px;
+    border-radius: 6px;
+    font-family: var(--font-body);
+    font-weight: 600;
+    font-size: 14px;
+    cursor: pointer;
+    transition: background 150ms ease;
+  }
+  .add-btn:hover { background: #C82845; }
+  .add-btn:active { transform: translateY(1px); }
+
+  /* Anomaly banners */
+  .anomaly-panel {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-bottom: 24px;
+  }
+  .anomaly-banner {
+    padding: 14px 20px;
+    border-radius: 8px;
+    font-family: var(--font-body);
+    font-weight: 500;
+    font-size: 14px;
+    color: #fff;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .anomaly-banner.red { background: var(--accent); }
+  .anomaly-banner.amber { background: var(--pending); }
+  .anomaly-banner .anomaly-icon {
+    font-size: 18px;
+    flex-shrink: 0;
+  }
+
+  /* Filter bar */
+  .filter-bar {
+    background: var(--secondary);
+    border-radius: 8px;
+    padding: 14px 20px;
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    margin-bottom: 24px;
+  }
+  .filter-bar label {
+    font-family: var(--font-body);
+    font-weight: 600;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--muted);
+  }
+  .filter-bar select {
+    height: 34px;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 0 10px;
+    font-family: var(--font-body);
+    font-size: 13px;
+    color: var(--fg);
+    background: #fff;
+    direction: rtl;
+  }
+  .filter-group {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  /* Attendance table */
+  .table-container {
+    border-radius: 8px;
+    overflow: hidden;
+    border: 1px solid var(--border);
+    background: var(--card);
+  }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+  thead tr {
+    background: var(--primary);
+    animation: slide-down 350ms ease-out both;
+  }
+  thead th {
+    font-family: var(--font-body);
+    font-weight: 600;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 1.2px;
+    color: #fff;
+    padding: 14px 20px;
+    text-align: right;
+  }
+  tbody tr {
+    border-bottom: 1px solid var(--border);
+    transition: background 150ms ease;
+  }
+  tbody tr:last-child { border-bottom: none; }
+  tbody tr:hover {
+    background: rgba(237, 228, 207, 0.3);
+  }
+  tbody td {
+    padding: 14px 20px;
+    font-family: var(--font-body);
+    font-size: 14px;
+    color: var(--fg);
+  }
+  .worker-name {
+    font-weight: 600;
+  }
+  .hours-val {
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* Status badges */
+  .badge {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 3px;
+    font-family: var(--font-body);
+    font-weight: 600;
+    font-size: 12px;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+  }
+  .badge-approved {
+    background: var(--approved);
+    color: #fff;
+  }
+  .badge-pending {
+    background: transparent;
+    color: var(--pending);
+    border: 2px solid var(--pending);
+  }
+  .badge-rejected {
+    background: var(--rejected);
+    color: #fff;
+  }
+  .badge-imported {
+    background: var(--imported);
+    color: #fff;
+  }
+
+  /* Table footer */
+  .table-footer {
+    background: rgba(26,110,66,0.06);
+    padding: 14px 20px;
+    display: flex;
+    justify-content: space-between;
+    font-family: var(--font-body);
+    font-weight: 600;
+    font-size: 14px;
+    color: var(--fg);
+    border-top: 1px solid var(--border);
+  }
+
+  /* Utility */
+  .section-label { font-size: 12px; color: var(--muted); margin-top: 80px; text-align: center; }
+</style>
+</head>
+<body>
+
+<!-- ===== TITLE BAR ===== -->
+<div class="title-bar">
+  <h1>Direction C: Shoresh — שורש</h1>
+  <p>Bauhaus meets kibbutz poster art. Bold serif. Pomegranate on emerald. Unmistakably Israeli.</p>
+  <div class="rotating-squares">
+    <span></span>
+    <span></span>
+    <span></span>
+  </div>
+</div>
+
+<!-- ============================================================
+     SECTION 1: LOGIN PAGE
+     ============================================================ -->
+<section class="login-section">
+  <!-- RIGHT half: emerald branding -->
+  <div class="login-brand">
+    <div class="geo-hex"></div>
+    <div class="geo-circle2"></div>
+    <div class="geo-circle3"></div>
+    <div class="login-brand-content animate-slide">
+      <div class="logo-text">מֶשֶׁק</div>
+      <div class="logo-sub">ניהול חקלאי חכם</div>
+    </div>
+  </div>
+  <!-- LEFT half: login form -->
+  <div class="login-form-side">
+    <div class="login-form-container animate-slide-d1">
+      <h2>התחברות</h2>
+      <div class="form-group">
+        <label>דוא״ל</label>
+        <input type="email" placeholder="your@email.com" dir="ltr">
+      </div>
+      <div class="form-group">
+        <label>סיסמה</label>
+        <input type="password" placeholder="********">
+      </div>
+      <a href="#" class="forgot-link">שכחת סיסמה?</a>
+      <button class="login-btn">התחברות</button>
+      <p class="register-link">אין לך חשבון? <a href="#">הרשמה</a></p>
+    </div>
+  </div>
+</section>
+
+<!-- DIVIDER -->
+<div class="section-divider">
+  <div class="line"></div>
+  <span class="shape">&#9679;</span>
+  <span class="shape">&#9632;</span>
+  <span class="shape">&#9670;</span>
+  <div class="line"></div>
+</div>
+
+<!-- ============================================================
+     SECTION 2: HOMEPAGE
+     ============================================================ -->
+<section class="homepage-section">
+  <div class="homepage-bg-circle3"></div>
+
+  <!-- Nav -->
+  <nav class="home-nav">
+    <span class="nav-logo">מֶשֶׁק</span>
+    <div class="nav-auth">
+      <span>שלום, ג׳וני</span>
+      <a href="#">התנתקות</a>
+    </div>
+  </nav>
+
+  <!-- Hero -->
+  <div class="home-hero animate-slide">
+    <h1>מֶשֶׁק</h1>
+    <p>מערכת ניהול חקלאית משולבת</p>
+    <a href="#" class="cta-btn">כניסה למערכת</a>
+  </div>
+
+  <!-- Content -->
+  <div class="home-content">
+
+    <!-- ניהול -->
+    <div class="section-header animate-slide-d1">
+      <h2>ניהול</h2>
+      <div class="accent-bar"></div>
+    </div>
+    <div class="cards-grid animate-slide-d2">
+      <div class="home-card">
+        <div class="card-icon">&#128101;</div>
+        <span class="card-label">עובדים</span>
+      </div>
+      <div class="home-card">
+        <div class="card-icon">&#127966;</div>
+        <span class="card-label">שטחים</span>
+      </div>
+      <div class="home-card">
+        <div class="card-icon">&#128736;</div>
+        <span class="card-label">ציוד</span>
+      </div>
+      <div class="home-card">
+        <div class="card-icon">&#127807;</div>
+        <span class="card-label">גידולים</span>
+      </div>
+    </div>
+
+    <!-- Geometric divider -->
+    <div class="geo-divider">
+      <span>&#9679;</span>
+      <span>&#9632;</span>
+      <span>&#9670;</span>
+    </div>
+
+    <!-- כספים -->
+    <div class="section-header animate-slide-d1">
+      <h2>כספים</h2>
+      <div class="accent-bar"></div>
+    </div>
+    <div class="cards-grid animate-slide-d2">
+      <div class="home-card">
+        <div class="card-icon">&#8362;</div>
+        <span class="card-label">שכר</span>
+      </div>
+    </div>
+
+    <!-- Geometric divider -->
+    <div class="geo-divider">
+      <span>&#9679;</span>
+      <span>&#9632;</span>
+      <span>&#9670;</span>
+    </div>
+
+    <!-- דוחות ותפעול -->
+    <div class="section-header animate-slide-d1">
+      <h2>דוחות ותפעול</h2>
+      <div class="accent-bar"></div>
+    </div>
+    <div class="cards-grid animate-slide-d2">
+      <div class="home-card">
+        <div class="card-icon">&#128203;</div>
+        <span class="card-label">נוכחות</span>
+      </div>
+      <div class="home-card">
+        <div class="card-icon">&#128269;</div>
+        <span class="card-label">סקירת רשומות</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- DIVIDER -->
+<div class="section-divider">
+  <div class="line"></div>
+  <span class="shape">&#9679;</span>
+  <span class="shape">&#9632;</span>
+  <span class="shape">&#9670;</span>
+  <div class="line"></div>
+</div>
+
+<!-- ============================================================
+     SECTION 3: DASHBOARD
+     ============================================================ -->
+<section class="dashboard-section">
+  <!-- Sidebar (right in RTL) -->
+  <aside class="sidebar">
+    <div class="sidebar-logo">
+      <div class="logo-hex">מ</div>
+    </div>
+
+    <!-- KPI block -->
+    <div class="sidebar-kpi">
+      <div class="kpi-item kpi-pending">
+        <div class="kpi-val">3</div>
+        <div class="kpi-label">ממתינים</div>
+      </div>
+      <div class="kpi-item kpi-approved">
+        <div class="kpi-val">12</div>
+        <div class="kpi-label">אושרו</div>
+      </div>
+      <div class="kpi-item kpi-anomaly">
+        <div class="kpi-val">1</div>
+        <div class="kpi-label">חריגות</div>
+      </div>
+    </div>
+
+    <div class="sidebar-divider"></div>
+
+    <!-- Nav: ניהול -->
+    <div class="sidebar-section-label">ניהול</div>
+    <a class="sidebar-nav-item">עובדים</a>
+    <a class="sidebar-nav-item">שטחים</a>
+    <a class="sidebar-nav-item">ציוד</a>
+    <a class="sidebar-nav-item">גידולים</a>
+
+    <div class="sidebar-divider"></div>
+
+    <!-- Nav: כספים -->
+    <div class="sidebar-section-label">כספים</div>
+    <a class="sidebar-nav-item">שכר</a>
+
+    <div class="sidebar-divider"></div>
+
+    <!-- Nav: דוחות ותפעול -->
+    <div class="sidebar-section-label">דוחות ותפעול</div>
+    <a class="sidebar-nav-item">ניהול מערכת</a>
+    <a class="sidebar-nav-item active">נוכחות</a>
+    <a class="sidebar-nav-item">סקירת רשומות</a>
+  </aside>
+
+  <!-- Main content -->
+  <div class="main-content">
+    <!-- Header -->
+    <div class="main-header animate-slide">
+      <div class="main-header-right">
+        <h1>נוכחות</h1>
+        <span class="date-label">12 מרץ 2026</span>
+      </div>
+      <button class="add-btn">+ הוספת רשומה</button>
+    </div>
+
+    <!-- Anomaly Panel -->
+    <div class="anomaly-panel animate-slide-d1">
+      <div class="anomaly-banner red">
+        <span class="anomaly-icon">&#9888;</span>
+        <span>שעות חריגות — אברהם כהן — 14 שעות (שטח הדרום)</span>
+      </div>
+      <div class="anomaly-banner amber">
+        <span class="anomaly-icon">&#9203;</span>
+        <span>ממתינים מעל יום — 2 רשומות ממתינות מעל 24 שעות</span>
+      </div>
+    </div>
+
+    <!-- Filter bar -->
+    <div class="filter-bar animate-slide-d2">
+      <div class="filter-group">
+        <label>סטטוס</label>
+        <select>
+          <option>הכל</option>
+          <option>ממתין</option>
+          <option>מאושר</option>
+          <option>נדחה</option>
+          <option>יובא</option>
+        </select>
+      </div>
+      <div class="filter-group">
+        <label>עובד</label>
+        <select>
+          <option>הכל</option>
+        </select>
+      </div>
+      <div class="filter-group">
+        <label>שטח</label>
+        <select>
+          <option>הכל</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Attendance Table -->
+    <div class="table-container animate-slide-d3">
+      <table>
+        <thead>
+          <tr>
+            <th>עובד</th>
+            <th>שטח</th>
+            <th>שעות</th>
+            <th>סטטוס</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="worker-name">יוסי לוי</td>
+            <td>שטח הצפון</td>
+            <td class="hours-val">8.5</td>
+            <td><span class="badge badge-approved">מאושר</span></td>
+          </tr>
+          <tr>
+            <td class="worker-name">אברהם כהן</td>
+            <td>שטח הדרום</td>
+            <td class="hours-val">14.0</td>
+            <td><span class="badge badge-pending">ממתין</span></td>
+          </tr>
+          <tr>
+            <td class="worker-name">מרים דוד</td>
+            <td>חממה 3</td>
+            <td class="hours-val">7.0</td>
+            <td><span class="badge badge-approved">מאושר</span></td>
+          </tr>
+          <tr>
+            <td class="worker-name">סומצ׳אי</td>
+            <td>שטח המערב</td>
+            <td class="hours-val">9.0</td>
+            <td><span class="badge badge-imported">יובא</span></td>
+          </tr>
+          <tr>
+            <td class="worker-name">רחל גולן</td>
+            <td>משתלה</td>
+            <td class="hours-val">6.5</td>
+            <td><span class="badge badge-rejected">נדחה</span></td>
+          </tr>
+          <tr>
+            <td class="worker-name">דני אלון</td>
+            <td>שטח הצפון</td>
+            <td class="hours-val">8.0</td>
+            <td><span class="badge badge-approved">מאושר</span></td>
+          </tr>
+        </tbody>
+      </table>
+      <div class="table-footer">
+        <span>סה״כ רשומות: 6</span>
+        <span>סה״כ שעות: 53.0</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+</body>
+</html>

@@ -12,6 +12,8 @@ import { AttendanceTable } from "@/components/attendance/attendance-table";
 import { AttendanceFilters } from "@/components/attendance/attendance-filters";
 import { AnomalyPanel } from "@/components/attendance/anomaly-panel";
 import type { AnomalyPanelLabels } from "@/components/attendance/anomaly-panel";
+import { AddRecordModal } from "@/components/attendance/add-record-modal";
+import type { AddRecordModalLabels } from "@/components/attendance/add-record-modal";
 import { routing } from "@/i18n/routing";
 
 export function generateStaticParams() {
@@ -88,6 +90,9 @@ export default async function DashboardPage({
   const tAttendance = await getTranslations("dashboard.attendance");
   const tFilters = await getTranslations("dashboard.filters");
   const tAnomalies = await getTranslations("dashboard.anomalies");
+  const tAddRecord = await getTranslations("dashboard.addRecord");
+
+  const tActions = await getTranslations("dashboard.actions");
 
   const attendanceLabels = {
     title: tAttendance("title"),
@@ -100,6 +105,20 @@ export default async function DashboardPage({
     approved: tAttendance("approved"),
     imported: tAttendance("imported"),
     noArea: tAttendance("noArea"),
+    pending: tActions("statusPending"),
+    rejected: tActions("statusRejected"),
+    actions: tActions("actionsColumn"),
+    unknownWorker: tActions("unknownWorker"),
+  };
+
+  const actionLabels = {
+    approve: tActions("approve"),
+    reject: tActions("reject"),
+    pendingResolution: tActions("pendingResolution"),
+    statusPending: tActions("statusPending"),
+    approveSuccess: tActions("approveSuccess"),
+    rejectSuccess: tActions("rejectSuccess"),
+    actionError: tActions("actionError"),
   };
 
   const filterLabels = {
@@ -124,6 +143,34 @@ export default async function DashboardPage({
     ? anomaliesResult.data
     : { excessiveHours: [], stalePending: [] };
 
+  const addRecordLabels: AddRecordModalLabels = {
+    buttonLabel: tAddRecord("buttonLabel"),
+    modalTitle: tAddRecord("modalTitle"),
+    workerLabel: tAddRecord("workerLabel"),
+    workerPlaceholder: tAddRecord("workerPlaceholder"),
+    workerSearchPlaceholder: tAddRecord("workerSearchPlaceholder"),
+    workerSearchEmpty: tAddRecord("workerSearchEmpty"),
+    dateLabel: tAddRecord("dateLabel"),
+    areaLabel: tAddRecord("areaLabel"),
+    areaPlaceholder: tAddRecord("areaPlaceholder"),
+    hoursLabel: tAddRecord("hoursLabel"),
+    hoursDecrease: tAddRecord("hoursDecrease"),
+    hoursIncrease: tAddRecord("hoursIncrease"),
+    saveButton: tAddRecord("saveButton"),
+    saveAndAddAnother: tAddRecord("saveAndAddAnother"),
+    cancel: tAddRecord("cancel"),
+    saving: tAddRecord("saving"),
+    successApproved: tAddRecord("successApproved"),
+    successPending: tAddRecord("successPending"),
+    duplicateWarning: tAddRecord("duplicateWarning"),
+    duplicateHours: tAddRecord("duplicateHours"),
+    excessiveHoursWarning: tAddRecord("excessiveHoursWarning"),
+    validationRequired: tAddRecord("validationRequired"),
+    validationHoursRange: tAddRecord("validationHoursRange"),
+    validationHoursStep: tAddRecord("validationHoursStep"),
+    validationFutureDate: tAddRecord("validationFutureDate"),
+  };
+
   const currentFilters = {
     fromDate,
     toDate,
@@ -134,7 +181,15 @@ export default async function DashboardPage({
   return (
     <main className="container mx-auto p-4 md:p-6">
       <div className="space-y-4">
-        <AnomalyPanel data={anomalyData} labels={anomalyLabels} />
+        <div className="flex items-center justify-between">
+          <AnomalyPanel data={anomalyData} labels={anomalyLabels} />
+          <AddRecordModal
+            workers={workersResult.success ? workersResult.data : []}
+            areas={areasResult.success ? areasResult.data : []}
+            labels={addRecordLabels}
+            todayJerusalem={todayJerusalem}
+          />
+        </div>
         <AttendanceFilters
           workers={workersResult.success ? workersResult.data : []}
           areas={areasResult.success ? areasResult.data : []}
@@ -151,6 +206,7 @@ export default async function DashboardPage({
           <AttendanceTable
             records={attendanceResult.data}
             labels={attendanceLabels}
+            actionLabels={actionLabels}
             currentDate={fromDate !== toDate ? undefined : fromDate}
             isMultiDay={fromDate !== toDate}
           />

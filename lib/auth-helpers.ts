@@ -40,8 +40,8 @@ export async function verifyDashboardCaller(supabase: Awaited<ReturnType<typeof 
     .single();
 
   if (!callerProfile || !["owner", "admin", "manager"].includes(callerProfile.role)) {
-    return { user: null, error: "אין הרשאות צפייה" } as const;
+    return { user: null, role: null, error: "אין הרשאות צפייה" } as const;
   }
 
-  return { user, error: null } as const;
+  return { user, role: callerProfile.role as "owner" | "admin" | "manager", error: null } as const;
 }

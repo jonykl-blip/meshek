@@ -17,6 +17,7 @@ import {
   MapPin,
   Wrench,
   Wheat,
+  Home,
   ChevronLeft,
   ChevronRight,
   type LucideIcon,
@@ -28,6 +29,7 @@ interface NavItem {
   href: string | null;
   roles: string[];
   disabled?: boolean;
+  exact?: boolean;
 }
 
 interface NavSection {
@@ -54,8 +56,9 @@ const navSections: NavSection[] = [
   {
     labelKey: "reportsOps",
     items: [
+      { label: "ניהול מערכת", icon: Home, href: "/admin", roles: ["owner", "admin"], exact: true },
       { label: "נוכחות", icon: CalendarCheck, href: "/dashboard", roles: ["owner", "admin", "manager"] },
-      { label: "תור ביקורת", icon: ClipboardList, href: "/admin/review", roles: ["owner", "admin"] },
+      { label: "רשומות ממתינות לאישור", icon: ClipboardList, href: "/admin/review", roles: ["owner", "admin"] },
     ],
   },
 ];
@@ -163,7 +166,9 @@ export default function SidebarNav({ role, kpis }: SidebarNavProps) {
               )}
               {section.items.map((item) => {
                 const isActive = item.href
-                  ? pathname.startsWith(item.href)
+                  ? item.exact
+                    ? pathname === item.href
+                    : pathname.startsWith(item.href)
                   : false;
                 const Icon = item.icon;
 

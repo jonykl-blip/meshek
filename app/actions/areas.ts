@@ -10,7 +10,6 @@ export interface Area {
   id: string;
   name: string;
   crop_id: string;
-  photo_url: string | null;
   is_active: boolean;
   crops: { name: string } | null;
   area_aliases: { id: string; alias: string }[];
@@ -26,34 +25,11 @@ export async function getAreasWithAliases(): Promise<Area[]> {
   const supabase = await createClient();
   const { data } = await supabase
     .from("areas")
-    .select("id, name, crop_id, photo_url, is_active, crops(name), area_aliases(id, alias)")
+    .select("id, name, crop_id, is_active, crops(name), area_aliases(id, alias)")
     .eq("is_active", true)
     .order("name");
 
-  const areas = (data as unknown as Area[]) ?? [];
-
-  const pathsToSign = areas
-    .map((a, i) => a.photo_url ? { index: i, path: a.photo_url } : null)
-    .filter((x): x is { index: number; path: string } => x !== null);
-
-  if (pathsToSign.length > 0) {
-    const { data: urls } = await supabase.storage
-      .from("area-photos")
-      .createSignedUrls(
-        pathsToSign.map((p) => p.path),
-        60 * 60,
-      );
-
-    if (urls) {
-      for (let i = 0; i < urls.length; i++) {
-        if (urls[i].signedUrl) {
-          areas[pathsToSign[i].index].photo_url = urls[i].signedUrl;
-        }
-      }
-    }
-  }
-
-  return areas;
+  return (data as unknown as Area[]) ?? [];
 }
 
 export async function getCrops(): Promise<{ id: string; name: string }[]> {
@@ -116,7 +92,7 @@ export async function createArea(
   const { data: newAreaRow, error } = await supabase
     .from("areas")
     .insert({ name: parsed.data.name, crop_id: parsed.data.crop_id })
-    .select("id, name, crop_id, photo_url, is_active")
+    .select("id, name, crop_id, is_active")
     .single();
 
   if (error || !newAreaRow) {
@@ -187,7 +163,7 @@ export async function updateArea(
 
   const { data: beforeArea } = await supabase
     .from("areas")
-    .select("id, name, crop_id, photo_url, is_active")
+    .select("id, name, crop_id, is_active")
     .eq("id", areaId)
     .single();
 
@@ -199,7 +175,7 @@ export async function updateArea(
     .from("areas")
     .update({ name: parsed.data.name, crop_id: parsed.data.crop_id })
     .eq("id", areaId)
-    .select("id, name, crop_id, photo_url, is_active")
+    .select("id, name, crop_id, is_active")
     .single();
 
   if (error || !updatedRow) {
@@ -218,7 +194,7 @@ export async function updateArea(
   // Fetch full area with relations for return (avoid .single() with embedded joins)
   const { data: fullAreas } = await supabase
     .from("areas")
-    .select("id, name, crop_id, photo_url, is_active, crops(name), area_aliases(id, alias)")
+    .select("id, name, crop_id, is_active, crops(name), area_aliases(id, alias)")
     .eq("id", areaId);
 
   revalidatePath("/admin/areas");
@@ -235,7 +211,7 @@ export async function archiveArea(
 
   const { data: beforeArea } = await supabase
     .from("areas")
-    .select("id, name, crop_id, photo_url, is_active")
+    .select("id, name, crop_id, is_active")
     .eq("id", areaId)
     .single();
 
@@ -342,64 +318,4 @@ export async function removeAreaAlias(
 
   revalidatePath("/admin/areas");
   return { success: true, data: { id: aliasId } };
-}
-
-export async function uploadAreaPhoto(
-  areaId: string,
-  formData: FormData,
-): Promise<ActionResult<{ photo_url: string }>> {
-  const supabase = await createClient();
-  const { user, error: authError } = await verifyAdminCaller(supabase);
-  if (!user) return { success: false, error: authError };
-
-  const file = formData.get("file") as File | null;
-  if (!file) {
-    return { success: false, error: "לא נבחר קובץ" };
-  }
-
-  if (!file.type.startsWith("image/")) {
-    return { success: false, error: "יש להעלות קובץ תמונה בלבד" };
-  }
-
-  if (file.size > 5 * 1024 * 1024) {
-    return { success: false, error: "גודל התמונה חייב להיות עד 5MB" };
-  }
-
-  const ext = file.name.split(".").pop() ?? "jpg";
-  const storagePath = `${areaId}.${ext}`;
-
-  const { error: uploadError } = await supabase.storage
-    .from("area-photos")
-    .upload(storagePath, file, { upsert: true });
-
-  if (uploadError) {
-    return { success: false, error: uploadError.message };
-  }
-
-  const { data: beforeArea } = await supabase
-    .from("areas")
-    .select("id, photo_url")
-    .eq("id", areaId)
-    .single();
-
-  const { error: updateError } = await supabase
-    .from("areas")
-    .update({ photo_url: storagePath })
-    .eq("id", areaId);
-
-  if (updateError) {
-    return { success: false, error: updateError.message };
-  }
-
-  await logAudit({
-    actorId: user.id,
-    tableName: "areas",
-    recordId: areaId,
-    action: "edit",
-    before: { photo_url: beforeArea?.photo_url ?? null },
-    after: { photo_url: storagePath },
-  });
-
-  revalidatePath("/admin/areas");
-  return { success: true, data: { photo_url: storagePath } };
 }

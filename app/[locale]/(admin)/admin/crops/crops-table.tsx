@@ -188,8 +188,12 @@ function CropRow({
 
   function handleSave() {
     setError("");
+    if (!editName.trim()) {
+      setError(labels.validationNameRequired);
+      return;
+    }
     startTransition(async () => {
-      const result = await updateCrop(item.id, { name: editName });
+      const result = await updateCrop(item.id, { name: editName.trim() });
       if (result.success) {
         setIsEditing(false);
         onFeedback(labels.updated);
@@ -213,7 +217,6 @@ function CropRow({
         onFeedback(labels.deleted);
       } else {
         setError(result.error);
-        setShowDeleteDialog(false);
       }
     });
   }

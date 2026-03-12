@@ -33,12 +33,18 @@ vi.mock("@/lib/audit", () => ({
   logAudit: (...args: unknown[]) => mockLogAudit(...args),
 }));
 
+const mockRevalidatePath = vi.fn();
 vi.mock("next/cache", () => ({
-  revalidatePath: vi.fn(),
+  revalidatePath: (...args: unknown[]) => mockRevalidatePath(...args),
+}));
+
+vi.mock("@/i18n/routing", () => ({
+  routing: { locales: ["he", "th"], defaultLocale: "he" },
 }));
 
 const {
   getPendingRecords,
+  getReviewRecords,
   resolveWorker,
   resolveArea,
   getActiveWorkers,
@@ -49,6 +55,9 @@ const {
   editRecord,
   getDailyAttendance,
   getAnomalies,
+  createManualAttendance,
+  dashboardApproveRecord,
+  dashboardRejectRecord,
 } = await import("./attendance");
 
 const { verifyDashboardCaller } = await import("@/lib/auth-helpers");
@@ -152,13 +161,6 @@ describe("getPendingRecords", () => {
       };
     });
 
-    mockSupabase.storage.from.mockReturnValue({
-      createSignedUrl: vi.fn().mockResolvedValue({
-        data: { signedUrl: "https://example.com/signed-url" },
-        error: null,
-      }),
-    });
-
     const result = await getPendingRecords();
 
     expect(result.success).toBe(true);
@@ -169,7 +171,7 @@ describe("getPendingRecords", () => {
       expect(result.data[0].profile_id).toBe("worker-1");
       expect(result.data[0].area_id).toBe("area-1");
       expect(result.data[0].voice_signed_url).toBe(
-        "https://example.com/signed-url"
+        "/api/audio/2026/03/voice1.ogg"
       );
       expect(result.data[0].total_hours).toBe(8);
     }
@@ -269,7 +271,7 @@ describe("getPendingRecords", () => {
     }
   });
 
-  it("generates signed URLs for records with voice_ref_url", async () => {
+  it("generates proxy URLs for records with voice_ref_url", async () => {
     mockAuthenticatedAdmin();
     let callIndex = 0;
     mockSupabase.from.mockImplementation(() => {
@@ -313,25 +315,12 @@ describe("getPendingRecords", () => {
       };
     });
 
-    const mockCreateSignedUrl = vi.fn().mockResolvedValue({
-      data: { signedUrl: "https://storage.example.com/signed" },
-      error: null,
-    });
-    mockSupabase.storage.from.mockReturnValue({
-      createSignedUrl: mockCreateSignedUrl,
-    });
-
     const result = await getPendingRecords();
 
-    expect(mockSupabase.storage.from).toHaveBeenCalledWith("voice-recordings");
-    expect(mockCreateSignedUrl).toHaveBeenCalledWith(
-      "2026/03/voice4.ogg",
-      3600
-    );
     expect(result.success).toBe(true);
     if (result.success) {
       expect(result.data[0].voice_signed_url).toBe(
-        "https://storage.example.com/signed"
+        "/api/audio/2026/03/voice4.ogg"
       );
     }
   });
@@ -413,7 +402,7 @@ describe("getPendingRecords", () => {
     });
   });
 
-  it("extracts path from full HTTP voice_ref_url and generates fresh signed URL", async () => {
+  it("extracts path from full HTTP voice_ref_url and returns proxy URL", async () => {
     mockAuthenticatedAdmin();
     let callIndex = 0;
     mockSupabase.from.mockImplementation(() => {
@@ -451,22 +440,12 @@ describe("getPendingRecords", () => {
       };
     });
 
-    const mockCreateSignedUrl = vi.fn().mockResolvedValue({
-      data: { signedUrl: "https://storage.example.com/fresh-signed" },
-      error: null,
-    });
-    mockSupabase.storage.from.mockReturnValue({
-      createSignedUrl: mockCreateSignedUrl,
-    });
-
     const result = await getPendingRecords();
 
-    expect(mockSupabase.storage.from).toHaveBeenCalledWith("voice-recordings");
-    expect(mockCreateSignedUrl).toHaveBeenCalledWith("2026/03/voice6.ogg", 3600);
     expect(result.success).toBe(true);
     if (result.success) {
       expect(result.data[0].voice_signed_url).toBe(
-        "https://storage.example.com/fresh-signed"
+        "/api/audio/2026/03/voice6.ogg"
       );
     }
   });
@@ -518,7 +497,7 @@ describe("getPendingRecords", () => {
     expect(mockSupabase.storage.from).not.toHaveBeenCalled();
   });
 
-  it("returns voice_signed_url null when createSignedUrl returns an error", async () => {
+  it("returns proxy URL for relative voice_ref_url path", async () => {
     mockAuthenticatedAdmin();
     let callIndex = 0;
     mockSupabase.from.mockImplementation(() => {
@@ -539,8 +518,8 @@ describe("getPendingRecords", () => {
                       area_id: "area-1",
                       work_date: "2026-03-10",
                       total_hours: 6,
-                      voice_ref_url: "2026/03/voice-fail.ogg",
-                      raw_transcript: "test signed url error",
+                      voice_ref_url: "2026/03/voice-test.ogg",
+                      raw_transcript: "test relative path",
                       status: "pending",
                       created_at: "2026-03-10T19:00:00Z",
                       profiles: { full_name: "עידן" },
@@ -555,25 +534,222 @@ describe("getPendingRecords", () => {
       };
     });
 
-    const mockCreateSignedUrl = vi.fn().mockResolvedValue({
-      data: null,
-      error: { message: "Bucket not found" },
-    });
-    mockSupabase.storage.from.mockReturnValue({
-      createSignedUrl: mockCreateSignedUrl,
-    });
-
     const result = await getPendingRecords();
 
-    expect(mockSupabase.storage.from).toHaveBeenCalledWith("voice-recordings");
-    expect(mockCreateSignedUrl).toHaveBeenCalledWith(
-      "2026/03/voice-fail.ogg",
-      3600
-    );
     expect(result.success).toBe(true);
     if (result.success) {
-      expect(result.data[0].voice_signed_url).toBeNull();
+      expect(result.data[0].voice_signed_url).toBe(
+        "/api/audio/2026/03/voice-test.ogg"
+      );
     }
+  });
+});
+
+describe("getReviewRecords", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("returns error when user is not authenticated", async () => {
+    mockSupabase.auth.getUser.mockResolvedValue({
+      data: { user: null },
+    });
+
+    const result = await getReviewRecords(false);
+
+    expect(result).toEqual({ success: false, error: "לא מאומת" });
+  });
+
+  it("returns only pending records when showAll=false", async () => {
+    mockAuthenticatedAdmin();
+    let callIndex = 0;
+    const mockEq = vi.fn();
+    const mockLimit = vi.fn();
+    mockSupabase.from.mockImplementation(() => {
+      callIndex++;
+      if (callIndex === 1) {
+        return mockAdminRoleCheck();
+      }
+      return {
+        select: () => ({
+          order: () => ({
+            order: () => {
+              const chain = {
+                eq: (col: string, val: string) => {
+                  mockEq(col, val);
+                  return {
+                    limit: (n: number) => {
+                      mockLimit(n);
+                      return Promise.resolve({
+                        data: [
+                          {
+                            id: "rec-1",
+                            profile_id: "worker-1",
+                            area_id: "area-1",
+                            work_date: "2026-03-10",
+                            total_hours: 8,
+                            voice_ref_url: null,
+                            raw_transcript: "test",
+                            status: "pending",
+                            created_at: "2026-03-10T12:00:00Z",
+                            profiles: { full_name: "עידן" },
+                            areas: { name: "תפוזים" },
+                          },
+                        ],
+                        error: null,
+                      });
+                    },
+                  };
+                },
+                limit: () =>
+                  Promise.resolve({ data: [], error: null }),
+              };
+              return chain;
+            },
+          }),
+        }),
+      };
+    });
+
+    const result = await getReviewRecords(false);
+
+    expect(mockSupabase.auth.getUser).toHaveBeenCalled();
+    expect(mockEq).toHaveBeenCalledWith("status", "pending");
+    expect(mockLimit).toHaveBeenCalledWith(500);
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data).toHaveLength(1);
+      expect(result.data[0].status).toBe("pending");
+    }
+  });
+
+  it("returns all records with limit when showAll=true", async () => {
+    mockAuthenticatedAdmin();
+    let callIndex = 0;
+    const mockLimit = vi.fn();
+    mockSupabase.from.mockImplementation(() => {
+      callIndex++;
+      if (callIndex === 1) {
+        return mockAdminRoleCheck();
+      }
+      return {
+        select: () => ({
+          order: () => ({
+            order: () => {
+              const chain = {
+                eq: () =>
+                  Promise.resolve({ data: [], error: null }),
+                limit: (n: number) => {
+                  mockLimit(n);
+                  return Promise.resolve({
+                    data: [
+                      {
+                        id: "rec-1",
+                        profile_id: "worker-1",
+                        area_id: "area-1",
+                        work_date: "2026-03-10",
+                        total_hours: 8,
+                        voice_ref_url: "2026/03/voice1.ogg",
+                        raw_transcript: "test",
+                        status: "approved",
+                        created_at: "2026-03-10T12:00:00Z",
+                        profiles: { full_name: "עידן" },
+                        areas: { name: "תפוזים" },
+                      },
+                      {
+                        id: "rec-2",
+                        profile_id: null,
+                        area_id: null,
+                        work_date: "2026-03-09",
+                        total_hours: 5,
+                        voice_ref_url: null,
+                        raw_transcript: null,
+                        status: "pending",
+                        created_at: "2026-03-09T10:00:00Z",
+                        profiles: null,
+                        areas: null,
+                      },
+                    ],
+                    error: null,
+                  });
+                },
+              };
+              return chain;
+            },
+          }),
+        }),
+      };
+    });
+
+    const result = await getReviewRecords(true);
+
+    expect(mockSupabase.auth.getUser).toHaveBeenCalled();
+    expect(mockLimit).toHaveBeenCalledWith(200);
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data).toHaveLength(2);
+      expect(result.data[0].status).toBe("approved");
+      expect(result.data[0].voice_signed_url).toBe("/api/audio/2026/03/voice1.ogg");
+      expect(result.data[1].status).toBe("pending");
+      expect(result.data[1].worker_name).toBeNull();
+      expect(result.data[1].area_name).toBeNull();
+    }
+  });
+
+  it("returns error when Supabase query fails (showAll=false)", async () => {
+    mockAuthenticatedAdmin();
+    let callIndex = 0;
+    mockSupabase.from.mockImplementation(() => {
+      callIndex++;
+      if (callIndex === 1) {
+        return mockAdminRoleCheck();
+      }
+      return {
+        select: () => ({
+          order: () => ({
+            order: () => ({
+              eq: () => ({
+                limit: () =>
+                  Promise.resolve({ data: null, error: { message: "DB error" } }),
+              }),
+              limit: () =>
+                Promise.resolve({ data: null, error: { message: "DB error" } }),
+            }),
+          }),
+        }),
+      };
+    });
+
+    const resultFalse = await getReviewRecords(false);
+    expect(resultFalse).toEqual({ success: false, error: "DB error" });
+  });
+
+  it("returns error when Supabase query fails (showAll=true)", async () => {
+    mockAuthenticatedAdmin();
+    let callIndex = 0;
+    mockSupabase.from.mockImplementation(() => {
+      callIndex++;
+      if (callIndex === 1) {
+        return mockAdminRoleCheck();
+      }
+      return {
+        select: () => ({
+          order: () => ({
+            order: () => ({
+              eq: () => ({
+                limit: () =>
+                  Promise.resolve({ data: null, error: { message: "DB error" } }),
+              }),
+              limit: () =>
+                Promise.resolve({ data: null, error: { message: "DB error" } }),
+            }),
+          }),
+        }),
+      };
+    });
+
+    const resultTrue = await getReviewRecords(true);
+    expect(resultTrue).toEqual({ success: false, error: "DB error" });
   });
 });
 
@@ -662,6 +838,8 @@ describe("resolveWorker", () => {
 
     expect(result).toEqual({ success: true, data: { id: "rec-1" } });
     expect(mockUpdate).toHaveBeenCalledWith({ profile_id: "worker-1" });
+    expect(mockRevalidatePath).toHaveBeenCalledWith("/he/admin/review");
+    expect(mockRevalidatePath).toHaveBeenCalledWith("/th/admin/review");
     expect(mockLogAudit).toHaveBeenCalledWith({
       actorId: "admin-1",
       tableName: "attendance_logs",
@@ -758,6 +936,8 @@ describe("resolveArea", () => {
 
     expect(result).toEqual({ success: true, data: { id: "rec-1" } });
     expect(mockUpdate).toHaveBeenCalledWith({ area_id: "area-1" });
+    expect(mockRevalidatePath).toHaveBeenCalledWith("/he/admin/review");
+    expect(mockRevalidatePath).toHaveBeenCalledWith("/th/admin/review");
     expect(mockLogAudit).toHaveBeenCalledWith({
       actorId: "admin-1",
       tableName: "attendance_logs",
@@ -989,6 +1169,10 @@ describe("createWorkerAndResolve", () => {
     expect(result).toEqual({ success: true, data: { id: "rec-1" } });
     expect(mockAdminClient.auth.admin.createUser).toHaveBeenCalled();
     expect(mockUpdate).toHaveBeenCalledWith({ profile_id: "new-user-id" });
+    expect(mockRevalidatePath).toHaveBeenCalledWith("/he/admin/review");
+    expect(mockRevalidatePath).toHaveBeenCalledWith("/th/admin/review");
+    expect(mockRevalidatePath).toHaveBeenCalledWith("/he/admin/workers");
+    expect(mockRevalidatePath).toHaveBeenCalledWith("/th/admin/workers");
     expect(mockLogAudit).toHaveBeenCalledTimes(2);
     expect(mockLogAudit).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -1152,6 +1336,8 @@ describe("approveRecord", () => {
 
     expect(result).toEqual({ success: true, data: { id: "rec-1" } });
     expect(mockUpdate).toHaveBeenCalledWith({ status: "approved" });
+    expect(mockRevalidatePath).toHaveBeenCalledWith("/he/admin/review");
+    expect(mockRevalidatePath).toHaveBeenCalledWith("/th/admin/review");
     expect(mockLogAudit).toHaveBeenCalledWith({
       actorId: "admin-1",
       tableName: "attendance_logs",
@@ -1251,6 +1437,8 @@ describe("rejectRecord", () => {
 
     expect(result).toEqual({ success: true, data: { id: "rec-1" } });
     expect(mockUpdate).toHaveBeenCalledWith({ status: "rejected" });
+    expect(mockRevalidatePath).toHaveBeenCalledWith("/he/admin/review");
+    expect(mockRevalidatePath).toHaveBeenCalledWith("/th/admin/review");
     expect(mockLogAudit).toHaveBeenCalledWith({
       actorId: "admin-1",
       tableName: "attendance_logs",
@@ -1323,6 +1511,8 @@ describe("editRecord", () => {
 
     expect(result).toEqual({ success: true, data: { id: "rec-1" } });
     expect(mockUpdate).toHaveBeenCalledWith({ total_hours: 10 });
+    expect(mockRevalidatePath).toHaveBeenCalledWith("/he/admin/review");
+    expect(mockRevalidatePath).toHaveBeenCalledWith("/th/admin/review");
     expect(mockLogAudit).toHaveBeenCalledWith({
       actorId: "admin-1",
       tableName: "attendance_logs",
@@ -1473,6 +1663,8 @@ describe("getDailyAttendance", () => {
         data: [
           {
             id: "rec-1",
+            profile_id: "worker-1",
+            area_id: "area-1",
             work_date: "2026-03-11",
             total_hours: 8.5,
             status: "approved",
@@ -1494,10 +1686,47 @@ describe("getDailyAttendance", () => {
       expect(result.data[0].area_name).toBe("תפוזים");
       expect(result.data[0].total_hours).toBe(8.5);
       expect(result.data[0].status).toBe("approved");
+      expect(result.data[0].profile_id).toBe("worker-1");
+      expect(result.data[0].area_id).toBe("area-1");
     }
   });
 
-  it("returns only approved/imported records (not pending/rejected)", async () => {
+  it("returns null worker_name for pending records with null profile", async () => {
+    mockAuthenticatedAdmin();
+    let callIndex = 0;
+    mockSupabase.from.mockImplementation(() => {
+      callIndex++;
+      if (callIndex === 1) return mockRoleCheck("owner");
+      return makeAttendanceQueryBuilder({
+        data: [
+          {
+            id: "rec-dirty",
+            profile_id: null,
+            area_id: "area-1",
+            work_date: "2026-03-11",
+            total_hours: 6,
+            status: "pending",
+            source: "bot",
+            profiles: null,
+            areas: { name: "תפוזים" },
+          },
+        ],
+        error: null,
+      });
+    });
+
+    const result = await getDailyAttendance();
+
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data[0].worker_name).toBeNull();
+      expect(result.data[0].profile_id).toBeNull();
+      expect(result.data[0].area_id).toBe("area-1");
+      expect(result.data[0].status).toBe("pending");
+    }
+  });
+
+  it("includes approved, imported, and pending records", async () => {
     mockAuthenticatedAdmin();
     let callIndex = 0;
     let capturedBuilder: ReturnType<typeof makeAttendanceQueryBuilder>;
@@ -1508,6 +1737,8 @@ describe("getDailyAttendance", () => {
         data: [
           {
             id: "rec-1",
+            profile_id: "worker-1",
+            area_id: "area-1",
             work_date: "2026-03-11",
             total_hours: 8,
             status: "approved",
@@ -1527,6 +1758,7 @@ describe("getDailyAttendance", () => {
     expect(capturedBuilder!.in).toHaveBeenCalledWith("status", [
       "approved",
       "imported",
+      "pending",
     ]);
   });
 
@@ -2031,5 +2263,774 @@ describe("getAnomalies", () => {
       success: false,
       error: "תאריך התחלה לא יכול להיות אחרי תאריך הסיום",
     });
+  });
+});
+
+describe("createManualAttendance", () => {
+  const validInput = {
+    profileId: "worker-1",
+    workDate: "2026-03-10",
+    areaId: "area-1",
+    totalHours: 8,
+  };
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  function mockDashboardRoleCheck(role: string) {
+    return {
+      select: () => ({
+        eq: () => ({
+          single: () =>
+            Promise.resolve({ data: { role }, error: null }),
+        }),
+      }),
+    };
+  }
+
+  function mockWorkerActiveCheck(exists: boolean) {
+    return {
+      select: () => ({
+        eq: () => ({
+          eq: () => ({
+            eq: () => ({
+              single: () =>
+                Promise.resolve(
+                  exists
+                    ? { data: { id: "found" }, error: null }
+                    : { data: null, error: { code: "PGRST116", message: "not found" } }
+                ),
+            }),
+          }),
+        }),
+      }),
+    };
+  }
+
+  function mockAreaActiveCheck(exists: boolean) {
+    return {
+      select: () => ({
+        eq: () => ({
+          eq: () => ({
+            single: () =>
+              Promise.resolve(
+                exists
+                  ? { data: { id: "found" }, error: null }
+                  : { data: null, error: { code: "PGRST116", message: "not found" } }
+              ),
+          }),
+        }),
+      }),
+    };
+  }
+
+  function mockDuplicateCheck(existing: { id: string; total_hours: number } | null) {
+    return {
+      select: () => ({
+        eq: () => ({
+          eq: () => ({
+            eq: () => ({
+              limit: () => ({
+                maybeSingle: () =>
+                  Promise.resolve({ data: existing, error: null }),
+              }),
+            }),
+          }),
+        }),
+      }),
+    };
+  }
+
+  function mockInsertSuccess(id: string) {
+    return {
+      insert: () => ({
+        select: () => ({
+          single: () =>
+            Promise.resolve({ data: { id }, error: null }),
+        }),
+      }),
+    };
+  }
+
+  function mockInsertError(message: string, code?: string) {
+    return {
+      insert: () => ({
+        select: () => ({
+          single: () =>
+            Promise.resolve({ data: null, error: { message, code } }),
+        }),
+      }),
+    };
+  }
+
+  it("6.1 — unauthenticated user → error", async () => {
+    mockSupabase.auth.getUser.mockResolvedValue({
+      data: { user: null },
+    });
+
+    const result = await createManualAttendance(validInput);
+
+    expect(result).toEqual({
+      success: false,
+      error: "לא מחובר",
+    });
+  });
+
+  it("6.2 — worker role → error", async () => {
+    mockSupabase.auth.getUser.mockResolvedValue({
+      data: { user: { id: "user-1" } },
+    });
+    mockSupabase.from.mockImplementation(() => mockDashboardRoleCheck("worker"));
+
+    const result = await createManualAttendance(validInput);
+
+    expect(result).toEqual({
+      success: false,
+      error: "אין הרשאות צפייה",
+    });
+  });
+
+  it("6.3 — admin role → status is approved", async () => {
+    mockSupabase.auth.getUser.mockResolvedValue({
+      data: { user: { id: "admin-1" } },
+    });
+
+    let callCount = 0;
+    mockSupabase.from.mockImplementation(() => {
+      callCount++;
+      if (callCount === 1) return mockDashboardRoleCheck("admin");
+      if (callCount === 2) return mockWorkerActiveCheck(true); // worker active
+      if (callCount === 3) return mockAreaActiveCheck(true); // area active
+      if (callCount === 4) return mockDuplicateCheck(null); // no duplicate
+      if (callCount === 5) return mockInsertSuccess("rec-1"); // insert
+      return {};
+    });
+
+    const result = await createManualAttendance(validInput);
+
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data.status).toBe("approved");
+      expect(result.data.id).toBe("rec-1");
+    }
+  });
+
+  it("6.4 — manager role → status is pending", async () => {
+    mockSupabase.auth.getUser.mockResolvedValue({
+      data: { user: { id: "mgr-1" } },
+    });
+
+    let callCount = 0;
+    mockSupabase.from.mockImplementation(() => {
+      callCount++;
+      if (callCount === 1) return mockDashboardRoleCheck("manager");
+      if (callCount === 2) return mockWorkerActiveCheck(true);
+      if (callCount === 3) return mockAreaActiveCheck(true);
+      if (callCount === 4) return mockDuplicateCheck(null);
+      if (callCount === 5) return mockInsertSuccess("rec-2");
+      return {};
+    });
+
+    const result = await createManualAttendance(validInput);
+
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data.status).toBe("pending");
+    }
+  });
+
+  it("6.5 — owner role → status is approved", async () => {
+    mockSupabase.auth.getUser.mockResolvedValue({
+      data: { user: { id: "owner-1" } },
+    });
+
+    let callCount = 0;
+    mockSupabase.from.mockImplementation(() => {
+      callCount++;
+      if (callCount === 1) return mockDashboardRoleCheck("owner");
+      if (callCount === 2) return mockWorkerActiveCheck(true);
+      if (callCount === 3) return mockAreaActiveCheck(true);
+      if (callCount === 4) return mockDuplicateCheck(null);
+      if (callCount === 5) return mockInsertSuccess("rec-3");
+      return {};
+    });
+
+    const result = await createManualAttendance(validInput);
+
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data.status).toBe("approved");
+    }
+  });
+
+  it("6.6 — future date → validation error", async () => {
+    mockSupabase.auth.getUser.mockResolvedValue({
+      data: { user: { id: "admin-1" } },
+    });
+    mockSupabase.from.mockImplementation(() => mockDashboardRoleCheck("admin"));
+
+    const result = await createManualAttendance({
+      ...validInput,
+      workDate: "2099-12-31",
+    });
+
+    expect(result).toEqual({
+      success: false,
+      error: "לא ניתן לבחור תאריך עתידי",
+    });
+  });
+
+  it("6.7 — hours out of range (too high) → validation error", async () => {
+    mockSupabase.auth.getUser.mockResolvedValue({
+      data: { user: { id: "admin-1" } },
+    });
+    mockSupabase.from.mockImplementation(() => mockDashboardRoleCheck("admin"));
+
+    const result = await createManualAttendance({
+      ...validInput,
+      totalHours: 25,
+    });
+
+    expect(result).toEqual({
+      success: false,
+      error: "שעות חייבות להיות בין 0.5 ל-24",
+    });
+  });
+
+  it("6.8 — hours not 0.5 multiple → validation error", async () => {
+    mockSupabase.auth.getUser.mockResolvedValue({
+      data: { user: { id: "admin-1" } },
+    });
+    mockSupabase.from.mockImplementation(() => mockDashboardRoleCheck("admin"));
+
+    const result = await createManualAttendance({
+      ...validInput,
+      totalHours: 3.3,
+    });
+
+    expect(result).toEqual({
+      success: false,
+      error: "שעות חייבות להיות בכפולות של 0.5",
+    });
+  });
+
+  it("6.9 — inactive worker → validation error", async () => {
+    mockSupabase.auth.getUser.mockResolvedValue({
+      data: { user: { id: "admin-1" } },
+    });
+
+    let callCount = 0;
+    mockSupabase.from.mockImplementation(() => {
+      callCount++;
+      if (callCount === 1) return mockDashboardRoleCheck("admin");
+      if (callCount === 2) return mockWorkerActiveCheck(false); // worker not active
+      return {};
+    });
+
+    const result = await createManualAttendance(validInput);
+
+    expect(result).toEqual({
+      success: false,
+      error: "עובד לא נמצא או לא פעיל",
+    });
+  });
+
+  it("6.10 — inactive area → validation error", async () => {
+    mockSupabase.auth.getUser.mockResolvedValue({
+      data: { user: { id: "admin-1" } },
+    });
+
+    let callCount = 0;
+    mockSupabase.from.mockImplementation(() => {
+      callCount++;
+      if (callCount === 1) return mockDashboardRoleCheck("admin");
+      if (callCount === 2) return mockWorkerActiveCheck(true); // worker active
+      if (callCount === 3) return mockAreaActiveCheck(false); // area not active
+      return {};
+    });
+
+    const result = await createManualAttendance(validInput);
+
+    expect(result).toEqual({
+      success: false,
+      error: "שטח לא נמצא או לא פעיל",
+    });
+  });
+
+  it("6.11 — duplicate detection returns warning but succeeds", async () => {
+    mockSupabase.auth.getUser.mockResolvedValue({
+      data: { user: { id: "admin-1" } },
+    });
+
+    let callCount = 0;
+    mockSupabase.from.mockImplementation(() => {
+      callCount++;
+      if (callCount === 1) return mockDashboardRoleCheck("admin");
+      if (callCount === 2) return mockWorkerActiveCheck(true);
+      if (callCount === 3) return mockAreaActiveCheck(true);
+      if (callCount === 4) return mockDuplicateCheck({ id: "existing-1", total_hours: 6 });
+      if (callCount === 5) return mockInsertSuccess("rec-new");
+      return {};
+    });
+
+    const result = await createManualAttendance(validInput);
+
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data.duplicate).toEqual({ id: "existing-1", total_hours: 6 });
+    }
+  });
+
+  it("6.12 — successful insert creates audit log entry", async () => {
+    mockSupabase.auth.getUser.mockResolvedValue({
+      data: { user: { id: "admin-1" } },
+    });
+
+    let callCount = 0;
+    mockSupabase.from.mockImplementation(() => {
+      callCount++;
+      if (callCount === 1) return mockDashboardRoleCheck("admin");
+      if (callCount === 2) return mockWorkerActiveCheck(true);
+      if (callCount === 3) return mockAreaActiveCheck(true);
+      if (callCount === 4) return mockDuplicateCheck(null);
+      if (callCount === 5) return mockInsertSuccess("rec-audit");
+      return {};
+    });
+
+    await createManualAttendance(validInput);
+
+    expect(mockLogAudit).toHaveBeenCalledWith({
+      actorId: "admin-1",
+      tableName: "attendance_logs",
+      recordId: "rec-audit",
+      action: "create",
+      before: null,
+      after: {
+        profile_id: "worker-1",
+        area_id: "area-1",
+        work_date: "2026-03-10",
+        total_hours: 8,
+        status: "approved",
+        source: "manual",
+      },
+    });
+  });
+
+  it("6.13 — record has source: manual", async () => {
+    mockSupabase.auth.getUser.mockResolvedValue({
+      data: { user: { id: "admin-1" } },
+    });
+
+    let callCount = 0;
+    mockSupabase.from.mockImplementation(() => {
+      callCount++;
+      if (callCount === 1) return mockDashboardRoleCheck("admin");
+      if (callCount === 2) return mockWorkerActiveCheck(true);
+      if (callCount === 3) return mockAreaActiveCheck(true);
+      if (callCount === 4) return mockDuplicateCheck(null);
+      if (callCount === 5) return mockInsertSuccess("rec-source");
+      return {};
+    });
+
+    await createManualAttendance(validInput);
+
+    expect(mockLogAudit).toHaveBeenCalledWith(
+      expect.objectContaining({
+        after: expect.objectContaining({
+          source: "manual",
+        }),
+      })
+    );
+  });
+
+  it("6.14 — audit log failure returns error (consistent with other actions)", async () => {
+    mockSupabase.auth.getUser.mockResolvedValue({
+      data: { user: { id: "admin-1" } },
+    });
+
+    let callCount = 0;
+    mockSupabase.from.mockImplementation(() => {
+      callCount++;
+      if (callCount === 1) return mockDashboardRoleCheck("admin");
+      if (callCount === 2) return mockWorkerActiveCheck(true);
+      if (callCount === 3) return mockAreaActiveCheck(true);
+      if (callCount === 4) return mockDuplicateCheck(null);
+      if (callCount === 5) return mockInsertSuccess("rec-audit-fail");
+      return {};
+    });
+    mockLogAudit.mockRejectedValueOnce(new Error("audit write failed"));
+
+    const result = await createManualAttendance(validInput);
+
+    expect(result).toEqual({
+      success: false,
+      error: "הפעולה בוצעה אך תיעוד הביקורת נכשל",
+    });
+  });
+
+  it("6.15 — DB insert error returns ActionResult error", async () => {
+    mockSupabase.auth.getUser.mockResolvedValue({
+      data: { user: { id: "admin-1" } },
+    });
+
+    let callCount = 0;
+    mockSupabase.from.mockImplementation(() => {
+      callCount++;
+      if (callCount === 1) return mockDashboardRoleCheck("admin");
+      if (callCount === 2) return mockWorkerActiveCheck(true);
+      if (callCount === 3) return mockAreaActiveCheck(true);
+      if (callCount === 4) return mockDuplicateCheck(null);
+      if (callCount === 5) return mockInsertError("insert failed");
+      return {};
+    });
+
+    const result = await createManualAttendance(validInput);
+
+    expect(result).toEqual({
+      success: false,
+      error: "insert failed",
+    });
+    expect(mockLogAudit).not.toHaveBeenCalled();
+  });
+});
+
+describe("dashboardApproveRecord", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  function mockDashRole(role: string) {
+    return {
+      select: () => ({
+        eq: () => ({
+          single: () =>
+            Promise.resolve({ data: { role }, error: null }),
+        }),
+      }),
+    };
+  }
+
+  function mockRecordLookup(data: unknown) {
+    return {
+      select: () => ({
+        eq: () => ({
+          single: () => Promise.resolve({ data, error: null }),
+        }),
+      }),
+    };
+  }
+
+  function mockUpdateSuccess() {
+    return {
+      update: () => ({
+        eq: () => Promise.resolve({ error: null }),
+      }),
+    };
+  }
+
+  it("rejects unauthenticated caller", async () => {
+    mockSupabase.auth.getUser.mockResolvedValue({ data: { user: null } });
+
+    const result = await dashboardApproveRecord("rec-1");
+
+    expect(result).toEqual({ success: false, error: "לא מחובר" });
+  });
+
+  it("rejects worker role", async () => {
+    mockSupabase.auth.getUser.mockResolvedValue({
+      data: { user: { id: "user-1" } },
+    });
+    mockSupabase.from.mockImplementation(() => mockDashRole("worker"));
+
+    const result = await dashboardApproveRecord("rec-1");
+
+    expect(result).toEqual({ success: false, error: "אין הרשאות צפייה" });
+  });
+
+  it("accepts owner/admin/manager roles", async () => {
+    for (const role of ["owner", "admin", "manager"]) {
+      vi.clearAllMocks();
+      mockSupabase.auth.getUser.mockResolvedValue({
+        data: { user: { id: "user-1" } },
+      });
+      let callIndex = 0;
+      mockSupabase.from.mockImplementation(() => {
+        callIndex++;
+        if (callIndex === 1) return mockDashRole(role);
+        if (callIndex === 2) return mockRecordLookup({
+          id: "rec-1", profile_id: "w-1", area_id: "a-1", status: "pending",
+        });
+        return mockUpdateSuccess();
+      });
+
+      const result = await dashboardApproveRecord("rec-1");
+
+      expect(result.success).toBe(true);
+    }
+  });
+
+  it("rejects if profile_id is null (dirty record)", async () => {
+    mockSupabase.auth.getUser.mockResolvedValue({
+      data: { user: { id: "user-1" } },
+    });
+    let callIndex = 0;
+    mockSupabase.from.mockImplementation(() => {
+      callIndex++;
+      if (callIndex === 1) return mockDashRole("owner");
+      return mockRecordLookup({
+        id: "rec-1", profile_id: null, area_id: "a-1", status: "pending",
+      });
+    });
+
+    const result = await dashboardApproveRecord("rec-1");
+
+    expect(result.success).toBe(false);
+    if (!result.success) expect(result.error).toContain("לא ניתן לאשר");
+  });
+
+  it("rejects if area_id is null (dirty record)", async () => {
+    mockSupabase.auth.getUser.mockResolvedValue({
+      data: { user: { id: "user-1" } },
+    });
+    let callIndex = 0;
+    mockSupabase.from.mockImplementation(() => {
+      callIndex++;
+      if (callIndex === 1) return mockDashRole("owner");
+      return mockRecordLookup({
+        id: "rec-1", profile_id: "w-1", area_id: null, status: "pending",
+      });
+    });
+
+    const result = await dashboardApproveRecord("rec-1");
+
+    expect(result.success).toBe(false);
+    if (!result.success) expect(result.error).toContain("לא ניתן לאשר");
+  });
+
+  it("rejects non-pending records", async () => {
+    mockSupabase.auth.getUser.mockResolvedValue({
+      data: { user: { id: "user-1" } },
+    });
+    let callIndex = 0;
+    mockSupabase.from.mockImplementation(() => {
+      callIndex++;
+      if (callIndex === 1) return mockDashRole("admin");
+      return mockRecordLookup({
+        id: "rec-1", profile_id: "w-1", area_id: "a-1", status: "approved",
+      });
+    });
+
+    const result = await dashboardApproveRecord("rec-1");
+
+    expect(result.success).toBe(false);
+    if (!result.success) expect(result.error).toContain("ממתינות");
+  });
+
+  it("approves clean pending record and calls logAudit", async () => {
+    mockSupabase.auth.getUser.mockResolvedValue({
+      data: { user: { id: "admin-1" } },
+    });
+    let callIndex = 0;
+    mockSupabase.from.mockImplementation(() => {
+      callIndex++;
+      if (callIndex === 1) return mockDashRole("admin");
+      if (callIndex === 2) return mockRecordLookup({
+        id: "rec-1", profile_id: "w-1", area_id: "a-1", status: "pending",
+      });
+      return mockUpdateSuccess();
+    });
+
+    const result = await dashboardApproveRecord("rec-1");
+
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data).toEqual({ id: "rec-1", status: "approved" });
+    }
+    expect(mockLogAudit).toHaveBeenCalledWith(
+      expect.objectContaining({
+        actorId: "admin-1",
+        tableName: "attendance_logs",
+        recordId: "rec-1",
+        action: "approve",
+        before: { status: "pending" },
+        after: { status: "approved" },
+      })
+    );
+    expect(mockRevalidatePath).toHaveBeenCalledWith("/he/dashboard");
+    expect(mockRevalidatePath).toHaveBeenCalledWith("/th/dashboard");
+    expect(mockRevalidatePath).toHaveBeenCalledWith("/he/admin/review");
+  });
+
+  it("returns error when Supabase update fails", async () => {
+    mockSupabase.auth.getUser.mockResolvedValue({
+      data: { user: { id: "admin-1" } },
+    });
+    let callIndex = 0;
+    mockSupabase.from.mockImplementation(() => {
+      callIndex++;
+      if (callIndex === 1) return mockDashRole("admin");
+      if (callIndex === 2) return mockRecordLookup({
+        id: "rec-1", profile_id: "w-1", area_id: "a-1", status: "pending",
+      });
+      return {
+        update: () => ({
+          eq: () => Promise.resolve({ error: { message: "db error" } }),
+        }),
+      };
+    });
+
+    const result = await dashboardApproveRecord("rec-1");
+
+    expect(result).toEqual({ success: false, error: "db error" });
+  });
+});
+
+describe("dashboardRejectRecord", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  function mockDashRole(role: string) {
+    return {
+      select: () => ({
+        eq: () => ({
+          single: () =>
+            Promise.resolve({ data: { role }, error: null }),
+        }),
+      }),
+    };
+  }
+
+  function mockRecordLookup(data: unknown) {
+    return {
+      select: () => ({
+        eq: () => ({
+          single: () => Promise.resolve({ data, error: null }),
+        }),
+      }),
+    };
+  }
+
+  function mockUpdateSuccess() {
+    return {
+      update: () => ({
+        eq: () => Promise.resolve({ error: null }),
+      }),
+    };
+  }
+
+  it("rejects unauthenticated caller", async () => {
+    mockSupabase.auth.getUser.mockResolvedValue({ data: { user: null } });
+
+    const result = await dashboardRejectRecord("rec-1");
+
+    expect(result).toEqual({ success: false, error: "לא מחובר" });
+  });
+
+  it("rejects worker role", async () => {
+    mockSupabase.auth.getUser.mockResolvedValue({
+      data: { user: { id: "user-1" } },
+    });
+    mockSupabase.from.mockImplementation(() => mockDashRole("worker"));
+
+    const result = await dashboardRejectRecord("rec-1");
+
+    expect(result).toEqual({ success: false, error: "אין הרשאות צפייה" });
+  });
+
+  it("rejects dirty records (null profile_id or area_id)", async () => {
+    mockSupabase.auth.getUser.mockResolvedValue({
+      data: { user: { id: "user-1" } },
+    });
+    let callIndex = 0;
+    mockSupabase.from.mockImplementation(() => {
+      callIndex++;
+      if (callIndex === 1) return mockDashRole("owner");
+      return mockRecordLookup({
+        id: "rec-1", profile_id: null, area_id: "a-1", status: "pending",
+      });
+    });
+
+    const result = await dashboardRejectRecord("rec-1");
+
+    expect(result.success).toBe(false);
+    if (!result.success) expect(result.error).toContain("לא ניתן לדחות");
+  });
+
+  it("rejects non-pending records", async () => {
+    mockSupabase.auth.getUser.mockResolvedValue({
+      data: { user: { id: "user-1" } },
+    });
+    let callIndex = 0;
+    mockSupabase.from.mockImplementation(() => {
+      callIndex++;
+      if (callIndex === 1) return mockDashRole("admin");
+      return mockRecordLookup({
+        id: "rec-1", profile_id: "w-1", area_id: "a-1", status: "approved",
+      });
+    });
+
+    const result = await dashboardRejectRecord("rec-1");
+
+    expect(result.success).toBe(false);
+    if (!result.success) expect(result.error).toContain("ממתינות");
+  });
+
+  it("rejects clean pending record and calls logAudit", async () => {
+    mockSupabase.auth.getUser.mockResolvedValue({
+      data: { user: { id: "admin-1" } },
+    });
+    let callIndex = 0;
+    mockSupabase.from.mockImplementation(() => {
+      callIndex++;
+      if (callIndex === 1) return mockDashRole("admin");
+      if (callIndex === 2) return mockRecordLookup({
+        id: "rec-1", profile_id: "w-1", area_id: "a-1", status: "pending",
+      });
+      return mockUpdateSuccess();
+    });
+
+    const result = await dashboardRejectRecord("rec-1");
+
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data).toEqual({ id: "rec-1", status: "rejected" });
+    }
+    expect(mockLogAudit).toHaveBeenCalledWith(
+      expect.objectContaining({
+        actorId: "admin-1",
+        tableName: "attendance_logs",
+        recordId: "rec-1",
+        action: "reject",
+        before: { status: "pending" },
+        after: { status: "rejected" },
+      })
+    );
+    expect(mockRevalidatePath).toHaveBeenCalledWith("/he/dashboard");
+    expect(mockRevalidatePath).toHaveBeenCalledWith("/he/admin/review");
+  });
+
+  it("returns error when Supabase update fails", async () => {
+    mockSupabase.auth.getUser.mockResolvedValue({
+      data: { user: { id: "admin-1" } },
+    });
+    let callIndex = 0;
+    mockSupabase.from.mockImplementation(() => {
+      callIndex++;
+      if (callIndex === 1) return mockDashRole("admin");
+      if (callIndex === 2) return mockRecordLookup({
+        id: "rec-1", profile_id: "w-1", area_id: "a-1", status: "pending",
+      });
+      return {
+        update: () => ({
+          eq: () => Promise.resolve({ error: { message: "db error" } }),
+        }),
+      };
+    });
+
+    const result = await dashboardRejectRecord("rec-1");
+
+    expect(result).toEqual({ success: false, error: "db error" });
   });
 });
