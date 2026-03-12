@@ -8,6 +8,16 @@ import { workerProfileSchema } from "@/lib/validators/worker-profile";
 import { revalidatePath } from "next/cache";
 import crypto from "crypto";
 
+function revalidateAdminReview() {
+  revalidatePath("/he/admin/review");
+  revalidatePath("/th/admin/review");
+}
+
+function revalidateAdminWorkers() {
+  revalidatePath("/he/admin/workers");
+  revalidatePath("/th/admin/workers");
+}
+
 export interface PendingRecord {
   id: string;
   profile_id: string | null;
@@ -137,11 +147,11 @@ export async function resolveWorker(
     });
   } catch (auditErr) {
     console.error("[resolveWorker] Audit log failed:", auditErr);
-    revalidatePath("/admin/review");
+    revalidateAdminReview();
     return { success: false, error: "הפעולה בוצעה אך תיעוד הביקורת נכשל" };
   }
 
-  revalidatePath("/admin/review");
+  revalidateAdminReview();
   return { success: true, data: { id: recordId } };
 }
 
@@ -183,11 +193,11 @@ export async function resolveArea(
     });
   } catch (auditErr) {
     console.error("[resolveArea] Audit log failed:", auditErr);
-    revalidatePath("/admin/review");
+    revalidateAdminReview();
     return { success: false, error: "הפעולה בוצעה אך תיעוד הביקורת נכשל" };
   }
 
-  revalidatePath("/admin/review");
+  revalidateAdminReview();
   return { success: true, data: { id: recordId } };
 }
 
@@ -330,13 +340,13 @@ export async function createWorkerAndResolve(
     });
   } catch (auditErr) {
     console.error("[createWorkerAndResolve] Resolve audit log failed:", auditErr);
-    revalidatePath("/admin/review");
-    revalidatePath("/admin/workers");
+    revalidateAdminReview();
+    revalidateAdminWorkers();
     return { success: false, error: "הפעולה בוצעה אך תיעוד הביקורת נכשל" };
   }
 
-  revalidatePath("/admin/review");
-  revalidatePath("/admin/workers");
+  revalidateAdminReview();
+  revalidateAdminWorkers();
   return { success: true, data: { id: recordId } };
 }
 
@@ -380,11 +390,11 @@ export async function approveRecord(
     });
   } catch (auditErr) {
     console.error("[approveRecord] Audit log failed:", auditErr);
-    revalidatePath("/admin/review");
+    revalidateAdminReview();
     return { success: false, error: "הפעולה בוצעה אך תיעוד הביקורת נכשל" };
   }
 
-  revalidatePath("/admin/review");
+  revalidateAdminReview();
   return { success: true, data: { id: recordId } };
 }
 
@@ -421,11 +431,11 @@ export async function rejectRecord(
     });
   } catch (auditErr) {
     console.error("[rejectRecord] Audit log failed:", auditErr);
-    revalidatePath("/admin/review");
+    revalidateAdminReview();
     return { success: false, error: "הפעולה בוצעה אך תיעוד הביקורת נכשל" };
   }
 
-  revalidatePath("/admin/review");
+  revalidateAdminReview();
   return { success: true, data: { id: recordId } };
 }
 
@@ -672,10 +682,10 @@ export async function editRecord(
     });
   } catch (auditErr) {
     console.error("[editRecord] Audit log failed:", auditErr);
-    revalidatePath("/admin/review");
+    revalidateAdminReview();
     return { success: false, error: "הפעולה בוצעה אך תיעוד הביקורת נכשל" };
   }
 
-  revalidatePath("/admin/review");
+  revalidateAdminReview();
   return { success: true, data: { id: recordId } };
 }
