@@ -4,7 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { logAudit } from "@/lib/audit";
 import { verifyAdminCaller, type ActionResult } from "@/lib/auth-helpers";
-import { workerProfileSchema, profileAliasSchema } from "@/lib/validators/worker-profile";
+import { workerProfileSchema, workerProfileBaseSchema, profileAliasSchema } from "@/lib/validators/worker-profile";
 import { revalidatePath } from "next/cache";
 import crypto from "crypto";
 
@@ -217,7 +217,7 @@ export async function updateWorkerProfile(
   const { user, error: authError } = await verifyAdminCaller(supabase);
   if (!user) return { success: false, error: authError };
 
-  const parsed = workerProfileSchema.partial().safeParse(input);
+  const parsed = workerProfileBaseSchema.partial().safeParse(input);
   if (!parsed.success) {
     const firstError = parsed.error.issues[0];
     return { success: false, error: firstError.message };
