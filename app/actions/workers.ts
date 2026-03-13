@@ -255,19 +255,22 @@ export async function updateWorkerProfile(
     }
   }
 
-  // Update auth email if provided (email lives in auth.users, not profiles)
+  // Update auth email if provided and changed (email lives in auth.users, not profiles)
   const newEmail = input.email?.trim();
   if (newEmail) {
-    const { error: emailError } = await adminClient.auth.admin.updateUserById(
-      profileId,
-      { email: newEmail },
-    );
-    if (emailError) {
-      const msg = emailError.message;
-      if (msg.includes("already been registered") || msg.includes("already exists")) {
-        return { success: false, error: "כתובת אימייל כבר קיימת במערכת" };
+    const { data: authUser } = await adminClient.auth.admin.getUserById(profileId);
+    if (authUser?.user?.email !== newEmail) {
+      const { error: emailError } = await adminClient.auth.admin.updateUserById(
+        profileId,
+        { email: newEmail },
+      );
+      if (emailError) {
+        const msg = emailError.message;
+        if (msg.includes("already been registered") || msg.includes("already exists")) {
+          return { success: false, error: "כתובת אימייל כבר קיימת במערכת" };
+        }
+        return { success: false, error: msg };
       }
-      return { success: false, error: msg };
     }
   }
 
