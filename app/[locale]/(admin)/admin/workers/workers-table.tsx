@@ -157,9 +157,9 @@ export function WorkersTable({
             <tr className="border-b bg-muted/50">
               <th className="px-4 py-3 text-start font-medium">{labels.name}</th>
               <th className="px-4 py-3 text-start font-medium">{labels.role}</th>
-              <th className="px-4 py-3 text-start font-medium">{labels.email}</th>
               <th className="px-4 py-3 text-start font-medium">{labels.hourlyRate}</th>
               <th className="px-4 py-3 text-start font-medium">{labels.language}</th>
+              <th className="px-4 py-3 text-start font-medium">{labels.email}</th>
               <th className="px-4 py-3 text-start font-medium">{labels.telegramId}</th>
               <th className="px-4 py-3 text-start font-medium">{labels.actions}</th>
             </tr>
@@ -470,20 +470,6 @@ function WorkerRow({
           </Select>
         </td>
         <td className="px-4 py-3">
-          {editData.role === "admin" || editData.role === "manager" ? (
-            <Input
-              type="email"
-              value={editData.email}
-              onChange={(e) => setEditData({ ...editData, email: e.target.value })}
-              placeholder={labels.emailPlaceholder}
-              className="max-w-[200px]"
-              dir="ltr"
-            />
-          ) : (
-            <span className="text-muted-foreground">—</span>
-          )}
-        </td>
-        <td className="px-4 py-3">
           <Input
             type="number"
             step="0.01"
@@ -508,6 +494,20 @@ function WorkerRow({
               <SelectItem value="en">{labels.langEn}</SelectItem>
             </SelectContent>
           </Select>
+        </td>
+        <td className="px-4 py-3">
+          {editData.role === "admin" || editData.role === "manager" ? (
+            <Input
+              type="email"
+              value={editData.email}
+              onChange={(e) => setEditData({ ...editData, email: e.target.value })}
+              placeholder={labels.emailPlaceholder}
+              className="max-w-[200px]"
+              dir="ltr"
+            />
+          ) : (
+            <span className="text-muted-foreground">—</span>
+          )}
         </td>
         <td className="px-4 py-3">
           <Input
@@ -561,13 +561,13 @@ function WorkerRow({
             "bg-muted text-muted-foreground border-border"
           }>{getRoleLabel(profile.role)}</Badge>
         </td>
-        <td className="px-4 py-3 text-sm" dir="ltr">
-          {email || "—"}
-        </td>
         <td className="px-4 py-3" dir="ltr">
           {profile.hourly_rate != null ? `₪${Number(profile.hourly_rate).toFixed(2)}` : "—"}
         </td>
         <td className="px-4 py-3">{getLangLabel(profile.language_pref)}</td>
+        <td className="px-4 py-3 text-sm max-w-[200px] truncate" dir="ltr">
+          {email || "—"}
+        </td>
         <td className="px-4 py-3 font-mono text-sm" dir="ltr">
           {profile.telegram_id ?? labels.noTelegramId}
         </td>
