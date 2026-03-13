@@ -1,6 +1,7 @@
 import { setRequestLocale } from "next-intl/server";
 import { getTranslations } from "next-intl/server";
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { redirect } from "next/navigation";
 import { WorkersTable } from "./workers-table";
 
@@ -56,11 +57,24 @@ export default async function WorkersPage({
     .eq("is_active", true)
     .order("full_name");
 
+  // Fetch emails from auth.users for staff roles (email lives in auth, not profiles)
+  const adminClient = createAdminClient();
+  const { data: authUsers } = await adminClient.auth.admin.listUsers();
+  const emailMap: Record<string, string> = {};
+  if (authUsers?.users) {
+    for (const u of authUsers.users) {
+      if (u.email && !u.email.endsWith("@meshek.local")) {
+        emailMap[u.id] = u.email;
+      }
+    }
+  }
+
   return (
     <main className="mx-auto max-w-4xl p-6">
       <h1 className="mb-6 text-2xl font-bold">{t("title")}</h1>
       <WorkersTable
         profiles={profiles ?? []}
+        emailMap={emailMap}
         labels={{
           name: t("name"),
           role: t("role"),

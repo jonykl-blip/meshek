@@ -100,9 +100,11 @@ const LANG_MAP: Record<string, keyof Labels> = {
 
 export function WorkersTable({
   profiles,
+  emailMap,
   labels,
 }: {
   profiles: Profile[];
+  emailMap: Record<string, string>;
   labels: Labels;
 }) {
   const [showCreateForm, setShowCreateForm] = useState(false);
@@ -155,6 +157,7 @@ export function WorkersTable({
             <tr className="border-b bg-muted/50">
               <th className="px-4 py-3 text-start font-medium">{labels.name}</th>
               <th className="px-4 py-3 text-start font-medium">{labels.role}</th>
+              <th className="px-4 py-3 text-start font-medium">{labels.email}</th>
               <th className="px-4 py-3 text-start font-medium">{labels.hourlyRate}</th>
               <th className="px-4 py-3 text-start font-medium">{labels.language}</th>
               <th className="px-4 py-3 text-start font-medium">{labels.telegramId}</th>
@@ -164,7 +167,7 @@ export function WorkersTable({
           <tbody>
             {profiles.length === 0 ? (
               <tr>
-                <td colSpan={6} className="px-4 py-8 text-center text-muted-foreground">
+                <td colSpan={7} className="px-4 py-8 text-center text-muted-foreground">
                   {labels.noWorkers}
                 </td>
               </tr>
@@ -173,6 +176,7 @@ export function WorkersTable({
                 <WorkerRow
                   key={profile.id}
                   profile={profile}
+                  email={emailMap[profile.id] ?? ""}
                   labels={labels}
                   getRoleLabel={getRoleLabel}
                   getLangLabel={getLangLabel}
@@ -336,6 +340,7 @@ function CreateWorkerForm({
 
 function WorkerRow({
   profile,
+  email,
   labels,
   getRoleLabel,
   getLangLabel,
@@ -343,6 +348,7 @@ function WorkerRow({
   onArchived,
 }: {
   profile: Profile;
+  email: string;
   labels: Labels;
   getRoleLabel: (role: string) => string;
   getLangLabel: (lang: string) => string;
@@ -353,6 +359,7 @@ function WorkerRow({
   const [showArchiveDialog, setShowArchiveDialog] = useState(false);
   const [editData, setEditData] = useState({
     full_name: profile.full_name,
+    email,
     telegram_id: profile.telegram_id ?? "",
     hourly_rate: String(profile.hourly_rate ?? ""),
     language_pref: profile.language_pref,
@@ -396,6 +403,7 @@ function WorkerRow({
     startTransition(async () => {
       const result = await updateWorkerProfile(profile.id, {
         full_name: editData.full_name,
+        email: editData.email || undefined,
         telegram_id: editData.telegram_id,
         hourly_rate: isNaN(rate) ? undefined : rate,
         language_pref: editData.language_pref,
@@ -413,6 +421,7 @@ function WorkerRow({
   function handleCancelEdit() {
     setEditData({
       full_name: profile.full_name,
+      email,
       telegram_id: profile.telegram_id ?? "",
       hourly_rate: String(profile.hourly_rate ?? ""),
       language_pref: profile.language_pref,
@@ -459,6 +468,20 @@ function WorkerRow({
               <SelectItem value="admin">{labels.roleAdmin}</SelectItem>
             </SelectContent>
           </Select>
+        </td>
+        <td className="px-4 py-3">
+          {editData.role === "admin" || editData.role === "manager" ? (
+            <Input
+              type="email"
+              value={editData.email}
+              onChange={(e) => setEditData({ ...editData, email: e.target.value })}
+              placeholder={labels.emailPlaceholder}
+              className="max-w-[200px]"
+              dir="ltr"
+            />
+          ) : (
+            <span className="text-muted-foreground">—</span>
+          )}
         </td>
         <td className="px-4 py-3">
           <Input
@@ -538,6 +561,9 @@ function WorkerRow({
             "bg-muted text-muted-foreground border-border"
           }>{getRoleLabel(profile.role)}</Badge>
         </td>
+        <td className="px-4 py-3 text-sm" dir="ltr">
+          {email || "—"}
+        </td>
         <td className="px-4 py-3" dir="ltr">
           {profile.hourly_rate != null ? `₪${Number(profile.hourly_rate).toFixed(2)}` : "—"}
         </td>
@@ -561,7 +587,7 @@ function WorkerRow({
         </td>
       </tr>
       <tr className="border-b last:border-b-0">
-        <td colSpan={6} className="px-4 pb-3 pt-0">
+        <td colSpan={7} className="px-4 pb-3 pt-0">
           <div className="flex flex-wrap items-center gap-1">
             <span className="text-xs text-muted-foreground">{labels.aliases}:</span>
             {profile.profile_aliases.map((a) => (

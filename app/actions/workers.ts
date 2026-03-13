@@ -146,7 +146,7 @@ export async function createWorkerProfile(
       (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : undefined);
     const result = await adminClient.auth.admin.inviteUserByEmail(email, {
       data: { full_name },
-      ...(siteUrl ? { redirectTo: `${siteUrl}/auth/callback` } : {}),
+      ...(siteUrl ? { redirectTo: `${siteUrl}/he/auth/confirm` } : {}),
     });
     authData = result.data;
     authCreateError = result.error;
@@ -206,6 +206,7 @@ export async function updateWorkerProfile(
   profileId: string,
   input: {
     full_name?: string;
+    email?: string;
     telegram_id?: string;
     hourly_rate?: number;
     language_pref?: string;
@@ -254,10 +255,26 @@ export async function updateWorkerProfile(
     }
   }
 
-  // Build update payload — only changed fields
+  // Update auth email if provided (email lives in auth.users, not profiles)
+  const newEmail = input.email?.trim();
+  if (newEmail) {
+    const { error: emailError } = await adminClient.auth.admin.updateUserById(
+      profileId,
+      { email: newEmail },
+    );
+    if (emailError) {
+      const msg = emailError.message;
+      if (msg.includes("already been registered") || msg.includes("already exists")) {
+        return { success: false, error: "כתובת אימייל כבר קיימת במערכת" };
+      }
+      return { success: false, error: msg };
+    }
+  }
+
+  // Build update payload — only changed fields (email excluded, it's in auth.users)
   const updateData: Record<string, unknown> = { updated_at: new Date().toISOString() };
   for (const [key, value] of Object.entries(parsed.data)) {
-    if (value !== undefined) {
+    if (value !== undefined && key !== "email") {
       updateData[key] = key === "telegram_id" && value === "" ? null : value;
     }
   }

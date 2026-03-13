@@ -25,6 +25,10 @@ export async function GET(
       token_hash,
     });
     if (!error) {
+      if (type === "invite") {
+        redirect(`${localePrefix}/auth/update-password`);
+      }
+
       const {
         data: { user },
       } = await supabase.auth.getUser();
