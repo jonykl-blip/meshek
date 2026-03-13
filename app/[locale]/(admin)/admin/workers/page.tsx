@@ -59,9 +59,11 @@ export default async function WorkersPage({
 
   // Fetch emails from auth.users for staff roles (email lives in auth, not profiles)
   const adminClient = createAdminClient();
-  const { data: authUsers } = await adminClient.auth.admin.listUsers();
+  const { data: authUsers, error: listUsersError } = await adminClient.auth.admin.listUsers();
   const emailMap: Record<string, string> = {};
-  if (authUsers?.users) {
+  if (listUsersError) {
+    console.error("listUsers failed:", listUsersError.message);
+  } else if (authUsers?.users) {
     for (const u of authUsers.users) {
       if (u.email && !u.email.endsWith("@meshek.local")) {
         emailMap[u.id] = u.email;
@@ -70,7 +72,7 @@ export default async function WorkersPage({
   }
 
   return (
-    <main className="mx-auto max-w-4xl p-6">
+    <main className="mx-auto max-w-6xl p-6">
       <h1 className="mb-6 text-2xl font-bold">{t("title")}</h1>
       <WorkersTable
         profiles={profiles ?? []}
