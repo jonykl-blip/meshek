@@ -95,9 +95,14 @@ export default async function WorkersPage({
           aliasPlaceholder: t("aliasPlaceholder"),
           aliasAdded: t("aliasAdded"),
           aliasRemoved: t("aliasRemoved"),
+          email: t("email"),
+          emailPlaceholder: t("emailPlaceholder"),
+          inviteSent: t("inviteSent"),
           validationNameRequired: t("validation.nameRequired"),
           validationRatePositive: t("validation.ratePositive"),
           validationTelegramNumeric: t("validation.telegramNumeric"),
+          validationEmailRequired: t("validation.emailRequired"),
+          validationEmailInvalid: t("validation.emailInvalid"),
         }}
       />
     </main>

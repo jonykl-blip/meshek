@@ -44,6 +44,7 @@ export async function bindTelegramId(
       .from("profiles")
       .select("id, full_name")
       .eq("telegram_id", trimmedId)
+      .eq("is_active", true)
       .neq("id", profileId)
       .maybeSingle();
 
@@ -96,6 +97,7 @@ export async function bindTelegramId(
 export async function createWorkerProfile(
   input: {
     full_name: string;
+    email?: string;
     telegram_id?: string;
     hourly_rate?: number;
     language_pref: string;
@@ -112,7 +114,7 @@ export async function createWorkerProfile(
     return { success: false, error: firstError.message };
   }
 
-  const { full_name, telegram_id, hourly_rate, language_pref, role } = parsed.data;
+  const { full_name, email, telegram_id, hourly_rate, language_pref, role } = parsed.data;
 
   // Check telegram_id uniqueness if provided
   if (telegram_id) {
@@ -120,6 +122,7 @@ export async function createWorkerProfile(
       .from("profiles")
       .select("id, full_name")
       .eq("telegram_id", telegram_id)
+      .eq("is_active", true)
       .maybeSingle();
 
     if (existing) {
@@ -130,17 +133,40 @@ export async function createWorkerProfile(
     }
   }
 
-  // Create headless auth user (required because profiles.id FK → auth.users)
+  // Create auth user — staff roles get a real invite, workers get headless auth
   const adminClient = createAdminClient();
-  const placeholderEmail = `worker-${crypto.randomUUID()}@meshek.local`;
-  const { data: authData, error: authCreateError } =
-    await adminClient.auth.admin.createUser({
+  const isStaffRole = role === "admin" || role === "manager";
+
+  let authData;
+  let authCreateError;
+
+  if (isStaffRole && email) {
+    const siteUrl =
+      process.env.NEXT_PUBLIC_SITE_URL ||
+      (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : undefined);
+    const result = await adminClient.auth.admin.inviteUserByEmail(email, {
+      data: { full_name },
+      ...(siteUrl ? { redirectTo: `${siteUrl}/auth/callback` } : {}),
+    });
+    authData = result.data;
+    authCreateError = result.error;
+  } else {
+    const placeholderEmail = `worker-${crypto.randomUUID()}@meshek.local`;
+    const result = await adminClient.auth.admin.createUser({
       email: placeholderEmail,
       email_confirm: true,
     });
+    authData = result.data;
+    authCreateError = result.error;
+  }
 
   if (authCreateError || !authData.user) {
-    return { success: false, error: authCreateError?.message ?? "יצירת משתמש נכשלה" };
+    const msg = authCreateError?.message ?? "יצירת משתמש נכשלה";
+    // Friendly message for duplicate email
+    if (msg.includes("already been registered") || msg.includes("already exists")) {
+      return { success: false, error: "כתובת אימייל כבר קיימת במערכת" };
+    }
+    return { success: false, error: msg };
   }
 
   const newUserId = authData.user.id;
@@ -216,6 +242,7 @@ export async function updateWorkerProfile(
       .from("profiles")
       .select("id, full_name")
       .eq("telegram_id", newTelegramId)
+      .eq("is_active", true)
       .neq("id", profileId)
       .maybeSingle();
 
@@ -285,7 +312,7 @@ export async function archiveWorkerProfile(
 
   const { data: updated, error } = await adminClient
     .from("profiles")
-    .update({ is_active: false, updated_at: new Date().toISOString() })
+    .update({ is_active: false, telegram_id: null, updated_at: new Date().toISOString() })
     .eq("id", profileId)
     .select("id, full_name, role, language_pref, telegram_id, hourly_rate, is_active")
     .single();

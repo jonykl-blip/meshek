@@ -70,6 +70,9 @@ interface Labels {
   langTh: string;
   langEn: string;
   noWorkers: string;
+  email: string;
+  emailPlaceholder: string;
+  inviteSent: string;
   aliases: string;
   addAlias: string;
   aliasPlaceholder: string;
@@ -78,6 +81,8 @@ interface Labels {
   validationNameRequired: string;
   validationRatePositive: string;
   validationTelegramNumeric: string;
+  validationEmailRequired: string;
+  validationEmailInvalid: string;
 }
 
 const ROLE_MAP: Record<string, keyof Labels> = {
@@ -199,6 +204,7 @@ function CreateWorkerForm({
   onSuccess: (msg: string) => void;
 }) {
   const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
   const [telegramId, setTelegramId] = useState("");
   const [hourlyRate, setHourlyRate] = useState("");
   const [languagePref, setLanguagePref] = useState("he");
@@ -206,11 +212,17 @@ function CreateWorkerForm({
   const [error, setError] = useState("");
   const [isPending, startTransition] = useTransition();
 
+  const isStaffRole = role === "admin" || role === "manager";
+
   function handleSubmit() {
     setError("");
     const rate = hourlyRate.trim() ? parseFloat(hourlyRate) : undefined;
     if (!name.trim()) {
       setError(labels.validationNameRequired);
+      return;
+    }
+    if (isStaffRole && !email.trim()) {
+      setError(labels.validationEmailRequired);
       return;
     }
     if (rate !== undefined && (isNaN(rate) || rate <= 0)) {
@@ -220,13 +232,14 @@ function CreateWorkerForm({
     startTransition(async () => {
       const result = await createWorkerProfile({
         full_name: name.trim(),
+        email: email.trim() || undefined,
         telegram_id: telegramId.trim() || undefined,
         hourly_rate: rate,
         language_pref: languagePref,
         role,
       });
       if (result.success) {
-        onSuccess(labels.created);
+        onSuccess(isStaffRole ? labels.inviteSent : labels.created);
       } else {
         setError(result.error);
       }
@@ -244,6 +257,32 @@ function CreateWorkerForm({
             className="mt-1"
           />
         </div>
+        <div>
+          <Label>{labels.role}</Label>
+          <Select value={role} onValueChange={setRole}>
+            <SelectTrigger className="mt-1">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="worker">{labels.roleWorker}</SelectItem>
+              <SelectItem value="manager">{labels.roleManager}</SelectItem>
+              <SelectItem value="admin">{labels.roleAdmin}</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        {isStaffRole && (
+          <div>
+            <Label>{labels.email}</Label>
+            <Input
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder={labels.emailPlaceholder}
+              className="mt-1"
+              dir="ltr"
+            />
+          </div>
+        )}
         <div>
           <Label>{labels.telegramId}</Label>
           <Input
@@ -276,19 +315,6 @@ function CreateWorkerForm({
               <SelectItem value="he">{labels.langHe}</SelectItem>
               <SelectItem value="th">{labels.langTh}</SelectItem>
               <SelectItem value="en">{labels.langEn}</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-        <div>
-          <Label>{labels.role}</Label>
-          <Select value={role} onValueChange={setRole}>
-            <SelectTrigger className="mt-1">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="worker">{labels.roleWorker}</SelectItem>
-              <SelectItem value="manager">{labels.roleManager}</SelectItem>
-              <SelectItem value="admin">{labels.roleAdmin}</SelectItem>
             </SelectContent>
           </Select>
         </div>

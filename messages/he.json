@@ -213,11 +213,16 @@
       "aliasPlaceholder": "שם כינוי חדש",
       "aliasAdded": "כינוי נוסף",
       "aliasRemoved": "כינוי הוסר",
+      "email": "אימייל",
+      "emailPlaceholder": "user@example.com",
+      "inviteSent": "נוצר בהצלחה — הזמנה נשלחה לאימייל",
       "validation": {
         "nameRequired": "שם הוא שדה חובה",
         "rateRequired": "תעריף הוא שדה חובה",
         "ratePositive": "תעריף חייב להיות חיובי",
-        "telegramNumeric": "מזהה טלגרם חייב להיות מספרי"
+        "telegramNumeric": "מזהה טלגרם חייב להיות מספרי",
+        "emailRequired": "אימייל הוא שדה חובה למנהלים",
+        "emailInvalid": "כתובת אימייל לא תקינה"
       }
     },
     "areas": {
