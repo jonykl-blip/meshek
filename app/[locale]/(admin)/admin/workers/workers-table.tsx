@@ -411,6 +411,9 @@ function WorkerRow({
       });
       if (result.success) {
         setIsEditing(false);
+        if (result.warning) {
+          setError(result.warning);
+        }
         onUpdated();
       } else {
         setError(result.error);

@@ -256,6 +256,8 @@ export async function updateWorkerProfile(
   }
 
   // Update auth email if provided and changed (email lives in auth.users, not profiles)
+  // Non-blocking: email errors don't prevent profile field updates
+  let emailWarning: string | undefined;
   const newEmail = input.email?.trim();
   if (newEmail) {
     const { data: authUser } = await adminClient.auth.admin.getUserById(profileId);
@@ -267,9 +269,11 @@ export async function updateWorkerProfile(
       if (emailError) {
         const msg = emailError.message;
         if (msg.includes("already been registered") || msg.includes("already exists")) {
-          return { success: false, error: "כתובת אימייל כבר קיימת במערכת" };
+          emailWarning = "כתובת אימייל כבר קיימת במערכת";
+        } else {
+          emailWarning = msg;
         }
-        return { success: false, error: msg };
+        console.error("Email update failed:", msg);
       }
     }
   }
@@ -303,7 +307,7 @@ export async function updateWorkerProfile(
   });
 
   revalidatePath("/admin/workers");
-  return { success: true, data: updated };
+  return { success: true, data: updated, warning: emailWarning };
 }
 
 export async function archiveWorkerProfile(

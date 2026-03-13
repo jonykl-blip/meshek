@@ -1,7 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 
 export type ActionResult<T> =
-  | { success: true; data: T }
+  | { success: true; data: T; warning?: string }
   | { success: false; error: string };
 
 export async function verifyAdminCaller(supabase: Awaited<ReturnType<typeof createClient>>) {
