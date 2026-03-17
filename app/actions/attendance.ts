@@ -515,6 +515,103 @@ export async function rejectRecord(
   return { success: true, data: { id: recordId } };
 }
 
+export async function bulkApproveRecords(
+  ids: string[]
+): Promise<ActionResult<{ approvedCount: number; skippedCount: number }>> {
+  if (ids.length === 0) return { success: true, data: { approvedCount: 0, skippedCount: 0 } };
+  const supabase = await createClient();
+  const { user, error: authError } = await verifyAdminCaller(supabase);
+  if (!user) return { success: false, error: authError };
+
+  const { data: records, error: fetchError } = await supabase
+    .from("attendance_logs")
+    .select("id, profile_id, area_id, status")
+    .in("id", ids)
+    .eq("status", "pending");
+
+  if (fetchError) return { success: false, error: fetchError.message };
+  if (!records || records.length === 0)
+    return { success: true, data: { approvedCount: 0, skippedCount: ids.length } };
+
+  const approvable = records.filter(
+    (r) => r.profile_id !== null && r.area_id !== null
+  );
+  const skippedCount = records.length - approvable.length + (ids.length - records.length);
+
+  if (approvable.length > 0) {
+    const approvableIds = approvable.map((r) => r.id);
+    const { error } = await supabase
+      .from("attendance_logs")
+      .update({ status: "approved" })
+      .in("id", approvableIds);
+
+    if (error) return { success: false, error: error.message };
+
+    for (const record of approvable) {
+      try {
+        await logAudit({
+          actorId: user.id,
+          tableName: "attendance_logs",
+          recordId: record.id,
+          action: "approve",
+          before: { status: "pending" },
+          after: { status: "approved" },
+        });
+      } catch (auditErr) {
+        console.error("[bulkApproveRecords] Audit log failed for", record.id, auditErr);
+      }
+    }
+  }
+
+  revalidateAdminReview();
+  return { success: true, data: { approvedCount: approvable.length, skippedCount } };
+}
+
+export async function bulkRejectRecords(
+  ids: string[]
+): Promise<ActionResult<{ rejectedCount: number }>> {
+  if (ids.length === 0) return { success: true, data: { rejectedCount: 0 } };
+  const supabase = await createClient();
+  const { user, error: authError } = await verifyAdminCaller(supabase);
+  if (!user) return { success: false, error: authError };
+
+  const { data: records, error: fetchError } = await supabase
+    .from("attendance_logs")
+    .select("id, status")
+    .in("id", ids)
+    .eq("status", "pending");
+
+  if (fetchError) return { success: false, error: fetchError.message };
+  if (!records || records.length === 0)
+    return { success: true, data: { rejectedCount: 0 } };
+
+  const rejectIds = records.map((r) => r.id);
+  const { error } = await supabase
+    .from("attendance_logs")
+    .update({ status: "rejected" })
+    .in("id", rejectIds);
+
+  if (error) return { success: false, error: error.message };
+
+  for (const record of records) {
+    try {
+      await logAudit({
+        actorId: user.id,
+        tableName: "attendance_logs",
+        recordId: record.id,
+        action: "reject",
+        before: { status: "pending" },
+        after: { status: "rejected" },
+      });
+    } catch (auditErr) {
+      console.error("[bulkRejectRecords] Audit log failed for", record.id, auditErr);
+    }
+  }
+
+  revalidateAdminReview();
+  return { success: true, data: { rejectedCount: records.length } };
+}
+
 export async function dashboardApproveRecord(
   recordId: string
 ): Promise<ActionResult<{ id: string; status: string }>> {

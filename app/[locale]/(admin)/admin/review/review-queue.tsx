@@ -1,11 +1,12 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState, useTransition, useEffect } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import { ChevronDown, ChevronUp, Volume2, Inbox } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -23,6 +24,8 @@ import {
   approveRecord,
   rejectRecord,
   editRecord,
+  bulkApproveRecords,
+  bulkRejectRecords,
 } from "@/app/actions/attendance";
 import type { PendingRecord } from "@/app/actions/attendance";
 
@@ -73,6 +76,15 @@ interface ReviewQueueLabels {
   editArea: string;
   cannotApproveUnresolved: string;
   noChanges: string;
+  selectAll: string;
+  clearSelection: string;
+  selectedCount: string;
+  bulkApprove: string;
+  bulkReject: string;
+  bulkRejectConfirm: string;
+  bulkApproved: string;
+  bulkRejected: string;
+  bulkPartialApprove: string;
 }
 
 interface ReviewQueueProps {
@@ -155,6 +167,31 @@ export function ReviewQueue({
   const [editAreaId, setEditAreaId] = useState("");
   const [editAreaFilter, setEditAreaFilter] = useState("");
 
+  // Bulk selection state
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [isBulkRejecting, setIsBulkRejecting] = useState(false);
+  const [bulkPending, setBulkPending] = useState(false);
+  const [bulkFeedback, setBulkFeedback] = useState<{
+    message: string;
+    type: "success" | "error";
+  } | null>(null);
+
+  // Clear selection when records change (after refresh)
+  useEffect(() => {
+    setSelectedIds(new Set());
+    setIsBulkRejecting(false);
+  }, [records]);
+
+  const pendingRecords = records.filter((r) => r.status === "pending");
+  const allPendingSelected =
+    pendingRecords.length > 0 &&
+    pendingRecords.every((r) => selectedIds.has(r.id));
+
+  const approvableSelectedIds = [...selectedIds].filter((id) => {
+    const r = records.find((rec) => rec.id === id);
+    return r?.profile_id !== null && r?.area_id !== null;
+  });
+
   const filteredWorkers = workers.filter((w) =>
     w.full_name.toLowerCase().includes(workerFilter.toLowerCase())
   );
@@ -196,6 +233,71 @@ export function ReviewQueue({
     } else {
       router.push(`${pathname}?show=all`);
     }
+  }
+
+  function handleToggleSelectAll() {
+    if (allPendingSelected) {
+      setSelectedIds(new Set());
+    } else {
+      setSelectedIds(new Set(pendingRecords.map((r) => r.id)));
+    }
+    setIsBulkRejecting(false);
+  }
+
+  function handleToggleRecord(recordId: string) {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(recordId)) {
+        next.delete(recordId);
+      } else {
+        next.add(recordId);
+      }
+      return next;
+    });
+    setIsBulkRejecting(false);
+  }
+
+  function handleBulkApprove() {
+    setBulkPending(true);
+    setBulkFeedback(null);
+    startTransition(async () => {
+      const result = await bulkApproveRecords(approvableSelectedIds);
+      setBulkPending(false);
+      if (result.success) {
+        const { approvedCount, skippedCount } = result.data;
+        const message =
+          skippedCount > 0
+            ? labels.bulkPartialApprove
+                .replace("{approved}", String(approvedCount))
+                .replace("{total}", String(approvedCount + skippedCount))
+                .replace("{skipped}", String(skippedCount))
+            : labels.bulkApproved.replace("{count}", String(approvedCount));
+        setBulkFeedback({ message, type: "success" });
+        router.refresh();
+      } else {
+        setBulkFeedback({ message: result.error, type: "error" });
+      }
+    });
+  }
+
+  function handleBulkReject() {
+    setBulkPending(true);
+    setBulkFeedback(null);
+    setIsBulkRejecting(false);
+    startTransition(async () => {
+      const result = await bulkRejectRecords([...selectedIds]);
+      setBulkPending(false);
+      if (result.success) {
+        const message = labels.bulkRejected.replace(
+          "{count}",
+          String(result.data.rejectedCount)
+        );
+        setBulkFeedback({ message, type: "success" });
+        router.refresh();
+      } else {
+        setBulkFeedback({ message: result.error, type: "error" });
+      }
+    });
   }
 
   function handleApprove(recordId: string) {
@@ -312,11 +414,78 @@ export function ReviewQueue({
 
   return (
     <div>
-      <div className="mb-4 flex items-center justify-end">
+      {/* Top toolbar */}
+      <div className="mb-4 flex items-center justify-between gap-2 flex-wrap">
+        <div className="flex items-center gap-2">
+          {pendingRecords.length > 0 && (
+            <Button variant="outline" size="sm" onClick={handleToggleSelectAll}>
+              {allPendingSelected ? labels.clearSelection : labels.selectAll}
+            </Button>
+          )}
+        </div>
         <Button variant="outline" size="sm" onClick={handleToggle}>
           {showAll ? labels.pendingOnly : labels.showAll}
         </Button>
       </div>
+
+      {/* Bulk action toolbar */}
+      {selectedIds.size > 0 && (
+        <div className="mb-4 rounded-md border bg-muted/50 p-3 space-y-2">
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="text-sm font-medium">
+              {labels.selectedCount.replace("{count}", String(selectedIds.size))}
+            </span>
+            <Button
+              size="sm"
+              disabled={approvableSelectedIds.length === 0 || bulkPending}
+              onClick={handleBulkApprove}
+              title={approvableSelectedIds.length === 0 ? labels.cannotApproveUnresolved : undefined}
+            >
+              {bulkPending
+                ? labels.saving
+                : labels.bulkApprove.replace("{count}", String(approvableSelectedIds.length))}
+            </Button>
+            <Button
+              variant="destructive"
+              size="sm"
+              disabled={bulkPending}
+              onClick={() => setIsBulkRejecting(true)}
+            >
+              {labels.bulkReject.replace("{count}", String(selectedIds.size))}
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => { setSelectedIds(new Set()); setIsBulkRejecting(false); }}
+            >
+              {labels.cancel}
+            </Button>
+          </div>
+          {isBulkRejecting && (
+            <div className="flex flex-wrap items-center gap-2 border-t pt-2">
+              <span className="text-sm">
+                {labels.bulkRejectConfirm.replace("{count}", String(selectedIds.size))}
+              </span>
+              <Button
+                variant="destructive"
+                size="sm"
+                disabled={bulkPending}
+                onClick={handleBulkReject}
+              >
+                {bulkPending ? labels.saving : labels.bulkReject.replace("{count}", String(selectedIds.size))}
+              </Button>
+              <Button variant="ghost" size="sm" onClick={() => setIsBulkRejecting(false)}>
+                {labels.cancel}
+              </Button>
+            </div>
+          )}
+          {bulkFeedback && (
+            <p className={`text-sm ${bulkFeedback.type === "success" ? "text-green-600" : "text-red-600"}`}>
+              {bulkFeedback.message}
+            </p>
+          )}
+        </div>
+      )}
 
       {records.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-16 text-center">
@@ -328,6 +497,7 @@ export function ReviewQueue({
           {records.map((record) => {
             const isExpanded = expandedId === record.id;
             const isPending = record.status === "pending";
+            const isSelected = selectedIds.has(record.id);
             const workerDisplay = record.worker_name ?? labels.unrecognized;
             const areaDisplay = record.area_name ?? labels.unrecognized;
             const transcriptPreview =
@@ -338,9 +508,18 @@ export function ReviewQueue({
               feedback?.recordId === record.id ? feedback : null;
 
             return (
-              <Card key={record.id} className="shadow-md">
+              <Card key={record.id} className={`shadow-md ${isSelected ? "ring-2 ring-primary" : ""}`}>
                 <CardContent className="p-4">
                   <div className="flex items-start justify-between gap-3">
+                    {isPending && (
+                      <div className="flex shrink-0 items-center pt-0.5">
+                        <Checkbox
+                          checked={isSelected}
+                          onCheckedChange={() => handleToggleRecord(record.id)}
+                          aria-label={workerDisplay}
+                        />
+                      </div>
+                    )}
                     <div className="min-w-0 flex-1">
                       <div className="mb-1 flex flex-wrap items-center gap-2">
                         <span className="font-bold">{workerDisplay}</span>

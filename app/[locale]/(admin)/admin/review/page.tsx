@@ -119,6 +119,15 @@ export default async function ReviewPage({
             editArea: t("editArea"),
             cannotApproveUnresolved: t("cannotApproveUnresolved"),
             noChanges: t("noChanges"),
+            selectAll: t("selectAll"),
+            clearSelection: t("clearSelection"),
+            selectedCount: t("selectedCount"),
+            bulkApprove: t("bulkApprove"),
+            bulkReject: t("bulkReject"),
+            bulkRejectConfirm: t("bulkRejectConfirm"),
+            bulkApproved: t("bulkApproved"),
+            bulkRejected: t("bulkRejected"),
+            bulkPartialApprove: t("bulkPartialApprove"),
           }}
         />
       ) : (

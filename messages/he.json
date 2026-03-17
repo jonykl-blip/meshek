@@ -318,7 +318,16 @@
       "statusPending": "ממתין",
       "statusApproved": "אושר",
       "statusRejected": "נדחה",
-      "statusImported": "יובא"
+      "statusImported": "יובא",
+      "selectAll": "בחר הכל",
+      "clearSelection": "בטל בחירה",
+      "selectedCount": "{count} נבחרו",
+      "bulkApprove": "אשר נבחרים ({count})",
+      "bulkReject": "דחה נבחרים ({count})",
+      "bulkRejectConfirm": "לדחות {count} רשומות?",
+      "bulkApproved": "אושרו {count} רשומות",
+      "bulkRejected": "נדחו {count} רשומות",
+      "bulkPartialApprove": "אושרו {approved} מתוך {total} (חסרים פרטים ל-{skipped})"
     },
     "crops": {
       "title": "ניהול גידולים",
