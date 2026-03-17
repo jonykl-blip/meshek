@@ -1,12 +1,17 @@
-import { Rubik } from "next/font/google";
+import { Noto_Sans_Hebrew } from "next/font/google";
 import "./globals.css";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import type { Metadata } from "next";
 
-const rubik = Rubik({
-  variable: "--font-rubik",
+export const metadata: Metadata = {
+  metadataBase: new URL("https://222.jonyklein.com"),
+};
+
+const notoSansHebrew = Noto_Sans_Hebrew({
+  variable: "--font-sans",
   display: "swap",
-  subsets: ["latin", "latin-ext"],
-  weight: ["400", "500", "600", "700"],
+  subsets: ["hebrew", "latin"],
+  weight: ["300", "400", "500", "600", "700"],
 });
 
 export default function RootLayout({
@@ -16,7 +21,7 @@ export default function RootLayout({
 }>) {
   return (
     <html suppressHydrationWarning>
-      <body className={`${rubik.variable} font-sans antialiased`}>
+      <body className={`${notoSansHebrew.variable} font-sans antialiased`}>
         <TooltipProvider>{children}</TooltipProvider>
       </body>
     </html>

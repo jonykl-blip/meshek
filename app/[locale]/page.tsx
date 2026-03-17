@@ -103,10 +103,10 @@ export default async function Home({
 
       {/* Hero section */}
       <main className="flex-1 flex flex-col items-center">
-        <section className="w-full bg-gradient-to-b from-[#F8F5F0] via-[#EDE8E0] to-[#F8F5F0] py-16 md:py-20">
+        <section className="w-full bg-gradient-to-b from-[#F0F7FF] via-[#E8F0FD] to-[#F8FAFC] py-16 md:py-20">
           <div className="max-w-5xl mx-auto flex flex-col items-center gap-5 px-5 text-center">
             <div className="relative">
-              <div className="w-28 h-28 md:w-32 md:h-32 rounded-full bg-gradient-to-br from-[#FFFDF9] to-[#F0EBE2] border-[3px] border-[hsl(var(--primary))]/40 flex items-center justify-center shadow-lg animate-[logoGlow_4s_ease-in-out_infinite]">
+              <div className="w-28 h-28 md:w-32 md:h-32 rounded-full bg-gradient-to-br from-[#EFF6FF] to-[#DBEAFE] border-[3px] border-[hsl(var(--primary))]/50 flex items-center justify-center shadow-lg animate-[logoGlow_4s_ease-in-out_infinite]">
                 <Image
                   src="/images/meshek-logo.jpeg"
                   alt={tCommon("appName")}

@@ -121,9 +121,9 @@ export default function SidebarNav({ role, fullName, kpis }: SidebarNavProps) {
             <>
               <div className="w-[56px] h-[56px] rounded-full flex items-center justify-center overflow-hidden mx-auto"
                 style={{
-                  background: "radial-gradient(circle at 50% 40%, rgba(255,255,255,0.95), rgba(237,232,224,0.9))",
-                  border: "2.5px solid rgba(107,140,62,0.6)",
-                  boxShadow: "0 3px 16px rgba(0,0,0,0.2)",
+                  background: "radial-gradient(circle at 50% 40%, rgba(255,255,255,0.95), rgba(219,234,254,0.9))",
+                  border: "2.5px solid rgba(96,165,250,0.65)",
+                  boxShadow: "0 3px 16px rgba(0,0,0,0.25), 0 0 12px rgba(96,165,250,0.2)",
                 }}
               >
                 <Image
@@ -177,17 +177,17 @@ export default function SidebarNav({ role, fullName, kpis }: SidebarNavProps) {
       {!collapsed && (
         <div className="relative z-[1] px-4 pb-4 flex flex-col gap-[5px]">
           <div className="sidebar-kpi-pill">
-            <span className="w-[7px] h-[7px] rounded-full shrink-0 bg-[#E6A817]" />
-            <span className="text-[#F0C654]">{t("kpi.pending", { count: kpis.pendingCount })}</span>
+            <span className="w-[7px] h-[7px] rounded-full shrink-0 bg-[#F59E0B]" />
+            <span className="text-[#FCD34D]">{t("kpi.pending", { count: kpis.pendingCount })}</span>
           </div>
           <div className="sidebar-kpi-pill">
-            <span className="w-[7px] h-[7px] rounded-full shrink-0 bg-[#5DB075]" />
-            <span className="text-[#8DD9A0]">{t("kpi.approvedToday", { count: kpis.approvedToday })}</span>
+            <span className="w-[7px] h-[7px] rounded-full shrink-0 bg-[#34D399]" />
+            <span className="text-[#6EE7B7]">{t("kpi.approvedToday", { count: kpis.approvedToday })}</span>
           </div>
           {kpis.anomalyCount > 0 && (
             <div className="sidebar-kpi-pill">
-              <span className="w-[7px] h-[7px] rounded-full shrink-0 bg-[#E05C4D]" />
-              <span className="text-[#F08C7F]">{t("kpi.anomalies", { count: kpis.anomalyCount })}</span>
+              <span className="w-[7px] h-[7px] rounded-full shrink-0 bg-[#F87171]" />
+              <span className="text-[#FCA5A5]">{t("kpi.anomalies", { count: kpis.anomalyCount })}</span>
             </div>
           )}
         </div>

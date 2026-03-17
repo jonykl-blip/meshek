@@ -4,50 +4,50 @@
 
 @layer base {
   :root {
-    --background: 33 27% 95%;
-    --foreground: 24 25% 12%;
-    --card: 40 100% 98%;
-    --card-foreground: 24 25% 12%;
-    --popover: 40 100% 98%;
-    --popover-foreground: 24 25% 12%;
-    --primary: 91 45% 33%;
+    --background: 210 40% 98%;
+    --foreground: 222 47% 11%;
+    --card: 0 0% 100%;
+    --card-foreground: 222 47% 11%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 222 47% 11%;
+    --primary: 221 83% 53%;
     --primary-foreground: 0 0% 100%;
-    --secondary: 33 22% 90%;
-    --secondary-foreground: 24 25% 12%;
-    --muted: 33 22% 90%;
-    --muted-foreground: 24 8% 44%;
-    --accent: 24 67% 54%;
+    --secondary: 214 32% 91%;
+    --secondary-foreground: 222 47% 11%;
+    --muted: 210 40% 96%;
+    --muted-foreground: 215 16% 47%;
+    --accent: 25 95% 53%;
     --accent-foreground: 0 0% 100%;
     --destructive: 4 70% 46%;
     --destructive-foreground: 0 0% 98%;
-    --border: 30 18% 84%;
-    --input: 30 18% 84%;
-    --ring: 91 45% 33%;
-    --chart-1: 12 76% 61%;
-    --chart-2: 173 58% 39%;
-    --chart-3: 197 37% 24%;
-    --chart-4: 43 74% 66%;
-    --chart-5: 27 87% 67%;
+    --border: 214 32% 91%;
+    --input: 214 32% 91%;
+    --ring: 221 83% 53%;
+    --chart-1: 221 83% 53%;
+    --chart-2: 142 71% 45%;
+    --chart-3: 25 95% 53%;
+    --chart-4: 262 83% 58%;
+    --chart-5: 173 58% 39%;
     --radius: 0.5rem;
-    --shadow-sm: 0 1px 3px rgba(37,31,25,0.04);
-    --shadow-md: 0 4px 16px rgba(37,31,25,0.06), 0 1px 3px rgba(37,31,25,0.04);
-    --shadow-lg: 0 8px 40px rgba(37,31,25,0.08), 0 2px 6px rgba(37,31,25,0.04);
-    --shadow-xl: 0 16px 56px rgba(37,31,25,0.12), 0 4px 12px rgba(37,31,25,0.06);
+    --shadow-sm: 0 1px 3px rgba(30,41,59,0.04);
+    --shadow-md: 0 4px 16px rgba(30,41,59,0.08), 0 1px 3px rgba(30,41,59,0.04);
+    --shadow-lg: 0 8px 40px rgba(30,41,59,0.10), 0 2px 6px rgba(30,41,59,0.05);
+    --shadow-xl: 0 16px 56px rgba(30,41,59,0.14), 0 4px 12px rgba(30,41,59,0.08);
     --radius-sm: 8px;
     --radius-md: 12px;
     --radius-lg: 20px;
     --radius-xl: 28px;
-    --sidebar-top: #3A5420;
-    --sidebar-bottom: #2E4318;
+    --sidebar-top: #1E3A8A;
+    --sidebar-bottom: #172654;
     --ease: cubic-bezier(0.4, 0, 0.2, 1);
-    --status-approved-bg: rgba(91,122,47,0.12);
-    --status-approved-text: #4A6526;
-    --status-pending-bg: rgba(196,155,48,0.12);
-    --status-pending-text: #9A7B25;
+    --status-approved-bg: rgba(22,163,74,0.12);
+    --status-approved-text: #15803D;
+    --status-pending-bg: rgba(217,119,6,0.12);
+    --status-pending-text: #B45309;
     --status-rejected-bg: rgba(192,57,43,0.10);
     --status-rejected-text: #A0312A;
-    --status-imported-bg: rgba(41,128,185,0.10);
-    --status-imported-text: #2471A3;
+    --status-imported-bg: rgba(37,99,235,0.10);
+    --status-imported-text: #1D4ED8;
   }
   .dark {
     --background: 0 0% 3.9%;
@@ -98,8 +98,8 @@
 /* ===== LOGIN PAGE — LANDSCAPE & GLASS CARD ===== */
 
 @keyframes logoGlow {
-  0%, 100% { box-shadow: 0 0 30px rgba(107,140,62,0.3), 0 0 60px rgba(139,105,20,0.12); }
-  50% { box-shadow: 0 0 50px rgba(107,140,62,0.45), 0 0 90px rgba(139,105,20,0.2); }
+  0%, 100% { box-shadow: 0 0 30px rgba(37,99,235,0.35), 0 0 60px rgba(249,115,22,0.12); }
+  50% { box-shadow: 0 0 50px rgba(37,99,235,0.5), 0 0 90px rgba(249,115,22,0.2); }
 }
 
 @keyframes loginFloat {
@@ -146,16 +146,16 @@
   inset: 0;
   background:
     linear-gradient(180deg,
-      #87CEEB 0%,
-      #B8D4E3 15%,
-      #D4C89E 30%,
-      #8B9A3C 40%,
-      #6B8C3E 48%,
-      #5B7A2F 55%,
-      #4A6526 62%,
-      #3A5420 70%,
-      #2E4318 80%,
-      #1F2E10 100%
+      #0F172A 0%,
+      #1E3A8A 12%,
+      #2563EB 25%,
+      #60A5FA 38%,
+      #BAE6FD 48%,
+      #6DB895 55%,
+      #4A9A6E 62%,
+      #2D7A50 70%,
+      #1A5E38 82%,
+      #0F3D24 100%
     );
   z-index: 0;
 }
@@ -263,7 +263,7 @@
   position: absolute;
   inset: -12px;
   border-radius: 50%;
-  border: 2px solid rgba(107,140,62,0.3);
+  border: 2px solid rgba(96,165,250,0.4);
   animation: pulseRing 3s ease-out infinite;
 }
 
@@ -271,8 +271,8 @@
   width: 200px;
   height: 200px;
   border-radius: 50%;
-  background: radial-gradient(circle at 50% 38%, #FFFDF9 0%, #F0EBE2 50%, #DDD6CC 100%);
-  border: 4px solid rgba(107,140,62,0.6);
+  background: radial-gradient(circle at 50% 38%, #FFFFFF 0%, #EFF6FF 50%, #DBEAFE 100%);
+  border: 4px solid rgba(96,165,250,0.6);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -322,21 +322,21 @@
   position: absolute;
   inset: 0;
   background:
-    radial-gradient(circle at 20% 80%, rgba(91,122,47,0.03) 0%, transparent 50%),
-    radial-gradient(circle at 80% 20%, rgba(139,105,20,0.02) 0%, transparent 50%);
+    radial-gradient(circle at 20% 80%, rgba(37,99,235,0.04) 0%, transparent 50%),
+    radial-gradient(circle at 80% 20%, rgba(249,115,22,0.03) 0%, transparent 50%);
 }
 
 /* Glass-morphism card */
 .login-card {
   width: 100%;
   max-width: 400px;
-  background: rgba(255,253,249,0.85);
+  background: rgba(255,255,255,0.90);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
   border-radius: var(--radius-xl);
   padding: 48px 40px;
   box-shadow: var(--shadow-xl);
-  border: 1px solid rgba(221,214,204,0.5);
+  border: 1px solid rgba(186,212,253,0.5);
   position: relative;
   z-index: 1;
   animation: fadeSlideUp 0.8s var(--ease) 0.3s both;
@@ -350,7 +350,7 @@
   left: 32px;
   right: 32px;
   height: 3px;
-  background: linear-gradient(90deg, hsl(var(--primary)), hsl(var(--accent)), #8B6914);
+  background: linear-gradient(90deg, hsl(var(--primary)), hsl(var(--accent)), #EA580C);
   border-radius: 0 0 2px 2px;
 }
 
@@ -428,13 +428,13 @@
 .auth-card {
   width: 100%;
   max-width: 420px;
-  background: rgba(255,253,249,0.85);
+  background: rgba(255,255,255,0.90);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
   border-radius: var(--radius-xl);
   padding: 48px 40px;
   box-shadow: var(--shadow-xl);
-  border: 1px solid rgba(221,214,204,0.5);
+  border: 1px solid rgba(186,212,253,0.5);
   position: relative;
   overflow: hidden;
   animation: fadeSlideUp 0.8s var(--ease) 0.3s both;
@@ -447,7 +447,7 @@
   left: 32px;
   right: 32px;
   height: 3px;
-  background: linear-gradient(90deg, hsl(var(--primary)), hsl(var(--accent)), #8B6914);
+  background: linear-gradient(90deg, hsl(var(--primary)), hsl(var(--accent)), #EA580C);
   border-radius: 0 0 2px 2px;
 }
 
@@ -456,16 +456,17 @@
   height: 50px;
   width: 100%;
   border-radius: var(--radius-md);
-  background: linear-gradient(to bottom right, hsl(var(--primary)), #4A6526);
+  background: linear-gradient(to bottom right, hsl(var(--primary)), #1D4ED8);
   font-size: 1rem;
   font-weight: 600;
   color: hsl(var(--primary-foreground));
-  box-shadow: 0 4px 16px rgba(91,122,47,0.25);
+  box-shadow: 0 4px 16px rgba(37,99,235,0.30);
   transition: all 0.2s;
 }
 .auth-btn-primary:hover {
-  background: linear-gradient(to bottom right, #4A6526, #3A5420);
-  box-shadow: 0 6px 24px rgba(91,122,47,0.35);
+  background: linear-gradient(to bottom right, #1D4ED8, #1E3A8A);
+  box-shadow: 0 6px 24px rgba(37,99,235,0.40);
+  transform: translateY(-1px);
 }
 
 /* Reusable auth input — premium styling */

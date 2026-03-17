@@ -39,7 +39,7 @@ export default function TopBar({ userInitials, notificationCount }: TopBarProps)
   const pageName = pageKey ? t(`pages.${pageKey}`) : null;
 
   return (
-    <header className="sticky top-0 z-40 flex h-14 items-center gap-4 border-b border-border bg-[rgba(255,253,249,0.85)] px-4 backdrop-blur-md md:px-8">
+    <header className="sticky top-0 z-40 flex h-14 items-center gap-4 border-b border-border bg-[rgba(248,250,252,0.88)] px-4 backdrop-blur-md md:px-8">
       {/* Breadcrumbs */}
       <nav className="flex-shrink-0 text-[0.82rem] text-muted-foreground">
         <Link href="/" className="hover:text-primary">{t("home")}</Link>
@@ -62,7 +62,7 @@ export default function TopBar({ userInitials, notificationCount }: TopBarProps)
       >
         <Bell className="h-[1.1rem] w-[1.1rem]" />
         {notificationCount > 0 && (
-          <span className="absolute end-1 top-1 flex h-4 w-4 items-center justify-center rounded-full border-2 border-card bg-[#E05C4D] text-[0.6rem] font-bold text-white">
+          <span className="absolute end-1 top-1 flex h-4 w-4 items-center justify-center rounded-full border-2 border-card bg-destructive text-[0.6rem] font-bold text-white">
             {notificationCount > 99 ? "99" : notificationCount}
           </span>
         )}

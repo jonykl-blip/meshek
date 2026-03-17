@@ -20,14 +20,14 @@ export function AnomalyPanel({
 
   if (!hasExcessive && !hasStale) {
     return (
-      <div className="rounded-[var(--radius-lg)] border border-[rgba(91,122,47,0.2)] bg-[rgba(91,122,47,0.08)] p-4 shadow-md text-sm text-green-700 text-start animate-fade-slide-up">
+      <div className="rounded-[var(--radius-lg)] border border-[rgba(22,163,74,0.2)] bg-[rgba(22,163,74,0.07)] p-4 shadow-md text-sm text-[#15803D] text-start animate-fade-slide-up">
         {labels.allClear}
       </div>
     );
   }
 
   return (
-    <div className="rounded-[var(--radius-lg)] border border-[rgba(221,214,204,0.4)] bg-card p-4 shadow-md space-y-4 animate-fade-slide-up">
+    <div className="rounded-[var(--radius-lg)] border border-[rgba(186,212,253,0.4)] bg-card p-4 shadow-md space-y-4 animate-fade-slide-up">
       {hasExcessive && (
         <section>
           <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2 text-start">

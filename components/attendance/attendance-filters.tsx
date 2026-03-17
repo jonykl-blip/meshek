@@ -82,7 +82,7 @@ export function AttendanceFilters({
 
   return (
     <div
-      className={`flex flex-wrap items-end gap-3 rounded-[var(--radius-lg)] border border-[rgba(221,214,204,0.5)] bg-secondary p-3 animate-fade-slide-up transition-opacity${isPending ? " opacity-60" : ""}`}
+      className={`flex flex-wrap items-end gap-3 rounded-[var(--radius-lg)] border border-[rgba(186,212,253,0.5)] bg-secondary p-3 animate-fade-slide-up transition-opacity${isPending ? " opacity-60" : ""}`}
       style={{ animationDelay: "0.05s" }}
     >
       <div className="flex items-center gap-2">

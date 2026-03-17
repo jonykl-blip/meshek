@@ -135,7 +135,7 @@ export function LoginForm({
 
         <Button
           type="submit"
-          className="mb-6 h-[50px] w-full rounded-md bg-gradient-to-br from-primary to-[#4A6526] text-base font-semibold shadow-[0_4px_16px_rgba(91,122,47,0.25)] hover:from-[#4A6526] hover:to-[#3A5420] hover:shadow-[0_6px_24px_rgba(91,122,47,0.35)]"
+          className="mb-6 h-[50px] w-full rounded-md bg-gradient-to-br from-primary to-[#1D4ED8] text-base font-semibold shadow-[0_4px_16px_rgba(37,99,235,0.30)] hover:from-[#1D4ED8] hover:to-[#1E3A8A] hover:shadow-[0_6px_24px_rgba(37,99,235,0.40)] hover:-translate-y-px transition-all"
           disabled={isLoading}
         >
           {isLoading ? t("loggingIn") : t("signIn")}

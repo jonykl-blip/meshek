@@ -126,7 +126,7 @@ function RecordRow({
 }) {
   return (
     <tr
-      className={`group border-b last:border-b-0 transition-colors duration-200 hover:bg-[rgba(237,232,224,0.45)] hover:border-s-[3px] hover:border-s-accent${isEven ? " bg-[rgba(237,232,224,0.18)]" : ""}`}
+      className={`group border-b last:border-b-0 transition-colors duration-200 hover:bg-[rgba(37,99,235,0.04)] hover:border-s-[3px] hover:border-s-accent${isEven ? " bg-[rgba(37,99,235,0.03)]" : ""}`}
     >
       <td className="px-4 py-3">
         <WorkerCell name={record.worker_name} fallback={labels.unknownWorker} />
@@ -218,7 +218,7 @@ export function AttendanceTable({
         </p>
       ) : (
         <div
-          className="overflow-hidden rounded-[var(--radius-lg)] border border-[rgba(221,214,204,0.4)] bg-card shadow-md animate-fade-slide-up"
+          className="overflow-hidden rounded-[var(--radius-lg)] border border-[rgba(186,212,253,0.4)] bg-card shadow-md animate-fade-slide-up"
           style={{ animationDelay: "0.1s" }}
         >
           <div className="overflow-x-auto">
