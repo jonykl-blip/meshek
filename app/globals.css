@@ -514,3 +514,26 @@
 .sidebar-kpi-pill:hover {
   background: rgba(255, 255, 255, 0.09);
 }
+
+/* ─── PWA: Safe area support for notches and display cutouts ─── */
+@supports (padding: env(safe-area-inset-top)) {
+  .safe-top {
+    padding-top: env(safe-area-inset-top);
+  }
+  .safe-bottom {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+  .safe-left {
+    padding-left: env(safe-area-inset-left);
+  }
+  .safe-right {
+    padding-right: env(safe-area-inset-right);
+  }
+}
+
+/* ─── PWA: Standalone display mode adjustments ─── */
+@media (display-mode: standalone) {
+  body {
+    overscroll-behavior-y: none;
+  }
+}

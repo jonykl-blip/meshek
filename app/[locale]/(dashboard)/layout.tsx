@@ -4,6 +4,7 @@ import { getSidebarKpis } from "@/app/actions/sidebar";
 import { getInitials } from "@/lib/format";
 import AppSidebar from "@/components/app-sidebar";
 import AppTopBar from "@/components/app-topbar";
+import PullToRefresh from "@/components/pull-to-refresh";
 
 export default async function DashboardLayout({
   children,
@@ -48,6 +49,7 @@ export default async function DashboardLayout({
       <AppSidebar role={role} fullName={fullName} kpis={kpis} />
       <div className="flex flex-1 flex-col overflow-auto">
         <AppTopBar userInitials={userInitials} notificationCount={pendingCount} />
+        <PullToRefresh />
         <main className="flex-1">{children}</main>
       </div>
     </div>

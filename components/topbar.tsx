@@ -19,6 +19,7 @@ const ROUTE_TO_PAGE_KEY: Record<string, string> = {
   payroll: "payroll",
   review: "review",
   health: "health",
+  record: "record",
 };
 
 function getPageKey(pathname: string): string | null {
@@ -39,7 +40,7 @@ export default function TopBar({ userInitials, notificationCount }: TopBarProps)
   const pageName = pageKey ? t(`pages.${pageKey}`) : null;
 
   return (
-    <header className="sticky top-0 z-40 flex h-14 items-center gap-4 border-b border-border bg-[rgba(248,250,252,0.88)] px-4 backdrop-blur-md md:px-8">
+    <header className="safe-top sticky top-0 z-40 flex h-14 items-center gap-4 border-b border-border bg-[rgba(248,250,252,0.88)] px-4 backdrop-blur-md md:px-8">
       {/* Breadcrumbs */}
       <nav className="flex-shrink-0 text-[0.82rem] text-muted-foreground">
         <Link href="/" className="hover:text-primary">{t("home")}</Link>

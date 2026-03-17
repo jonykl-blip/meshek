@@ -23,6 +23,7 @@ import {
   ChevronRight,
   HelpCircle,
   Menu,
+  Mic,
   X,
   type LucideIcon,
 } from "lucide-react";
@@ -42,6 +43,12 @@ interface NavSection {
 }
 
 const navSections: NavSection[] = [
+  {
+    labelKey: "workerActions",
+    items: [
+      { label: "דיווח", icon: Mic, href: "/record", roles: ["worker"], exact: true },
+    ],
+  },
   {
     labelKey: "reportsOps",
     items: [
@@ -321,7 +328,7 @@ export default function SidebarNav({ role, fullName, kpis }: SidebarNavProps) {
 
       {/* Mobile sidebar drawer */}
       <aside
-        className={`sidebar-noise fixed inset-y-0 left-0 z-50 flex flex-col w-[260px] text-white transition-transform duration-200 md:hidden ${
+        className={`safe-top sidebar-noise fixed inset-y-0 left-0 z-50 flex flex-col w-[260px] text-white transition-transform duration-200 md:hidden ${
           mobileOpen ? "translate-x-0" : "-translate-x-full"
         }`}
         style={{

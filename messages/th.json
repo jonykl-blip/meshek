@@ -416,11 +416,13 @@
       "crops": "גידולים",
       "payroll": "שכר",
       "review": "רשומות ממתינות לאישור",
-      "health": "בריאות מערכת"
+      "health": "בריאות מערכת",
+      "record": "รายงานการเข้างาน"
     }
   },
   "sidebar": {
     "sections": {
+      "workerActions": "การดำเนินการ",
       "management": "การจัดการ",
       "finance": "การเงิน",
       "reportsOps": "รายงานและปฏิบัติการ"
@@ -433,6 +435,28 @@
     "footer": {
       "help": "עזרה ותמיכה"
     }
+  },
+  "record": {
+    "title": "รายงานการเข้างาน",
+    "instruction": "กดปุ่มและรายงานชั่วโมงการทำงานของคุณ",
+    "record": "บันทึก",
+    "stop": "หยุด",
+    "send": "ส่ง",
+    "reRecord": "บันทึกใหม่",
+    "processing": "กำลังประมวลผล...",
+    "reviewing": "ตรวจสอบรายงาน",
+    "workerFound": "คนงาน",
+    "workerNotFound": "ไม่พบคนงาน",
+    "areaFound": "พื้นที่",
+    "areaNotFound": "ไม่พบพื้นที่",
+    "hours": "ชั่วโมง",
+    "transcript": "การถอดความ",
+    "confirm": "ยืนยันและส่ง",
+    "success": "ส่งรายงานสำเร็จ",
+    "successSub": "รายงานรอการอนุมัติจากผู้จัดการ",
+    "error": "เกิดข้อผิดพลาดในการประมวลผล",
+    "permissionError": "กรุณาอนุญาตการเข้าถึงไมโครโฟน",
+    "recentRecords": "รายงานล่าสุด"
   },
   "bot": {
     "clockin": {

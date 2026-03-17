@@ -416,11 +416,13 @@
       "crops": "גידולים",
       "payroll": "שכר",
       "review": "רשומות ממתינות לאישור",
-      "health": "בריאות מערכת"
+      "health": "בריאות מערכת",
+      "record": "דיווח נוכחות"
     }
   },
   "sidebar": {
     "sections": {
+      "workerActions": "פעולות",
       "management": "ניהול",
       "finance": "כספים",
       "reportsOps": "דוחות ותפעול"
@@ -433,6 +435,28 @@
     "footer": {
       "help": "עזרה ותמיכה"
     }
+  },
+  "record": {
+    "title": "דיווח נוכחות",
+    "instruction": "לחץ על הכפתור ודווח על שעות העבודה שלך",
+    "record": "הקלט",
+    "stop": "עצור",
+    "send": "שלח",
+    "reRecord": "הקלט שוב",
+    "processing": "מעבד...",
+    "reviewing": "בדוק את הדיווח",
+    "workerFound": "עובד",
+    "workerNotFound": "עובד לא זוהה",
+    "areaFound": "אזור",
+    "areaNotFound": "אזור לא זוהה",
+    "hours": "שעות",
+    "transcript": "תמלול",
+    "confirm": "אשר ושלח",
+    "success": "הדיווח נשלח בהצלחה",
+    "successSub": "הדיווח ממתין לאישור מנהל",
+    "error": "שגיאה בעיבוד ההקלטה",
+    "permissionError": "נא לאפשר גישה למיקרופון",
+    "recentRecords": "דיווחים אחרונים"
   },
   "bot": {
     "clockin": {
