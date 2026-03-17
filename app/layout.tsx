@@ -17,14 +17,19 @@ export const metadata: Metadata = {
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
-    statusBarStyle: "default",
+    statusBarStyle: "black-translucent",
     title: "Meshek",
   },
   formatDetection: {
     telephone: false,
   },
   icons: {
-    apple: "/icons/icon-192.png",
+    apple: [
+      { url: "/icons/apple-touch-icon-180.png", sizes: "180x180", type: "image/png" },
+      { url: "/icons/apple-touch-icon-167.png", sizes: "167x167", type: "image/png" },
+      { url: "/icons/apple-touch-icon-152.png", sizes: "152x152", type: "image/png" },
+      { url: "/icons/apple-touch-icon-120.png", sizes: "120x120", type: "image/png" },
+    ],
   },
 };
 

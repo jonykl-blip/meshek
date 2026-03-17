@@ -259,7 +259,9 @@ export async function processVoiceAttendance(
   const month = (now.getMonth() + 1).toString().padStart(2, "0");
   const timestamp = now.getTime();
   const fileUuid = randomUUID();
-  const storagePath = `web-app/${year}/${month}/${timestamp}-${fileUuid}.webm`;
+  const audioMimeType = audioFile.type || "audio/webm";
+  const ext = audioMimeType.includes("mp4") || audioMimeType.includes("mpeg") ? "m4a" : "webm";
+  const storagePath = `web-app/${year}/${month}/${timestamp}-${fileUuid}.${ext}`;
 
   const audioBuffer = await audioFile.arrayBuffer();
   const audioUint8 = new Uint8Array(audioBuffer);
@@ -267,7 +269,7 @@ export async function processVoiceAttendance(
   const { error: uploadError } = await adminClient.storage
     .from("voice-recordings")
     .upload(storagePath, audioUint8, {
-      contentType: audioFile.type || "audio/webm",
+      contentType: audioMimeType,
       upsert: false,
     });
 
@@ -302,10 +304,10 @@ export async function processVoiceAttendance(
   let transcript = "";
   try {
     const audioBlob = new Blob([audioUint8], {
-      type: audioFile.type || "audio/webm",
+      type: audioMimeType,
     });
-    const audioFileForApi = new File([audioBlob], `recording-${fileUuid}.webm`, {
-      type: audioFile.type || "audio/webm",
+    const audioFileForApi = new File([audioBlob], `recording-${fileUuid}.${ext}`, {
+      type: audioMimeType,
     });
 
     const transcriptionResponse = await openai.audio.transcriptions.create({

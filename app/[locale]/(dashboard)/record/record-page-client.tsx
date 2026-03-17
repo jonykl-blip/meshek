@@ -54,6 +54,7 @@ function StatusBadge({ status }: { status: string }) {
 export function RecordPageClient({ userId }: RecordPageClientProps) {
   const [step, setStep] = useState<Step>("record");
   const [audioBlob, setAudioBlob] = useState<Blob | null>(null);
+  const [audioMimeType, setAudioMimeType] = useState<string>("audio/webm");
   const [result, setResult] = useState<VoiceAttendanceResult | null>(null);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [transcriptOpen, setTranscriptOpen] = useState(false);
@@ -74,8 +75,9 @@ export function RecordPageClient({ userId }: RecordPageClientProps) {
     });
   }, [userId]);
 
-  const handleRecordingComplete = useCallback((blob: Blob) => {
+  const handleRecordingComplete = useCallback((blob: Blob, mimeType: string) => {
     setAudioBlob(blob);
+    setAudioMimeType(mimeType);
   }, []);
 
   const handleSend = useCallback(() => {
@@ -84,8 +86,9 @@ export function RecordPageClient({ userId }: RecordPageClientProps) {
     setErrorMsg(null);
     setStep("processing");
 
+    const ext = audioMimeType.includes("mp4") || audioMimeType.includes("mpeg") ? "m4a" : "webm";
     const formData = new FormData();
-    formData.append("audio", audioBlob, "recording.webm");
+    formData.append("audio", audioBlob, `recording.${ext}`);
 
     startTransition(async () => {
       const res = await processVoiceAttendance(formData);
@@ -106,6 +109,7 @@ export function RecordPageClient({ userId }: RecordPageClientProps) {
 
   const handleReRecord = useCallback(() => {
     setAudioBlob(null);
+    setAudioMimeType("audio/webm");
     setResult(null);
     setErrorMsg(null);
     setTranscriptOpen(false);

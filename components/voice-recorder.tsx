@@ -12,9 +12,28 @@ import { AudioPlayer } from "@/components/audio-player";
 type RecorderState = "idle" | "recording" | "recorded";
 
 interface VoiceRecorderProps {
-  onRecordingComplete: (blob: Blob) => void;
+  onRecordingComplete: (blob: Blob, mimeType: string) => void;
   disabled?: boolean;
 }
+
+// ============================================================================
+// MIME type detection (iOS Safari only supports audio/mp4)
+// ============================================================================
+
+const MIME_TYPE_PRIORITY = [
+  "audio/webm;codecs=opus",
+  "audio/webm",
+  "audio/mp4",   // iOS Safari (iPhone/iPad)
+  "audio/mpeg",
+];
+
+const getSupportedMimeType = (): string => {
+  if (typeof MediaRecorder === "undefined") return "";
+  for (const type of MIME_TYPE_PRIORITY) {
+    if (MediaRecorder.isTypeSupported(type)) return type;
+  }
+  return "";
+};
 
 // ============================================================================
 // Helpers
@@ -74,12 +93,8 @@ export function VoiceRecorder({ onRecordingComplete, disabled }: VoiceRecorderPr
     streamRef.current = stream;
     chunksRef.current = [];
 
-    // Prefer webm/opus; fall back to whatever the browser supports
-    const mimeType = MediaRecorder.isTypeSupported("audio/webm;codecs=opus")
-      ? "audio/webm;codecs=opus"
-      : MediaRecorder.isTypeSupported("audio/webm")
-      ? "audio/webm"
-      : "";
+    // Pick the best supported MIME type (includes audio/mp4 for iOS Safari)
+    const mimeType = getSupportedMimeType();
 
     const recorder = new MediaRecorder(stream, mimeType ? { mimeType } : undefined);
     mediaRecorderRef.current = recorder;
@@ -91,13 +106,14 @@ export function VoiceRecorder({ onRecordingComplete, disabled }: VoiceRecorderPr
     };
 
     recorder.onstop = () => {
+      const finalMimeType = recorder.mimeType || "audio/mp4";
       const blob = new Blob(chunksRef.current, {
-        type: recorder.mimeType || "audio/webm",
+        type: finalMimeType,
       });
       const url = URL.createObjectURL(blob);
       setPreviewUrl(url);
       setState("recorded");
-      onRecordingComplete(blob);
+      onRecordingComplete(blob, finalMimeType);
 
       // Stop all tracks
       stream.getTracks().forEach((t) => t.stop());
