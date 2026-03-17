@@ -6,7 +6,7 @@
     "poweredBy": "מופעל על ידי",
     "envVarRequired": "משתני סביבה של Supabase נדרשים",
     "copyright": "משק © {year}",
-    "brandName": "משק פילצביץ'"
+    "brandName": "משק פילצביץ׳"
   },
   "home": {
     "heroTitle": "משק - ניהול חקלאי",
@@ -73,7 +73,7 @@
     "orDivider": "או",
     "magicLinkButton": "שליחת קישור כניסה למייל",
     "magicLinkSent": "קישור נשלח למייל!",
-    "brandName": "משק פילצביץ'",
+    "brandName": "משק פילצביץ׳",
     "brandSubtitle": "ניהול חקלאי חכם",
     "checkEmail": "בדיקת המייל שלך",
     "resetInstructionsSent": "הוראות איפוס סיסמה נשלחו",
@@ -457,6 +457,15 @@
     "error": "เกิดข้อผิดพลาดในการประมวลผล",
     "permissionError": "กรุณาอนุญาตการเข้าถึงไมโครโฟน",
     "recentRecords": "รายงานล่าสุด"
+  },
+  "help": {
+    "title": "מדריכים ועזרה",
+    "pageSubtitle": "שני סרטונים קצרים שיעזרו לך להתחיל לעבוד עם המשק תוך דקות.",
+    "video1Title": "כיצד עובד הבוט בטלגרם",
+    "video1Subtitle": "75 שניות — לכל עובד ומנהל",
+    "video2Title": "סקירה מלאה של המערכת",
+    "video2Subtitle": "4 דקות — 5 פרקים",
+    "tipsTitle": "טיפים מהירים"
   },
   "bot": {
     "clockin": {
