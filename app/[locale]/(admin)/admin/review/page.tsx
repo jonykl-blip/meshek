@@ -87,6 +87,7 @@ export default async function ReviewPage({
             area: t("area"),
             date: t("date"),
             hours: t("hours"),
+            dunam: t("dunam"),
             transcript: t("transcript"),
             unrecognized: t("unrecognized"),
             play: t("play"),
