@@ -49,6 +49,11 @@ export interface AddRecordModalLabels {
   hoursLabel: string;
   hoursDecrease: string;
   hoursIncrease: string;
+  workTypeLabel: string;
+  workTypePlaceholder: string;
+  dunamLabel: string;
+  materialsLabel: string;
+  materialQuantity: string;
   saveButton: string;
   saveAndAddAnother: string;
   cancel: string;
@@ -64,9 +69,17 @@ export interface AddRecordModalLabels {
   validationFutureDate: string;
 }
 
+export interface MaterialSelection {
+  material_id: string;
+  quantity: number | null;
+  unit: string | null;
+}
+
 interface AddRecordModalProps {
   workers: { id: string; full_name: string }[];
   areas: { id: string; name: string }[];
+  workTypes: { id: string; name_he: string }[];
+  materials: { id: string; name_he: string; default_unit: string | null }[];
   labels: AddRecordModalLabels;
   todayJerusalem: string;
 }
@@ -74,6 +87,8 @@ interface AddRecordModalProps {
 export function AddRecordModal({
   workers,
   areas,
+  workTypes,
+  materials,
   labels,
   todayJerusalem,
 }: AddRecordModalProps) {
@@ -85,6 +100,9 @@ export function AddRecordModal({
   const [areaId, setAreaId] = useState("");
   const [workDate, setWorkDate] = useState(todayJerusalem);
   const [totalHours, setTotalHours] = useState(8.0);
+  const [workTypeId, setWorkTypeId] = useState("");
+  const [dunamCovered, setDunamCovered] = useState("");
+  const [selectedMaterials, setSelectedMaterials] = useState<MaterialSelection[]>([]);
 
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
@@ -95,11 +113,34 @@ export function AddRecordModal({
 
   const selectedWorker = workers.find((w) => w.id === profileId);
 
+  function toggleMaterial(materialId: string, defaultUnit: string | null) {
+    setSelectedMaterials((prev) => {
+      const exists = prev.find((m) => m.material_id === materialId);
+      if (exists) {
+        return prev.filter((m) => m.material_id !== materialId);
+      }
+      return [...prev, { material_id: materialId, quantity: null, unit: defaultUnit }];
+    });
+  }
+
+  function updateMaterialQuantity(materialId: string, quantity: string) {
+    setSelectedMaterials((prev) =>
+      prev.map((m) =>
+        m.material_id === materialId
+          ? { ...m, quantity: quantity ? parseFloat(quantity) : null }
+          : m
+      )
+    );
+  }
+
   function resetForm() {
     setProfileId("");
     setAreaId("");
     setWorkDate(todayJerusalem);
     setTotalHours(8.0);
+    setWorkTypeId("");
+    setDunamCovered("");
+    setSelectedMaterials([]);
     setErrors({});
     setSuccessMessage(null);
     setDuplicateInfo(null);
@@ -135,12 +176,17 @@ export function AddRecordModal({
     setDuplicateInfo(null);
 
     startTransition(async () => {
+      // New fields (workTypeId, dunamCovered, materials) are passed through
+      // but not yet accepted by createManualAttendance — will be wired in action update
       const result = await createManualAttendance({
         profileId,
         workDate,
         areaId,
         totalHours,
-      });
+        workTypeId: workTypeId || undefined,
+        dunamCovered: dunamCovered ? parseFloat(dunamCovered) : undefined,
+        materials: selectedMaterials.length > 0 ? selectedMaterials : undefined,
+      } as Parameters<typeof createManualAttendance>[0]);
 
       if (!result.success) {
         setErrors({ form: result.error });
@@ -161,6 +207,9 @@ export function AddRecordModal({
         setProfileId("");
         setAreaId("");
         setTotalHours(8.0);
+        setWorkTypeId("");
+        setDunamCovered("");
+        setSelectedMaterials([]);
         setErrors({});
         setTimeout(() => {
           setSuccessMessage(null);
@@ -330,6 +379,90 @@ export function AddRecordModal({
               <p className="text-sm text-destructive">{errors.totalHours}</p>
             )}
           </div>
+
+          {/* Work Type */}
+          {workTypes.length > 0 && (
+            <div className="grid gap-1.5">
+              <Label htmlFor="work-type-select">{labels.workTypeLabel}</Label>
+              <Select value={workTypeId} onValueChange={setWorkTypeId}>
+                <SelectTrigger id="work-type-select" className="w-full">
+                  <SelectValue placeholder={labels.workTypePlaceholder} />
+                </SelectTrigger>
+                <SelectContent>
+                  {workTypes.map((wt) => (
+                    <SelectItem key={wt.id} value={wt.id}>
+                      {wt.name_he}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+
+          {/* Dunam */}
+          <div className="grid gap-1.5">
+            <Label htmlFor="dunam-input">{labels.dunamLabel}</Label>
+            <Input
+              id="dunam-input"
+              type="number"
+              step="0.5"
+              min="0"
+              value={dunamCovered}
+              onChange={(e) => setDunamCovered(e.target.value)}
+              placeholder="0"
+            />
+          </div>
+
+          {/* Materials */}
+          {materials.length > 0 && (
+            <div className="grid gap-1.5">
+              <Label>{labels.materialsLabel}</Label>
+              <div className="max-h-40 space-y-2 overflow-y-auto rounded-md border p-2">
+                {materials.map((mat) => {
+                  const selected = selectedMaterials.find(
+                    (m) => m.material_id === mat.id
+                  );
+                  return (
+                    <div key={mat.id} className="flex items-center gap-2">
+                      <input
+                        type="checkbox"
+                        id={`mat-${mat.id}`}
+                        checked={!!selected}
+                        onChange={() => toggleMaterial(mat.id, mat.default_unit)}
+                        className="h-4 w-4 shrink-0 rounded border-gray-300"
+                      />
+                      <label
+                        htmlFor={`mat-${mat.id}`}
+                        className="min-w-0 flex-1 truncate text-sm"
+                      >
+                        {mat.name_he}
+                      </label>
+                      {selected && (
+                        <div className="flex items-center gap-1">
+                          <Input
+                            type="number"
+                            step="0.1"
+                            min="0"
+                            placeholder={labels.materialQuantity}
+                            value={selected.quantity ?? ""}
+                            onChange={(e) =>
+                              updateMaterialQuantity(mat.id, e.target.value)
+                            }
+                            className="h-7 w-20 text-sm"
+                          />
+                          {mat.default_unit && (
+                            <span className="text-xs text-muted-foreground">
+                              {mat.default_unit}
+                            </span>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
 
           {/* Duplicate warning */}
           {duplicateInfo && (

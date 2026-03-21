@@ -39,6 +39,7 @@ export interface PendingRecord {
   created_at: string;
   worker_name: string | null;
   area_name: string | null;
+  pending_client_name: string | null;
 }
 
 function extractVoiceStoragePath(voiceRefUrl: string): string | null {
@@ -74,6 +75,7 @@ export async function getPendingRecords(): Promise<
       raw_transcript,
       status,
       created_at,
+      pending_client_name,
       profiles!attendance_logs_profile_id_fkey ( full_name ),
       areas!attendance_logs_area_id_fkey ( name )
     `
@@ -111,6 +113,7 @@ export async function getPendingRecords(): Promise<
         created_at: row.created_at,
         worker_name: profile?.full_name ?? null,
         area_name: area?.name ?? null,
+        pending_client_name: row.pending_client_name ?? null,
       };
     })
   );
@@ -138,6 +141,7 @@ export async function getReviewRecords(
       raw_transcript,
       status,
       created_at,
+      pending_client_name,
       profiles!attendance_logs_profile_id_fkey ( full_name ),
       areas!attendance_logs_area_id_fkey ( name )
     `
@@ -180,6 +184,7 @@ export async function getReviewRecords(
       created_at: row.created_at,
       worker_name: profile?.full_name ?? null,
       area_name: area?.name ?? null,
+      pending_client_name: row.pending_client_name ?? null,
     };
   });
 

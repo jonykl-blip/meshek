@@ -25,6 +25,10 @@ import {
   Menu,
   Mic,
   X,
+  Building2,
+  Hammer,
+  FlaskConical,
+  FileBarChart,
   type LucideIcon,
 } from "lucide-react";
 
@@ -64,6 +68,15 @@ const navSections: NavSection[] = [
       { label: "שטחים", icon: MapPin, href: "/admin/areas", roles: ["owner", "admin"] },
       { label: "ציוד", icon: Wrench, href: "/admin/equipment", roles: ["owner", "admin"] },
       { label: "גידולים", icon: Wheat, href: "/admin/crops", roles: ["owner", "admin"] },
+    ],
+  },
+  {
+    labelKey: "contractor",
+    items: [
+      { label: "לקוחות", icon: Building2, href: "/admin/clients", roles: ["owner", "admin"] },
+      { label: "סוגי עבודה", icon: Hammer, href: "/admin/work-types", roles: ["owner", "admin"] },
+      { label: "חומרים", icon: FlaskConical, href: "/admin/materials", roles: ["owner", "admin"] },
+      { label: "דוחות קבלן", icon: FileBarChart, href: "/admin/contractor-reports", roles: ["owner", "admin"] },
     ],
   },
   {
@@ -289,10 +302,13 @@ export default function SidebarNav({ role, fullName, kpis }: SidebarNavProps) {
       {/* Footer */}
       {!collapsed && (
         <div className="relative z-[1] px-5 py-4 border-t border-white/[0.08]">
-          <span className="flex items-center gap-2 text-[0.8rem] text-white/50 hover:text-white/80 transition-colors cursor-pointer">
+          <Link
+            href="/help"
+            className="flex items-center gap-2 text-[0.8rem] text-white/50 hover:text-white/80 transition-colors"
+          >
             <HelpCircle size={16} className="shrink-0" />
             {t("footer.help")}
-          </span>
+          </Link>
         </div>
       )}
 

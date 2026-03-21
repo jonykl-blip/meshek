@@ -140,6 +140,7 @@ describe("createArea", () => {
       success: true,
       data: {
         ...insertedRow,
+        clients: null,
         crops: { name: "שקדים" },
         area_aliases: [],
       },

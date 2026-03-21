@@ -7,6 +7,8 @@ import {
   getActiveAreas,
   getAnomalies,
 } from "@/app/actions/attendance";
+import { getWorkTypes } from "@/app/actions/work-types";
+import { getMaterials } from "@/app/actions/materials";
 import type { AnomalyResult } from "@/app/actions/attendance";
 import { AttendanceTable } from "@/components/attendance/attendance-table";
 import { AttendanceFilters } from "@/components/attendance/attendance-filters";
@@ -75,7 +77,7 @@ export default async function DashboardPage({
   const workerIdFilter = workerId ?? "";
   const areaIdFilter = areaId ?? "";
 
-  const [attendanceResult, workersResult, areasResult, anomaliesResult] = await Promise.all([
+  const [attendanceResult, workersResult, areasResult, anomaliesResult, workTypesData, materialsData] = await Promise.all([
     getDailyAttendance({
       fromDate,
       toDate,
@@ -85,6 +87,8 @@ export default async function DashboardPage({
     getActiveWorkers(),
     getActiveAreas(),
     getAnomalies({ fromDate, toDate }),
+    getWorkTypes(),
+    getMaterials(),
   ]);
 
   const tAttendance = await getTranslations("dashboard.attendance");
@@ -157,6 +161,11 @@ export default async function DashboardPage({
     hoursLabel: tAddRecord("hoursLabel"),
     hoursDecrease: tAddRecord("hoursDecrease"),
     hoursIncrease: tAddRecord("hoursIncrease"),
+    workTypeLabel: tAddRecord("workTypeLabel"),
+    workTypePlaceholder: tAddRecord("workTypePlaceholder"),
+    dunamLabel: tAddRecord("dunamLabel"),
+    materialsLabel: tAddRecord("materialsLabel"),
+    materialQuantity: tAddRecord("materialQuantity"),
     saveButton: tAddRecord("saveButton"),
     saveAndAddAnother: tAddRecord("saveAndAddAnother"),
     cancel: tAddRecord("cancel"),
@@ -203,6 +212,8 @@ export default async function DashboardPage({
           <AddRecordModal
             workers={workersResult.success ? workersResult.data : []}
             areas={areasResult.success ? areasResult.data : []}
+            workTypes={workTypesData}
+            materials={materialsData}
             labels={addRecordLabels}
             todayJerusalem={todayJerusalem}
           />
