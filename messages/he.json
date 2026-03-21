@@ -547,7 +547,8 @@
       "workers": "עובדים",
       "workerCount": "מספר עובדים",
       "notes": "הערות",
-      "previewCount": "נמצאו {count} עבודות"
+      "previewCount": "נמצאו {count} עבודות",
+      "workSummary": "פירוט עבודות לפי לקוח"
     },
     "payroll": {
       "title": "שכר",

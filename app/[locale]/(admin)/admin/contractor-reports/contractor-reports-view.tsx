@@ -1,13 +1,21 @@
 "use client";
 
-import { useState, useTransition, useCallback } from "react";
+import { useState, useTransition, useCallback, useMemo } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
+import { Badge } from "@/components/ui/badge";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
 import {
   getContractorDashboardStats,
+  getContractorInvoiceSummary,
   exportContractorCsv,
   type ContractorDashboardStats,
+  type ContractorSessionRow,
 } from "@/app/actions/contractor-reports";
 import {
   BarChart,
@@ -21,6 +29,7 @@ import {
   Cell,
   Legend,
 } from "recharts";
+import { ChevronDown, ChevronLeft } from "lucide-react";
 
 interface Labels {
   fromDate: string;
@@ -50,6 +59,7 @@ interface Labels {
   workerCount: string;
   notes: string;
   previewCount: string;
+  workSummary: string;
 }
 
 interface ClientOption {
@@ -85,6 +95,7 @@ export function ContractorReportsView({
   const [toDate, setToDate] = useState(currentMonth.to);
   const [clientId, setClientId] = useState("");
   const [stats, setStats] = useState<ContractorDashboardStats | null>(null);
+  const [sessionRows, setSessionRows] = useState<ContractorSessionRow[]>([]);
   const [error, setError] = useState("");
   const [isPending, startTransition] = useTransition();
   const [isExporting, startExportTransition] = useTransition();
@@ -92,14 +103,20 @@ export function ContractorReportsView({
   const loadStats = useCallback(() => {
     setError("");
     startTransition(async () => {
-      const result = await getContractorDashboardStats({ fromDate, toDate });
-      if (result.success) {
-        setStats(result.data);
+      const [statsResult, sessionsResult] = await Promise.all([
+        getContractorDashboardStats({ fromDate, toDate }),
+        getContractorInvoiceSummary({ fromDate, toDate, clientId: clientId || undefined }),
+      ]);
+      if (statsResult.success) {
+        setStats(statsResult.data);
       } else {
-        setError(result.error);
+        setError(statsResult.error);
+      }
+      if (sessionsResult.success) {
+        setSessionRows(sessionsResult.data.rows);
       }
     });
-  }, [fromDate, toDate]);
+  }, [fromDate, toDate, clientId]);
 
   function setMonth(offset: number) {
     const range = getMonthRange(offset);
@@ -236,10 +253,137 @@ export function ContractorReportsView({
               )}
             </div>
           )}
+
+          {/* Work summary by client */}
+          {sessionRows.length > 0 && (
+            <ClientWorkSummary rows={sessionRows} labels={labels} />
+          )}
         </>
       )}
     </div>
   );
+}
+
+// ─── Client Work Summary (grouped detail table) ─────────────────────────────
+
+interface ClientGroup {
+  client_name: string;
+  rows: ContractorSessionRow[];
+  total_hours: number;
+  total_dunam: number;
+}
+
+function ClientWorkSummary({
+  rows,
+  labels,
+}: {
+  rows: ContractorSessionRow[];
+  labels: Labels;
+}) {
+  const groups = useMemo(() => {
+    const map = new Map<string, ContractorSessionRow[]>();
+    for (const row of rows) {
+      const existing = map.get(row.client_name) ?? [];
+      existing.push(row);
+      map.set(row.client_name, existing);
+    }
+    const result: ClientGroup[] = [];
+    for (const [client_name, clientRows] of map) {
+      result.push({
+        client_name,
+        rows: clientRows,
+        total_hours: clientRows.reduce((s, r) => s + r.total_hours, 0),
+        total_dunam: clientRows.reduce((s, r) => s + (r.dunam_covered ?? 0), 0),
+      });
+    }
+    return result.sort((a, b) => a.client_name.localeCompare(b.client_name, "he"));
+  }, [rows]);
+
+  return (
+    <div className="space-y-4 mt-6">
+      <h3 className="text-lg font-semibold">{labels.workSummary}</h3>
+      {groups.map((group) => (
+        <ClientGroupSection key={group.client_name} group={group} labels={labels} />
+      ))}
+    </div>
+  );
+}
+
+function ClientGroupSection({
+  group,
+  labels,
+}: {
+  group: ClientGroup;
+  labels: Labels;
+}) {
+  const [isOpen, setIsOpen] = useState(true);
+
+  return (
+    <Collapsible open={isOpen} onOpenChange={setIsOpen}>
+      <div className="rounded-lg border bg-card shadow-sm overflow-hidden">
+        <CollapsibleTrigger asChild>
+          <div className="flex items-center justify-between bg-muted/50 px-4 py-3 cursor-pointer hover:bg-muted/70 transition-colors">
+            <div className="flex items-center gap-3">
+              {isOpen ? (
+                <ChevronDown className="h-4 w-4 text-muted-foreground" />
+              ) : (
+                <ChevronLeft className="h-4 w-4 text-muted-foreground" />
+              )}
+              <span className="font-semibold">{group.client_name}</span>
+              <Badge variant="outline" className="text-xs">
+                {group.rows.length}
+              </Badge>
+            </div>
+            <div className="flex items-center gap-4 text-sm text-muted-foreground">
+              <span>{group.total_hours.toFixed(1)} {labels.hours}</span>
+              {group.total_dunam > 0 && (
+                <span>{group.total_dunam.toFixed(0)} {labels.dunam}</span>
+              )}
+            </div>
+          </div>
+        </CollapsibleTrigger>
+        <CollapsibleContent>
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b bg-muted/30">
+                  <th className="px-4 py-2 text-start font-medium">{labels.date}</th>
+                  <th className="px-4 py-2 text-start font-medium">{labels.area}</th>
+                  <th className="px-4 py-2 text-start font-medium">{labels.workType}</th>
+                  <th className="px-4 py-2 text-start font-medium">{labels.hours}</th>
+                  <th className="px-4 py-2 text-start font-medium">{labels.dunam}</th>
+                  <th className="px-4 py-2 text-start font-medium">{labels.workers}</th>
+                  <th className="px-4 py-2 text-start font-medium">{labels.materials}</th>
+                </tr>
+              </thead>
+              <tbody>
+                {group.rows.map((row, i) => (
+                  <tr key={i} className="border-b last:border-b-0 hover:bg-muted/20 transition-colors">
+                    <td className="px-4 py-2 whitespace-nowrap">{formatDisplayDate(row.date)}</td>
+                    <td className="px-4 py-2">{row.area_name}</td>
+                    <td className="px-4 py-2">{row.work_type ?? "—"}</td>
+                    <td className="px-4 py-2 whitespace-nowrap">{row.total_hours.toFixed(1)}</td>
+                    <td className="px-4 py-2">{row.dunam_covered ?? "—"}</td>
+                    <td className="px-4 py-2">
+                      <span className="text-xs">{row.workers}</span>
+                    </td>
+                    <td className="px-4 py-2">
+                      <span className="text-xs text-muted-foreground">{row.materials || "—"}</span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </CollapsibleContent>
+      </div>
+    </Collapsible>
+  );
+}
+
+function formatDisplayDate(dateStr: string): string {
+  const [y, m, d] = dateStr.split("-");
+  return `${d}/${m}/${y}`;
 }
 
 function SummaryCard({ label, value }: { label: string; value: string }) {

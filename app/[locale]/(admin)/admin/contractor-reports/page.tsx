@@ -84,6 +84,7 @@ export default async function ContractorReportsPage({
           workerCount: t("workerCount"),
           notes: t("notes"),
           previewCount: t("previewCount"),
+          workSummary: t("workSummary"),
         }}
       />
     </main>
