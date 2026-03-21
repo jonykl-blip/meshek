@@ -39,7 +39,10 @@ export interface PendingRecord {
   created_at: string;
   worker_name: string | null;
   area_name: string | null;
+  dunam_covered: number | null;
   pending_client_name: string | null;
+  work_type_name: string | null;
+  client_name: string | null;
 }
 
 function extractVoiceStoragePath(voiceRefUrl: string): string | null {
@@ -76,8 +79,10 @@ export async function getPendingRecords(): Promise<
       status,
       created_at,
       pending_client_name,
+      dunam_covered,
       profiles!attendance_logs_profile_id_fkey ( full_name ),
-      areas!attendance_logs_area_id_fkey ( name )
+      areas!attendance_logs_area_id_fkey ( name, clients(name, is_own_farm) ),
+      work_types ( name_he )
     `
     )
     .eq("status", "pending")
@@ -99,7 +104,8 @@ export async function getPendingRecords(): Promise<
 
       // Supabase FK joins return object for to-one relations, but TS infers array
       const profile = row.profiles as unknown as { full_name: string } | null;
-      const area = row.areas as unknown as { name: string } | null;
+      const area = row.areas as unknown as { name: string; clients: { name: string; is_own_farm: boolean } | null } | null;
+      const workType = row.work_types as unknown as { name_he: string } | null;
 
       return {
         id: row.id,
@@ -113,7 +119,10 @@ export async function getPendingRecords(): Promise<
         created_at: row.created_at,
         worker_name: profile?.full_name ?? null,
         area_name: area?.name ?? null,
+        dunam_covered: row.dunam_covered ?? null,
         pending_client_name: row.pending_client_name ?? null,
+        work_type_name: workType?.name_he ?? null,
+        client_name: area?.clients?.is_own_farm ? null : area?.clients?.name ?? null,
       };
     })
   );
@@ -142,8 +151,10 @@ export async function getReviewRecords(
       status,
       created_at,
       pending_client_name,
+      dunam_covered,
       profiles!attendance_logs_profile_id_fkey ( full_name ),
-      areas!attendance_logs_area_id_fkey ( name )
+      areas!attendance_logs_area_id_fkey ( name, clients(name, is_own_farm) ),
+      work_types ( name_he )
     `
     )
     .order("work_date", { ascending: false })
@@ -170,7 +181,8 @@ export async function getReviewRecords(
     }
 
     const profile = row.profiles as unknown as { full_name: string } | null;
-    const area = row.areas as unknown as { name: string } | null;
+    const area = row.areas as unknown as { name: string; clients: { name: string; is_own_farm: boolean } | null } | null;
+    const workType = row.work_types as unknown as { name_he: string } | null;
 
     return {
       id: row.id,
@@ -184,7 +196,10 @@ export async function getReviewRecords(
       created_at: row.created_at,
       worker_name: profile?.full_name ?? null,
       area_name: area?.name ?? null,
+      dunam_covered: row.dunam_covered ?? null,
       pending_client_name: row.pending_client_name ?? null,
+      work_type_name: workType?.name_he ?? null,
+      client_name: area?.clients?.is_own_farm ? null : area?.clients?.name ?? null,
     };
   });
 

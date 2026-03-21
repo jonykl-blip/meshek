@@ -42,6 +42,7 @@ interface ReviewQueueLabels {
   area: string;
   date: string;
   hours: string;
+  dunam: string;
   transcript: string;
   unrecognized: string;
   play: string;
@@ -604,6 +605,19 @@ export function ReviewQueue({
                           <span className="text-sm text-muted-foreground">
                             {record.total_hours}h
                           </span>
+                        )}
+                        {record.dunam_covered != null && (
+                          <span className="text-sm text-muted-foreground">
+                            {record.dunam_covered} {labels.dunam}
+                          </span>
+                        )}
+                        {record.client_name && (
+                          <Badge variant="outline">{record.client_name}</Badge>
+                        )}
+                        {record.work_type_name && (
+                          <Badge className="bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950 dark:text-blue-300">
+                            {record.work_type_name}
+                          </Badge>
                         )}
                         {record.status === "imported" ? (
                           <Badge variant="secondary">
