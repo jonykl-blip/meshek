@@ -14,7 +14,7 @@ export interface ContractorSessionRow {
   workers: string;
   worker_count: number;
   total_hours: number;
-  notes: string | null;
+  raw_transcript: string | null;
 }
 
 export interface ContractorSummary {
@@ -44,7 +44,7 @@ interface RawContractorRow {
   work_date: string;
   total_hours: number | null;
   dunam_covered: number | null;
-  notes: string | null;
+  raw_transcript: string | null;
   profiles: { full_name: string } | null;
   areas: {
     name: string;
@@ -96,7 +96,7 @@ interface SessionAccumulator {
   dunam_covered: number | null;
   workers: Set<string>;
   total_hours: number;
-  notes: string | null;
+  raw_transcript: string | null;
   attendance_log_ids: string[];
 }
 
@@ -127,7 +127,7 @@ function aggregateToSessions(
         dunam_covered: row.dunam_covered,
         workers: new Set([workerName]),
         total_hours: row.total_hours ?? 0,
-        notes: row.notes,
+        raw_transcript: row.raw_transcript,
         attendance_log_ids: [row.id],
       });
     }
@@ -144,7 +144,7 @@ function aggregateToSessions(
       workers: Array.from(s.workers).join("; "),
       worker_count: s.workers.size,
       total_hours: s.total_hours,
-      notes: s.notes,
+      raw_transcript: s.raw_transcript,
     }))
     .sort((a, b) => a.date.localeCompare(b.date) || a.client_name.localeCompare(b.client_name, "he"));
 }
@@ -156,7 +156,7 @@ async function fetchContractorData(
   let query = supabase
     .from("attendance_logs")
     .select(
-      "id, work_date, total_hours, dunam_covered, notes, profiles(full_name), areas!inner(name, client_id, clients!inner(name, rate_per_dunam, rate_per_hour)), work_types(name_he)",
+      "id, work_date, total_hours, dunam_covered, raw_transcript, profiles(full_name), areas!inner(name, client_id, clients!inner(name, rate_per_dunam, rate_per_hour)), work_types(name_he)",
     )
     .eq("status", "approved")
     .gte("work_date", params.fromDate)
@@ -316,7 +316,7 @@ export async function exportContractorCsv(params: {
       csvEscape(r.workers),
       csvEscape(r.worker_count),
       csvEscape(r.total_hours.toFixed(1)),
-      csvEscape(r.notes),
+      csvEscape(r.raw_transcript),
     ].join(","),
   );
 
