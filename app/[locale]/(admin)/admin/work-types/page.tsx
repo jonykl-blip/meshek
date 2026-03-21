@@ -2,9 +2,8 @@ import { setRequestLocale } from "next-intl/server";
 import { getTranslations } from "next-intl/server";
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
-import { getAreasWithAliases, getCrops } from "@/app/actions/areas";
-import { getClients } from "@/app/actions/clients";
-import { AreasTable } from "./areas-table";
+import { getAllWorkTypes } from "@/app/actions/work-types";
+import { WorkTypesTable } from "./work-types-table";
 
 export function generateStaticParams() {
   return [{ locale: "he" }, { locale: "th" }];
@@ -17,18 +16,18 @@ export async function generateMetadata({
 }) {
   const { locale } = await params;
   setRequestLocale(locale);
-  const t = await getTranslations("admin.areas");
+  const t = await getTranslations("admin.workTypes");
   return { title: t("title") };
 }
 
-export default async function AreasPage({
+export default async function WorkTypesPage({
   params,
 }: {
   params: Promise<{ locale: string }>;
 }) {
   const { locale } = await params;
   setRequestLocale(locale);
-  const t = await getTranslations("admin.areas");
+  const t = await getTranslations("admin.workTypes");
 
   const supabase = await createClient();
 
@@ -50,30 +49,27 @@ export default async function AreasPage({
     redirect(`/${locale}/dashboard`);
   }
 
-  const [areas, crops, clients] = await Promise.all([
-    getAreasWithAliases(),
-    getCrops(),
-    getClients(),
-  ]);
+  const workTypes = await getAllWorkTypes();
 
   return (
     <main className="mx-auto max-w-4xl p-6">
       <h1 className="mb-6 text-2xl font-bold">{t("title")}</h1>
-      <AreasTable
-        areas={areas}
-        crops={crops}
-        clients={clients}
+      <WorkTypesTable
+        workTypes={workTypes}
         labels={{
-          addArea: t("addArea"),
-          editArea: t("editArea"),
-          archiveArea: t("archiveArea"),
-          name: t("name"),
-          crop: t("crop"),
-          aliases: t("aliases"),
-          addAlias: t("addAlias"),
-          removeAlias: t("removeAlias"),
+          addWorkType: t("addWorkType"),
+          editWorkType: t("editWorkType"),
+          archiveWorkType: t("archiveWorkType"),
+          nameHe: t("nameHe"),
+          nameEn: t("nameEn"),
+          nameTh: t("nameTh"),
+          category: t("category"),
+          isActive: t("isActive"),
+          active: t("active"),
+          inactive: t("inactive"),
           archiveConfirm: t("archiveConfirm", { name: "__NAME__" }),
           archiveDescription: t("archiveDescription"),
+          archiveLinkedWarning: t("archiveLinkedWarning"),
           confirm: t("confirm"),
           cancel: t("cancel"),
           save: t("save"),
@@ -81,21 +77,24 @@ export default async function AreasPage({
           created: t("created"),
           updated: t("updated"),
           archived: t("archived"),
-          aliasAdded: t("aliasAdded"),
-          aliasRemoved: t("aliasRemoved"),
-          noAreas: t("noAreas"),
+          noWorkTypes: t("noWorkTypes"),
           actions: t("actions"),
-          createCrop: t("createCrop"),
-          cropName: t("cropName"),
-          noCrops: t("noCrops"),
+          search: t("search"),
+          allCategories: t("allCategories"),
+          showAll: t("showAll"),
+          activeOnly: t("activeOnly"),
+          inactiveOnly: t("inactiveOnly"),
+          categoryFieldWork: t("categories.fieldWork"),
+          categorySpraying: t("categories.spraying"),
+          categoryPlanting: t("categories.planting"),
+          categoryHarvest: t("categories.harvest"),
+          categoryIrrigation: t("categories.irrigation"),
+          categoryMaintenance: t("categories.maintenance"),
+          categoryLogistics: t("categories.logistics"),
+          categoryAdmin: t("categories.admin"),
+          categoryOther: t("categories.other"),
           validationNameRequired: t("validation.nameRequired"),
-          validationCropRequired: t("validation.cropRequired"),
-          ownField: t("ownField"),
-          contractorField: t("contractorField"),
-          client: t("client"),
-          selectClient: t("selectClient"),
-          totalAreaDunam: t("totalAreaDunam"),
-          dunamUnit: t("dunamUnit"),
+          validationCategoryRequired: t("validation.categoryRequired"),
         }}
       />
     </main>

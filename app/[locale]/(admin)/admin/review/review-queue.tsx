@@ -28,6 +28,7 @@ import {
   bulkRejectRecords,
 } from "@/app/actions/attendance";
 import type { PendingRecord } from "@/app/actions/attendance";
+import { resolveClient, createClientAction } from "@/app/actions/clients";
 
 interface ReviewQueueLabels {
   emptyState: string;
@@ -85,6 +86,14 @@ interface ReviewQueueLabels {
   bulkApproved: string;
   bulkRejected: string;
   bulkPartialApprove: string;
+  clientUnrecognized: string;
+  matchExistingClient: string;
+  newClient: string;
+  searchClient: string;
+  clientResolved: string;
+  clientCreated: string;
+  clientName: string;
+  clientPhone: string;
 }
 
 interface ReviewQueueProps {
@@ -92,6 +101,7 @@ interface ReviewQueueProps {
   showAll: boolean;
   workers: { id: string; full_name: string }[];
   areas: { id: string; name: string }[];
+  clients: { id: string; name: string }[];
   labels: ReviewQueueLabels;
 }
 
@@ -125,6 +135,7 @@ export function ReviewQueue({
   showAll,
   workers,
   areas,
+  clients,
   labels,
 }: ReviewQueueProps) {
   const router = useRouter();
@@ -133,7 +144,7 @@ export function ReviewQueue({
   const [, startTransition] = useTransition();
   const [pendingAction, setPendingAction] = useState<{
     recordId: string;
-    type: "approve" | "reject" | "edit" | "resolveWorker" | "resolveArea" | "createWorker";
+    type: "approve" | "reject" | "edit" | "resolveWorker" | "resolveArea" | "createWorker" | "resolveClient" | "createClient";
   } | null>(null);
   const pendingRecordId = pendingAction?.recordId ?? null;
   const [feedback, setFeedback] = useState<{
@@ -152,6 +163,16 @@ export function ReviewQueue({
   const [areaResolvingId, setAreaResolvingId] = useState<string | null>(null);
   const [selectedAreaId, setSelectedAreaId] = useState("");
   const [areaFilter, setAreaFilter] = useState("");
+
+  // Client resolution state
+  const [clientResolvingId, setClientResolvingId] = useState<string | null>(null);
+  const [clientResolveMode, setClientResolveMode] = useState<"existing" | "new" | null>(null);
+  const [selectedClientId, setSelectedClientId] = useState("");
+  const [clientFilter, setClientFilter] = useState("");
+
+  // New client form state
+  const [newClientName, setNewClientName] = useState("");
+  const [newClientPhone, setNewClientPhone] = useState("");
 
   // New worker form state
   const [newWorkerName, setNewWorkerName] = useState("");
@@ -189,7 +210,7 @@ export function ReviewQueue({
 
   const approvableSelectedIds = [...selectedIds].filter((id) => {
     const r = records.find((rec) => rec.id === id);
-    return r?.profile_id !== null && r?.area_id !== null;
+    return r?.profile_id !== null && r?.area_id !== null && r?.pending_client_name === null;
   });
 
   const filteredWorkers = workers.filter((w) =>
@@ -199,6 +220,19 @@ export function ReviewQueue({
   const filteredAreas = areas.filter((a) =>
     a.name.toLowerCase().includes(areaFilter.toLowerCase())
   );
+
+  const filteredClients = clients.filter((c) =>
+    c.name.toLowerCase().includes(clientFilter.toLowerCase())
+  );
+
+  function resetClientResolution() {
+    setClientResolvingId(null);
+    setClientResolveMode(null);
+    setSelectedClientId("");
+    setClientFilter("");
+    setNewClientName("");
+    setNewClientPhone("");
+  }
 
   function resetWorkerResolution() {
     setWorkerResolvingId(null);
@@ -412,6 +446,45 @@ export function ReviewQueue({
     });
   }
 
+  function handleResolveClient(recordId: string, clientId: string) {
+    setPendingAction({ recordId, type: "resolveClient" });
+    startTransition(async () => {
+      const result = await resolveClient(recordId, clientId);
+      setPendingAction(null);
+      if (result.success) {
+        setFeedback({ recordId, message: labels.clientResolved, type: "success" });
+        resetClientResolution();
+        router.refresh();
+      } else {
+        setFeedback({ recordId, message: result.error, type: "error" });
+      }
+    });
+  }
+
+  function handleCreateClientAndResolve(recordId: string) {
+    setPendingAction({ recordId, type: "createClient" });
+    startTransition(async () => {
+      const createResult = await createClientAction({
+        name: newClientName,
+        phone: newClientPhone || undefined,
+      });
+      if (!createResult.success) {
+        setPendingAction(null);
+        setFeedback({ recordId, message: createResult.error, type: "error" });
+        return;
+      }
+      const result = await resolveClient(recordId, createResult.data.id);
+      setPendingAction(null);
+      if (result.success) {
+        setFeedback({ recordId, message: labels.clientCreated, type: "success" });
+        resetClientResolution();
+        router.refresh();
+      } else {
+        setFeedback({ recordId, message: result.error, type: "error" });
+      }
+    });
+  }
+
   return (
     <div>
       {/* Top toolbar */}
@@ -541,6 +614,11 @@ export function ReviewQueue({
                             {labels[statusLabelMap[record.status] ?? "statusPending"]}
                           </Badge>
                         )}
+                        {record.pending_client_name && (
+                          <Badge className="bg-amber-100 text-amber-800 border-amber-200">
+                            {labels.clientUnrecognized.replace("{name}", record.pending_client_name)}
+                          </Badge>
+                        )}
                       </div>
                       {!isExpanded && transcriptPreview && (
                         <p className="truncate text-sm text-muted-foreground">
@@ -666,6 +744,49 @@ export function ReviewQueue({
                         </div>
                       )}
 
+                      {/* Client Resolution — only for pending records with pending_client_name */}
+                      {isPending && record.pending_client_name !== null && (
+                        <div className="rounded-md border border-amber-200 bg-amber-50/50 p-3 space-y-2">
+                          <p className="text-xs font-medium text-amber-800">
+                            {labels.clientUnrecognized.replace("{name}", record.pending_client_name)}
+                          </p>
+                          {clientResolvingId !== record.id ? (
+                            <div className="flex flex-wrap gap-2">
+                              <Button variant="outline" size="sm" onClick={() => { resetClientResolution(); setClientResolvingId(record.id); setClientResolveMode("existing"); }}>{labels.matchExistingClient}</Button>
+                              <Button variant="outline" size="sm" onClick={() => { resetClientResolution(); setClientResolvingId(record.id); setClientResolveMode("new"); setNewClientName(record.pending_client_name ?? ""); }}>{labels.newClient}</Button>
+                            </div>
+                          ) : clientResolveMode === "existing" ? (
+                            <div className="space-y-2">
+                              <Input placeholder={labels.searchClient} value={clientFilter} onChange={(e) => setClientFilter(e.target.value)} className="h-8" />
+                              <div className="max-h-40 overflow-y-auto rounded border">
+                                {filteredClients.map((c) => (
+                                  <button key={c.id} type="button" className={`w-full px-3 py-1.5 text-sm text-start hover:bg-muted ${selectedClientId === c.id ? "bg-muted" : ""}`} onClick={() => setSelectedClientId(c.id)}>{c.name}</button>
+                                ))}
+                              </div>
+                              <div className="flex gap-2">
+                                <Button size="sm" disabled={!selectedClientId || pendingRecordId === record.id} onClick={() => handleResolveClient(record.id, selectedClientId)}>{pendingRecordId === record.id ? labels.saving : labels.confirm}</Button>
+                                <Button variant="ghost" size="sm" onClick={resetClientResolution}>{labels.cancel}</Button>
+                              </div>
+                            </div>
+                          ) : (
+                            <div className="space-y-2">
+                              <div>
+                                <Label className="text-xs">{labels.clientName}</Label>
+                                <Input value={newClientName} onChange={(e) => setNewClientName(e.target.value)} className="h-8" />
+                              </div>
+                              <div>
+                                <Label className="text-xs">{labels.clientPhone}</Label>
+                                <Input type="tel" value={newClientPhone} onChange={(e) => setNewClientPhone(e.target.value)} className="h-8" />
+                              </div>
+                              <div className="flex gap-2">
+                                <Button size="sm" disabled={!newClientName.trim() || pendingRecordId === record.id} onClick={() => handleCreateClientAndResolve(record.id)}>{pendingRecordId === record.id ? labels.saving : labels.confirm}</Button>
+                                <Button variant="ghost" size="sm" onClick={resetClientResolution}>{labels.cancel}</Button>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      )}
+
                       {/* Actions — only for pending records */}
                       {isPending && (
                         <div className="border-t pt-3 space-y-2">
@@ -699,7 +820,7 @@ export function ReviewQueue({
                           ) : (
                             <div className="flex flex-wrap gap-2">
                               {(() => {
-                                const canApprove = record.profile_id !== null && record.area_id !== null;
+                                const canApprove = record.profile_id !== null && record.area_id !== null && record.pending_client_name === null;
                                 return (
                                   <Button variant="default" size="sm" disabled={!canApprove || pendingRecordId === record.id} onClick={() => handleApprove(record.id)} title={!canApprove ? labels.cannotApproveUnresolved : undefined}>{pendingRecordId === record.id ? labels.saving : labels.approve}</Button>
                                 );

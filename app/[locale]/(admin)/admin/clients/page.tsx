@@ -2,9 +2,8 @@ import { setRequestLocale } from "next-intl/server";
 import { getTranslations } from "next-intl/server";
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
-import { getAreasWithAliases, getCrops } from "@/app/actions/areas";
-import { getClients } from "@/app/actions/clients";
-import { AreasTable } from "./areas-table";
+import { getAllClients } from "@/app/actions/clients";
+import { ClientsTable } from "./clients-table";
 
 export function generateStaticParams() {
   return [{ locale: "he" }, { locale: "th" }];
@@ -17,18 +16,18 @@ export async function generateMetadata({
 }) {
   const { locale } = await params;
   setRequestLocale(locale);
-  const t = await getTranslations("admin.areas");
+  const t = await getTranslations("admin.clients");
   return { title: t("title") };
 }
 
-export default async function AreasPage({
+export default async function ClientsPage({
   params,
 }: {
   params: Promise<{ locale: string }>;
 }) {
   const { locale } = await params;
   setRequestLocale(locale);
-  const t = await getTranslations("admin.areas");
+  const t = await getTranslations("admin.clients");
 
   const supabase = await createClient();
 
@@ -50,30 +49,31 @@ export default async function AreasPage({
     redirect(`/${locale}/dashboard`);
   }
 
-  const [areas, crops, clients] = await Promise.all([
-    getAreasWithAliases(),
-    getCrops(),
-    getClients(),
-  ]);
+  const clients = await getAllClients();
 
   return (
-    <main className="mx-auto max-w-4xl p-6">
+    <main className="mx-auto max-w-5xl p-6">
       <h1 className="mb-6 text-2xl font-bold">{t("title")}</h1>
-      <AreasTable
-        areas={areas}
-        crops={crops}
+      <ClientsTable
         clients={clients}
         labels={{
-          addArea: t("addArea"),
-          editArea: t("editArea"),
-          archiveArea: t("archiveArea"),
+          title: t("title"),
+          addClient: t("addClient"),
+          editClient: t("editClient"),
+          archiveClient: t("archiveClient"),
           name: t("name"),
-          crop: t("crop"),
+          nameEn: t("nameEn"),
+          phone: t("phone"),
+          notes: t("notes"),
+          rateDunam: t("rateDunam"),
+          rateHour: t("rateHour"),
           aliases: t("aliases"),
           addAlias: t("addAlias"),
           removeAlias: t("removeAlias"),
+          ownFarm: t("ownFarm"),
           archiveConfirm: t("archiveConfirm", { name: "__NAME__" }),
           archiveDescription: t("archiveDescription"),
+          archiveBlockedOwnFarm: t("archiveBlockedOwnFarm"),
           confirm: t("confirm"),
           cancel: t("cancel"),
           save: t("save"),
@@ -81,21 +81,10 @@ export default async function AreasPage({
           created: t("created"),
           updated: t("updated"),
           archived: t("archived"),
-          aliasAdded: t("aliasAdded"),
-          aliasRemoved: t("aliasRemoved"),
-          noAreas: t("noAreas"),
+          noClients: t("noClients"),
           actions: t("actions"),
-          createCrop: t("createCrop"),
-          cropName: t("cropName"),
-          noCrops: t("noCrops"),
-          validationNameRequired: t("validation.nameRequired"),
-          validationCropRequired: t("validation.cropRequired"),
-          ownField: t("ownField"),
-          contractorField: t("contractorField"),
-          client: t("client"),
-          selectClient: t("selectClient"),
-          totalAreaDunam: t("totalAreaDunam"),
-          dunamUnit: t("dunamUnit"),
+          validationNameRequired: t("validationNameRequired"),
+          searchPlaceholder: t("searchPlaceholder"),
         }}
       />
     </main>

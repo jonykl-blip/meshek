@@ -7,6 +7,7 @@ import {
   getActiveWorkers,
   getActiveAreas,
 } from "@/app/actions/attendance";
+import { getClients } from "@/app/actions/clients";
 import { ReviewQueue } from "./review-queue";
 
 export function generateStaticParams() {
@@ -57,10 +58,11 @@ export default async function ReviewPage({
     redirect(`/${locale}/dashboard`);
   }
 
-  const [result, workersResult, areasResult] = await Promise.all([
+  const [result, workersResult, areasResult, clientsList] = await Promise.all([
     getReviewRecords(showAll),
     getActiveWorkers(),
     getActiveAreas(),
+    getClients(),
   ]);
 
   return (
@@ -72,6 +74,7 @@ export default async function ReviewPage({
           showAll={showAll}
           workers={workersResult.success ? workersResult.data : []}
           areas={areasResult.success ? areasResult.data : []}
+          clients={clientsList.map((c) => ({ id: c.id, name: c.name }))}
           labels={{
             emptyState: t("emptyState"),
             showAll: t("showAll"),
@@ -128,6 +131,14 @@ export default async function ReviewPage({
             bulkApproved: t("bulkApproved"),
             bulkRejected: t("bulkRejected"),
             bulkPartialApprove: t("bulkPartialApprove"),
+            clientUnrecognized: t("clientUnrecognized"),
+            matchExistingClient: t("matchExistingClient"),
+            newClient: t("newClient"),
+            searchClient: t("searchClient"),
+            clientResolved: t("clientResolved"),
+            clientCreated: t("clientCreated"),
+            clientName: t("clientName"),
+            clientPhone: t("clientPhone"),
           }}
         />
       ) : (
