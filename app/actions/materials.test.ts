@@ -157,7 +157,7 @@ describe("createMaterial", () => {
       before: null,
       after: fakeMaterial,
     });
-    expect(revalidatePath).toHaveBeenCalledWith("/admin/materials");
+    expect(revalidatePath).toHaveBeenCalledWith("/admin/settings");
   });
 
   it("returns auth error for non-admin", async () => {
@@ -276,7 +276,7 @@ describe("updateMaterial", () => {
       before: fakeMaterial,
       after: updatedMaterial,
     });
-    expect(revalidatePath).toHaveBeenCalledWith("/admin/materials");
+    expect(revalidatePath).toHaveBeenCalledWith("/admin/settings");
   });
 
   it("returns error when material not found", async () => {
@@ -359,7 +359,7 @@ describe("archiveMaterial", () => {
       before: { id: "mat-1", name_he: "דשן אורגני", is_active: true },
       after: { id: "mat-1", name_he: "דשן אורגני", is_active: false },
     });
-    expect(revalidatePath).toHaveBeenCalledWith("/admin/materials");
+    expect(revalidatePath).toHaveBeenCalledWith("/admin/settings");
   });
 
   it("returns error when already archived", async () => {

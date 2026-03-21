@@ -49,7 +49,7 @@ interface RawContractorRow {
   areas: {
     name: string;
     client_id: string;
-    clients: { name: string; rate_per_dunam: number | null; rate_per_hour: number | null } | null;
+    clients: { name: string } | null;
   } | null;
   work_types: { name_he: string } | null;
 }
@@ -156,7 +156,7 @@ async function fetchContractorData(
   let query = supabase
     .from("attendance_logs")
     .select(
-      "id, work_date, total_hours, dunam_covered, raw_transcript, profiles(full_name), areas!inner(name, client_id, clients!inner(name, rate_per_dunam, rate_per_hour)), work_types(name_he)",
+      "id, work_date, total_hours, dunam_covered, raw_transcript, profiles(full_name), areas!inner(name, client_id, clients!inner(name)), work_types(name_he)",
     )
     .eq("status", "approved")
     .gte("work_date", params.fromDate)

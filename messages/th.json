@@ -20,18 +20,18 @@
     "nav": {
       "workers": "עובדים",
       "workersDesc": "ניהול פרופילי עובדים ושיוך טלגרם",
-      "areas": "שטחים",
-      "areasDesc": "ניהול שטחים וכינויים",
-      "equipment": "ציוד",
-      "equipmentDesc": "ניהול רשימת הציוד",
-      "crops": "גידולים",
-      "cropsDesc": "ניהול רשימת הגידולים",
+      "clientsAreas": "לקוחות ושטחים",
+      "clientsAreasDesc": "ניהול לקוחות, שטחים וכינויים",
+      "settings": "הגדרות",
+      "settingsDesc": "סוגי עבודה, חומרים, גידולים וציוד",
       "payroll": "שכר",
       "payrollDesc": "חישוב שכר וייצוא CSV",
       "dashboard": "נוכחות יומית",
       "dashboardDesc": "צפייה ברשומות נוכחות יומיות",
       "review": "רשומות ממתינות לאישור",
-      "reviewDesc": "סקירה ואישור רשומות ממתינות"
+      "reviewDesc": "סקירה ואישור רשומות ממתינות",
+      "contractorReports": "דוחות קבלן",
+      "contractorReportsDesc": "צפייה בדוחות עבודת קבלנות וייצוא"
     }
   },
   "auth": {
@@ -183,6 +183,20 @@
   "admin": {
     "title": "ניהול מערכת",
     "emptyState": "לוח ניהול",
+    "settings": {
+      "title": "הגדרות",
+      "tabs": {
+        "workTypes": "סוגי עבודה",
+        "materials": "חומרים",
+        "crops": "גידולים",
+        "equipment": "ציוד"
+      }
+    },
+    "clientsAreas": {
+      "title": "לקוחות ושטחים",
+      "addClient": "הוסף לקוח",
+      "ownFarmSection": "שטחי המשק"
+    },
     "workers": {
       "title": "ניהול עובדים",
       "name": "שם",
@@ -288,6 +302,7 @@
       "area": "שטח",
       "date": "תאריך",
       "hours": "שעות",
+      "dunam": "דונם",
       "transcript": "תמלול",
       "unrecognized": "לא מזוהה",
       "play": "נגן",
@@ -574,20 +589,19 @@
       "dashboard": "נוכחות יומית",
       "admin": "ניהול מערכת",
       "workers": "עובדים",
-      "areas": "שטחים",
-      "equipment": "ציוד",
-      "crops": "גידולים",
+      "clientsAreas": "לקוחות ושטחים",
+      "settings": "הגדרות",
       "payroll": "שכר",
       "review": "רשומות ממתינות לאישור",
-      "health": "בריאות מערכת",
-      "record": "รายงานการเข้างาน"
+      "health": "בริאות מערכת",
+      "record": "รายงานการเข้างาน",
+      "contractorReports": "דוחות קבלנות"
     }
   },
   "sidebar": {
     "sections": {
       "workerActions": "การดำเนินการ",
       "management": "การจัดการ",
-      "contractor": "Contractor",
       "finance": "การเงิน",
       "reportsOps": "รายงานและปฏิบัติการ"
     },

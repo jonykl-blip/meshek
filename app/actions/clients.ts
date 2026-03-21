@@ -101,7 +101,7 @@ export async function createClientAction(
     after: newClient,
   });
 
-  revalidatePath("/admin/clients");
+  revalidatePath("/admin/clients-areas");
   return {
     success: true,
     data: { ...newClient, client_aliases: [] } as unknown as Client,
@@ -178,7 +178,7 @@ export async function updateClient(
     )
     .eq("id", clientId);
 
-  revalidatePath("/admin/clients");
+  revalidatePath("/admin/clients-areas");
   const fullClient = fullClients?.[0] as unknown as Client | undefined;
   return { success: true, data: fullClient ?? (updatedRow as unknown as Client) };
 }
@@ -226,7 +226,7 @@ export async function archiveClient(
     after: { ...beforeClient, is_active: false },
   });
 
-  revalidatePath("/admin/clients");
+  revalidatePath("/admin/clients-areas");
   return { success: true, data: { id: clientId } };
 }
 
@@ -262,7 +262,7 @@ export async function addClientAlias(
     after: newAlias,
   });
 
-  revalidatePath("/admin/clients");
+  revalidatePath("/admin/clients-areas");
   return { success: true, data: newAlias };
 }
 
@@ -301,7 +301,7 @@ export async function removeClientAlias(
     after: null,
   });
 
-  revalidatePath("/admin/clients");
+  revalidatePath("/admin/clients-areas");
   return { success: true, data: { id: aliasId } };
 }
 

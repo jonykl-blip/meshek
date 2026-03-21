@@ -55,7 +55,7 @@ export async function createCrop(
     after: newCrop,
   });
 
-  revalidatePath("/admin/crops");
+  revalidatePath("/admin/settings");
   return { success: true, data: newCrop };
 }
 
@@ -105,7 +105,7 @@ export async function updateCrop(
     after: updated,
   });
 
-  revalidatePath("/admin/crops");
+  revalidatePath("/admin/settings");
   return { success: true, data: updated };
 }
 
@@ -154,6 +154,6 @@ export async function deleteCrop(
     after: null,
   });
 
-  revalidatePath("/admin/crops");
+  revalidatePath("/admin/settings");
   return { success: true, data: { id: cropId } };
 }

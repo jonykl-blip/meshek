@@ -78,7 +78,7 @@ export async function createCrop(
     after: newCrop,
   });
 
-  revalidatePath("/admin/areas");
+  revalidatePath("/admin/clients-areas");
   return { success: true, data: newCrop };
 }
 
@@ -174,7 +174,7 @@ export async function createArea(
     }
   }
 
-  revalidatePath("/admin/areas");
+  revalidatePath("/admin/clients-areas");
   return { success: true, data: newArea as unknown as Area };
 }
 
@@ -246,7 +246,7 @@ export async function updateArea(
     .select("id, name, crop_id, client_id, is_own_field, total_area_dunam, is_active, crops(name), clients(name, is_own_farm), area_aliases(id, alias)")
     .eq("id", areaId);
 
-  revalidatePath("/admin/areas");
+  revalidatePath("/admin/clients-areas");
   const fullArea = fullAreas?.[0] as unknown as Area | undefined;
   return { success: true, data: fullArea ?? (updatedRow as unknown as Area) };
 }
@@ -290,7 +290,7 @@ export async function archiveArea(
     after: { ...beforeArea, is_active: false },
   });
 
-  revalidatePath("/admin/areas");
+  revalidatePath("/admin/clients-areas");
   return { success: true, data: { id: areaId } };
 }
 
@@ -326,7 +326,7 @@ export async function addAreaAlias(
     after: newAlias,
   });
 
-  revalidatePath("/admin/areas");
+  revalidatePath("/admin/clients-areas");
   return { success: true, data: newAlias };
 }
 
@@ -365,6 +365,6 @@ export async function removeAreaAlias(
     after: null,
   });
 
-  revalidatePath("/admin/areas");
+  revalidatePath("/admin/clients-areas");
   return { success: true, data: { id: aliasId } };
 }

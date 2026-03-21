@@ -78,7 +78,7 @@ export async function createMaterial(
     after: newMaterial,
   });
 
-  revalidatePath("/admin/materials");
+  revalidatePath("/admin/settings");
   return { success: true, data: newMaterial as Material };
 }
 
@@ -135,7 +135,7 @@ export async function updateMaterial(
     after: updatedRow,
   });
 
-  revalidatePath("/admin/materials");
+  revalidatePath("/admin/settings");
   return { success: true, data: updatedRow as Material };
 }
 
@@ -178,6 +178,6 @@ export async function archiveMaterial(
     after: { ...beforeMaterial, is_active: false },
   });
 
-  revalidatePath("/admin/materials");
+  revalidatePath("/admin/settings");
   return { success: true, data: { id: materialId } };
 }

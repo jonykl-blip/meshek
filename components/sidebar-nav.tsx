@@ -16,8 +16,6 @@ import {
   Banknote,
   Users,
   MapPin,
-  Wrench,
-  Wheat,
   Home,
   ChevronLeft,
   ChevronRight,
@@ -25,10 +23,8 @@ import {
   Menu,
   Mic,
   X,
-  Building2,
-  Hammer,
-  FlaskConical,
   FileBarChart,
+  Settings,
   type LucideIcon,
 } from "lucide-react";
 
@@ -59,24 +55,15 @@ const navSections: NavSection[] = [
       { label: "ניהול מערכת", icon: Home, href: "/admin", roles: ["owner", "admin"], exact: true },
       { label: "נוכחות", icon: CalendarCheck, href: "/dashboard", roles: ["owner", "admin", "manager"] },
       { label: "רשומות ממתינות לאישור", icon: ClipboardList, href: "/admin/review", roles: ["owner", "admin"] },
+      { label: "דוחות קבלן", icon: FileBarChart, href: "/admin/contractor-reports", roles: ["owner", "admin"] },
     ],
   },
   {
     labelKey: "management",
     items: [
       { label: "עובדים", icon: Users, href: "/admin/workers", roles: ["owner", "admin"] },
-      { label: "שטחים", icon: MapPin, href: "/admin/areas", roles: ["owner", "admin"] },
-      { label: "ציוד", icon: Wrench, href: "/admin/equipment", roles: ["owner", "admin"] },
-      { label: "גידולים", icon: Wheat, href: "/admin/crops", roles: ["owner", "admin"] },
-    ],
-  },
-  {
-    labelKey: "contractor",
-    items: [
-      { label: "לקוחות", icon: Building2, href: "/admin/clients", roles: ["owner", "admin"] },
-      { label: "סוגי עבודה", icon: Hammer, href: "/admin/work-types", roles: ["owner", "admin"] },
-      { label: "חומרים", icon: FlaskConical, href: "/admin/materials", roles: ["owner", "admin"] },
-      { label: "דוחות קבלן", icon: FileBarChart, href: "/admin/contractor-reports", roles: ["owner", "admin"] },
+      { label: "לקוחות ושטחים", icon: MapPin, href: "/admin/clients-areas", roles: ["owner", "admin"] },
+      { label: "הגדרות", icon: Settings, href: "/admin/settings", roles: ["owner", "admin"] },
     ],
   },
   {

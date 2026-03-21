@@ -54,7 +54,7 @@ export async function createEquipment(
     after: newEquipment,
   });
 
-  revalidatePath("/admin/equipment");
+  revalidatePath("/admin/settings");
   return { success: true, data: newEquipment };
 }
 
@@ -101,7 +101,7 @@ export async function updateEquipment(
     after: updated,
   });
 
-  revalidatePath("/admin/equipment");
+  revalidatePath("/admin/settings");
   return { success: true, data: updated };
 }
 
@@ -144,6 +144,6 @@ export async function archiveEquipment(
     after: { ...beforeEquipment, is_active: false },
   });
 
-  revalidatePath("/admin/equipment");
+  revalidatePath("/admin/settings");
   return { success: true, data: { id: equipmentId } };
 }

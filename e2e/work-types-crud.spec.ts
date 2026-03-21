@@ -17,14 +17,16 @@ async function login(page: Page) {
 test.describe("Admin Work Types — CRUD", () => {
   test.beforeEach(async ({ page }) => {
     await login(page);
-    await page.goto("/admin/work-types");
+    await page.goto("/admin/settings");
     await page.waitForLoadState("networkidle");
   });
 
-  test("page loads and shows work types", async ({ page }) => {
-    await expect(page).toHaveURL(/\/admin\/work-types/);
+  test("page loads and shows work types tab", async ({ page }) => {
+    await expect(page).toHaveURL(/\/admin\/settings/);
     // Page heading
-    await expect(page.getByRole("heading", { name: "ניהול סוגי עבודה" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "הגדרות" })).toBeVisible();
+    // Work types tab should be active by default — check the table is visible
+    await expect(page.getByRole("button", { name: "הוסף סוג עבודה" })).toBeVisible();
     // Table should be visible with at least the header row
     await expect(page.locator("table")).toBeVisible();
     // The "Add Work Type" button should be present

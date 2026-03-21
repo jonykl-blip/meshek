@@ -78,7 +78,7 @@ export async function createWorkType(
     after: newWorkType,
   });
 
-  revalidatePath("/admin/work-types");
+  revalidatePath("/admin/settings");
   return { success: true, data: newWorkType as WorkType };
 }
 
@@ -135,7 +135,7 @@ export async function updateWorkType(
     after: updatedRow,
   });
 
-  revalidatePath("/admin/work-types");
+  revalidatePath("/admin/settings");
   return { success: true, data: updatedRow as WorkType };
 }
 
@@ -186,7 +186,7 @@ export async function archiveWorkType(
       after: { ...beforeWorkType, is_active: false },
     });
 
-    revalidatePath("/admin/work-types");
+    revalidatePath("/admin/settings");
     return {
       success: true,
       data: { id: workTypeId },
@@ -213,6 +213,6 @@ export async function archiveWorkType(
     after: null,
   });
 
-  revalidatePath("/admin/work-types");
+  revalidatePath("/admin/settings");
   return { success: true, data: { id: workTypeId } };
 }

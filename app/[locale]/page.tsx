@@ -13,10 +13,10 @@ import {
   Banknote,
   CalendarCheck,
   ClipboardList,
+  FileBarChart,
   MapPin,
+  Settings,
   Users,
-  Wheat,
-  Wrench,
 } from "lucide-react";
 import type { Metadata } from "next";
 import Image from "next/image";
@@ -42,9 +42,8 @@ const navSections = [
     sectionKey: "management" as const,
     cards: [
       { titleKey: "workers", descKey: "workersDesc", icon: Users, href: "/admin/workers" },
-      { titleKey: "areas", descKey: "areasDesc", icon: MapPin, href: "/admin/areas" },
-      { titleKey: "equipment", descKey: "equipmentDesc", icon: Wrench, href: "/admin/equipment" },
-      { titleKey: "crops", descKey: "cropsDesc", icon: Wheat, href: "/admin/crops" },
+      { titleKey: "clientsAreas", descKey: "clientsAreasDesc", icon: MapPin, href: "/admin/clients-areas" },
+      { titleKey: "settings", descKey: "settingsDesc", icon: Settings, href: "/admin/settings" },
     ],
   },
   {
@@ -58,6 +57,7 @@ const navSections = [
     cards: [
       { titleKey: "dashboard", descKey: "dashboardDesc", icon: CalendarCheck, href: "/dashboard" },
       { titleKey: "review", descKey: "reviewDesc", icon: ClipboardList, href: "/admin/review" },
+      { titleKey: "contractorReports", descKey: "contractorReportsDesc", icon: FileBarChart, href: "/admin/contractor-reports" },
     ],
   },
 ] as const;

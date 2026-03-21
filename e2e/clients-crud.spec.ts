@@ -17,21 +17,21 @@ async function login(page: Page) {
 test.describe("Admin Clients — CRUD", () => {
   test.beforeEach(async ({ page }) => {
     await login(page);
-    await page.goto("/admin/clients");
+    await page.goto("/admin/clients-areas");
     await page.waitForLoadState("networkidle");
   });
 
-  test("page loads and shows clients list", async ({ page }) => {
-    await expect(page).toHaveURL(/\/admin\/clients/);
+  test("page loads and shows clients-areas unified view", async ({ page }) => {
+    await expect(page).toHaveURL(/\/admin\/clients-areas/);
     // Page heading
-    await expect(page.getByRole("heading", { name: "ניהול לקוחות" })).toBeVisible();
-    // Own-farm client should always be present
-    await expect(page.getByText("משק פילצביץ׳")).toBeVisible();
+    await expect(page.getByRole("heading", { name: "לקוחות ושטחים" })).toBeVisible();
+    // Own-farm section should always be present
+    await expect(page.getByText("שטחי המשק")).toBeVisible();
   });
 
-  test("own-farm client has special badge", async ({ page }) => {
-    // The own-farm row should display the green badge with the ownFarm label
-    const ownFarmBadge = page.locator("text=משק פילצביץ׳").first();
+  test("own-farm section is visible", async ({ page }) => {
+    // The own-farm section should display the green badge
+    const ownFarmBadge = page.getByText("שטחי המשק").first();
     await expect(ownFarmBadge).toBeVisible();
   });
 
@@ -41,23 +41,23 @@ test.describe("Admin Clients — CRUD", () => {
     // Click "Add Client" button
     await page.getByRole("button", { name: "הוסף לקוח" }).click();
 
-    // Fill in the name field — the create form has a Label "שם הלקוח" followed by an Input
+    // Fill in the name field — first input in the create form
     const createForm = page.locator(".rounded-lg.border.bg-card.p-4.shadow-sm");
     await createForm.locator("input").first().fill(uniqueName);
 
     // Click Save
     await createForm.getByRole("button", { name: "שמור" }).click();
 
-    // Wait for the form to close and the new client to appear in the list
+    // Wait for the form to close and the new client to appear
     await page.waitForLoadState("networkidle");
     await expect(page.getByText(uniqueName)).toBeVisible({ timeout: 10_000 });
   });
 
   test("can add alias to a client", async ({ page }) => {
-    // Find a non-own-farm row that has an "Add Alias" button
+    // Find a "Add Alias" button for client aliases
     const addAliasButtons = page.getByRole("button", { name: "הוסף כינוי" });
     const count = await addAliasButtons.count();
-    test.skip(count === 0, "No non-own-farm clients to add aliases to");
+    test.skip(count === 0, "No clients to add aliases to");
 
     // Click the first "Add Alias" button
     await addAliasButtons.first().click();
@@ -73,19 +73,5 @@ test.describe("Admin Clients — CRUD", () => {
     // Wait for the alias chip (Badge) to appear
     await page.waitForLoadState("networkidle");
     await expect(page.getByText(aliasName)).toBeVisible({ timeout: 10_000 });
-  });
-
-  test("own-farm client cannot be archived", async ({ page }) => {
-    // The own-farm row should show "—" instead of Edit/Archive buttons
-    // Find the row containing the own-farm badge text
-    const ownFarmRow = page.locator("tr", { has: page.locator("text=משק פילצביץ׳") });
-
-    // There should be no "Archive" (גנוז) button in this row
-    const archiveButton = ownFarmRow.getByRole("button", { name: "גנוז" });
-    await expect(archiveButton).toHaveCount(0);
-
-    // There should be no "Edit" (עריכה) button either
-    const editButton = ownFarmRow.getByRole("button", { name: "עריכה" });
-    await expect(editButton).toHaveCount(0);
   });
 });

@@ -13,13 +13,13 @@ const ROUTE_TO_PAGE_KEY: Record<string, string> = {
   dashboard: "dashboard",
   admin: "admin",
   workers: "workers",
-  areas: "areas",
-  equipment: "equipment",
-  crops: "crops",
+  "clients-areas": "clientsAreas",
+  settings: "settings",
   payroll: "payroll",
   review: "review",
   health: "health",
   record: "record",
+  "contractor-reports": "contractorReports",
 };
 
 function getPageKey(pathname: string): string | null {
