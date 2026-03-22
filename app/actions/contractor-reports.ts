@@ -7,10 +7,12 @@ import { logAudit } from "@/lib/audit";
 export interface ContractorSessionRow {
   date: string;
   client_name: string;
+  is_own_farm: boolean;
   area_name: string;
   dunam_covered: number | null;
   work_type: string | null;
   materials: string;
+  material_qty_label: string;
   workers: string;
   worker_count: number;
   total_hours: number;
@@ -39,6 +41,31 @@ export interface ExportResult {
   filename: string;
 }
 
+export type DashboardScope = "all" | "contractor" | "own_farm";
+
+export interface DashboardParams {
+  fromDate: string;
+  toDate: string;
+  clientId?: string;
+  scope: DashboardScope;
+  workTypeId?: string;
+}
+
+export interface OperationsDashboardData {
+  total_hours: number;
+  total_dunam: number;
+  session_count: number;
+  active_clients: number;
+  avg_crew_size: number;
+  labor_intensity: number | null;
+  by_client: { client_name: string; hours: number; dunam: number; sessions: number }[];
+  by_work_type: { work_type: string; hours: number; sessions: number; pct: number }[];
+  by_date: { date: string; hours: number; by_work_type: Record<string, number> }[];
+  by_worker: { worker_name: string; hours: number; sessions: number }[];
+  by_material: { material_name: string; total_quantity: number; unit: string }[];
+  session_rows: ContractorSessionRow[];
+}
+
 interface RawContractorRow {
   id: string;
   work_date: string;
@@ -49,7 +76,7 @@ interface RawContractorRow {
   areas: {
     name: string;
     client_id: string;
-    clients: { name: string } | null;
+    clients: { name: string; is_own_farm: boolean } | null;
   } | null;
   work_types: { name_he: string } | null;
   work_log_materials: { quantity: number | null; unit: string | null; materials: { name_he: string } | null }[] | null;
@@ -82,6 +109,24 @@ function formatDateDDMMYYYY(dateStr: string): string {
 
 type SessionKey = string;
 
+function getMaterialNames(row: RawContractorRow): string {
+  const names = (row.work_log_materials ?? [])
+    .map((wlm) => wlm.materials?.name_he)
+    .filter(Boolean);
+  return names.join("; ");
+}
+
+function getMaterialQtyLabel(row: RawContractorRow): string {
+  const qtys = (row.work_log_materials ?? [])
+    .map((wlm) => {
+      if (!wlm.quantity) return null;
+      return `${wlm.quantity} ${wlm.unit ?? ""}`.trim();
+    })
+    .filter(Boolean);
+  return qtys.join("; ");
+}
+
+/** Combined label for session key grouping (keeps backward compat) */
 function getMaterialLabel(row: RawContractorRow): string {
   const mats = (row.work_log_materials ?? [])
     .map((wlm) => {
@@ -104,10 +149,12 @@ function buildSessionKey(row: RawContractorRow): SessionKey {
 interface SessionAccumulator {
   date: string;
   client_name: string;
+  is_own_farm: boolean;
   area_name: string;
   work_type: string | null;
   dunam_covered: number | null;
   materials: string;
+  material_qty_label: string;
   workers: Set<string>;
   total_hours: number;
   raw_transcript: string | null;
@@ -136,10 +183,12 @@ function aggregateToSessions(
       sessionMap.set(key, {
         date: row.work_date,
         client_name: row.areas?.clients?.name ?? "לא ידוע",
+        is_own_farm: row.areas?.clients?.is_own_farm ?? false,
         area_name: row.areas?.name ?? "לא ידוע",
         work_type: row.work_types?.name_he ?? null,
         dunam_covered: row.dunam_covered,
-        materials: getMaterialLabel(row),
+        materials: getMaterialNames(row),
+        material_qty_label: getMaterialQtyLabel(row),
         workers: new Set([workerName]),
         total_hours: row.total_hours ?? 0,
         raw_transcript: row.raw_transcript,
@@ -152,10 +201,12 @@ function aggregateToSessions(
     .map((s) => ({
       date: s.date,
       client_name: s.client_name,
+      is_own_farm: s.is_own_farm,
       area_name: s.area_name,
       dunam_covered: s.dunam_covered,
       work_type: s.work_type,
       materials: s.materials,
+      material_qty_label: s.material_qty_label,
       workers: Array.from(s.workers).join("; "),
       worker_count: s.workers.size,
       total_hours: s.total_hours,
@@ -171,12 +222,11 @@ async function fetchContractorData(
   let query = supabase
     .from("attendance_logs")
     .select(
-      "id, work_date, total_hours, dunam_covered, raw_transcript, profiles(full_name), areas!inner(name, client_id, clients!inner(name)), work_types(name_he), work_log_materials(quantity, unit, materials(name_he))",
+      "id, work_date, total_hours, dunam_covered, raw_transcript, profiles(full_name), areas!inner(name, client_id, clients!inner(name, is_own_farm)), work_types(name_he), work_log_materials(quantity, unit, materials(name_he))",
     )
     .eq("status", "approved")
     .gte("work_date", params.fromDate)
-    .lte("work_date", params.toDate)
-    .neq("areas.clients.is_own_farm", true);
+    .lte("work_date", params.toDate);
 
   if (params.clientId) {
     query = query.eq("areas.client_id", params.clientId);
@@ -185,39 +235,6 @@ async function fetchContractorData(
   const { data, error } = await query;
   if (error) throw error;
   return (data ?? []) as unknown as RawContractorRow[];
-}
-
-async function fetchMaterialsForLogs(
-  supabase: Awaited<ReturnType<typeof import("@/lib/supabase/server").createClient>>,
-  logIds: string[],
-): Promise<Map<string, string>> {
-  if (logIds.length === 0) return new Map();
-
-  const { data } = await supabase
-    .from("work_log_materials")
-    .select("attendance_log_id, quantity, unit, materials(name_he)")
-    .in("attendance_log_id", logIds);
-
-  const materialsByLog = new Map<string, string[]>();
-  for (const row of data ?? []) {
-    const mat = row.materials as unknown as { name_he: string } | null;
-    if (!mat) continue;
-
-    const label = row.quantity
-      ? `${mat.name_he} ${row.quantity} ${row.unit ?? ""}`.trim()
-      : mat.name_he;
-
-    const existing = materialsByLog.get(row.attendance_log_id) ?? [];
-    existing.push(label);
-    materialsByLog.set(row.attendance_log_id, existing);
-  }
-
-  // Deduplicate materials per log
-  const result = new Map<string, string>();
-  for (const [logId, mats] of materialsByLog) {
-    result.set(logId, [...new Set(mats)].join("; "));
-  }
-  return result;
 }
 
 export async function getContractorInvoiceSummary(params: {
@@ -271,7 +288,8 @@ export async function exportContractorCsv(params: {
     "שם שדה / חלקה",
     "שטח בעבודה (דונם)",
     "סוג עבודה",
-    "חומרים שבשימוש",
+    "חומר",
+    "כמות חומר",
     "עובדים",
     "מספר עובדים",
     'סה"כ שעות (מצטבר)',
@@ -284,7 +302,8 @@ export async function exportContractorCsv(params: {
     "(Field Name)",
     "(Area Worked - Dunam)",
     "(Work Type)",
-    "(Materials Used)",
+    "(Material)",
+    "(Material Qty)",
     "(Workers)",
     "(Worker Count)",
     "(Total Hours)",
@@ -299,6 +318,7 @@ export async function exportContractorCsv(params: {
       csvEscape(r.dunam_covered),
       csvEscape(r.work_type),
       csvEscape(r.materials),
+      csvEscape(r.material_qty_label),
       csvEscape(r.workers),
       csvEscape(r.worker_count),
       csvEscape(r.total_hours.toFixed(1)),
@@ -382,6 +402,171 @@ export async function getContractorDashboardStats(params: {
         by_work_type: Array.from(workTypeMap.entries())
           .map(([work_type, count]) => ({ work_type, count }))
           .sort((a, b) => b.count - a.count),
+      },
+    };
+  } catch (err) {
+    return { success: false, error: (err as Error).message };
+  }
+}
+
+// ─── Operations Dashboard (new unified action) ──────────────────────────────
+
+async function fetchOperationsData(
+  supabase: Awaited<ReturnType<typeof import("@/lib/supabase/server").createClient>>,
+  params: DashboardParams,
+): Promise<RawContractorRow[]> {
+  let query = supabase
+    .from("attendance_logs")
+    .select(
+      "id, work_date, total_hours, dunam_covered, raw_transcript, profiles(full_name), areas!inner(name, client_id, clients!inner(name, is_own_farm)), work_types(name_he), work_log_materials(quantity, unit, materials(name_he))",
+    )
+    .eq("status", "approved")
+    .gte("work_date", params.fromDate)
+    .lte("work_date", params.toDate);
+
+  if (params.scope === "contractor") {
+    query = query.eq("areas.clients.is_own_farm", false);
+  } else if (params.scope === "own_farm") {
+    query = query.eq("areas.clients.is_own_farm", true);
+  }
+
+  if (params.clientId) {
+    query = query.eq("areas.client_id", params.clientId);
+  }
+
+  if (params.workTypeId) {
+    query = query.eq("work_type_id", params.workTypeId);
+  }
+
+  const { data, error } = await query;
+  if (error) throw error;
+  return (data ?? []) as unknown as RawContractorRow[];
+}
+
+export async function getOperationsDashboardData(
+  params: DashboardParams,
+): Promise<ActionResult<OperationsDashboardData>> {
+  const supabase = await createClient();
+  const { user, error: authError } = await verifyAdminCaller(supabase);
+  if (!user) return { success: false, error: authError };
+
+  const dateError = validateDateRange(params.fromDate, params.toDate);
+  if (dateError) return { success: false, error: dateError };
+
+  try {
+    const rawData = await fetchOperationsData(supabase, params);
+    const sessions = aggregateToSessions(rawData);
+
+    const total_hours = sessions.reduce((sum, s) => sum + s.total_hours, 0);
+    const total_dunam = sessions.reduce((sum, s) => sum + (s.dunam_covered ?? 0), 0);
+    const total_workers = sessions.reduce((sum, s) => sum + s.worker_count, 0);
+
+    // By client
+    const clientMap = new Map<string, { hours: number; dunam: number; sessions: number }>();
+    for (const s of sessions) {
+      const existing = clientMap.get(s.client_name);
+      if (existing) {
+        existing.hours += s.total_hours;
+        existing.dunam += s.dunam_covered ?? 0;
+        existing.sessions += 1;
+      } else {
+        clientMap.set(s.client_name, { hours: s.total_hours, dunam: s.dunam_covered ?? 0, sessions: 1 });
+      }
+    }
+
+    // By work type — aggregate by HOURS (not session count)
+    const wtMap = new Map<string, { hours: number; sessions: number }>();
+    for (const s of sessions) {
+      const wt = s.work_type ?? "לא צוין";
+      const existing = wtMap.get(wt);
+      if (existing) {
+        existing.hours += s.total_hours;
+        existing.sessions += 1;
+      } else {
+        wtMap.set(wt, { hours: s.total_hours, sessions: 1 });
+      }
+    }
+
+    // By date (for timeline chart) — with work type sub-breakdown
+    const dateMap = new Map<string, { hours: number; by_work_type: Map<string, number> }>();
+    for (const s of sessions) {
+      const existing = dateMap.get(s.date);
+      const wt = s.work_type ?? "לא צוין";
+      if (existing) {
+        existing.hours += s.total_hours;
+        existing.by_work_type.set(wt, (existing.by_work_type.get(wt) ?? 0) + s.total_hours);
+      } else {
+        const byWt = new Map<string, number>();
+        byWt.set(wt, s.total_hours);
+        dateMap.set(s.date, { hours: s.total_hours, by_work_type: byWt });
+      }
+    }
+
+    // By worker — aggregate from raw data (before session grouping)
+    const workerMap = new Map<string, { hours: number; sessions: Set<string> }>();
+    for (const row of rawData) {
+      const name = (row.profiles as { full_name: string } | null)?.full_name ?? "לא ידוע";
+      const existing = workerMap.get(name);
+      const sessionKey = buildSessionKey(row);
+      if (existing) {
+        existing.hours += row.total_hours ?? 0;
+        existing.sessions.add(sessionKey);
+      } else {
+        workerMap.set(name, { hours: row.total_hours ?? 0, sessions: new Set([sessionKey]) });
+      }
+    }
+
+    // By material — aggregate from raw data
+    const materialMap = new Map<string, { total_quantity: number; unit: string }>();
+    for (const row of rawData) {
+      for (const wlm of row.work_log_materials ?? []) {
+        const name = wlm.materials?.name_he;
+        if (!name) continue;
+        const existing = materialMap.get(name);
+        if (existing) {
+          existing.total_quantity += wlm.quantity ?? 0;
+        } else {
+          materialMap.set(name, { total_quantity: wlm.quantity ?? 0, unit: wlm.unit ?? "" });
+        }
+      }
+    }
+
+    const by_work_type = Array.from(wtMap.entries())
+      .map(([work_type, stats]) => ({
+        work_type,
+        hours: stats.hours,
+        sessions: stats.sessions,
+        pct: total_hours > 0 ? Math.round((stats.hours / total_hours) * 100) : 0,
+      }))
+      .sort((a, b) => b.hours - a.hours);
+
+    return {
+      success: true,
+      data: {
+        total_hours,
+        total_dunam,
+        session_count: sessions.length,
+        active_clients: clientMap.size,
+        avg_crew_size: sessions.length > 0 ? total_workers / sessions.length : 0,
+        labor_intensity: total_dunam > 0 ? total_hours / total_dunam : null,
+        by_client: Array.from(clientMap.entries())
+          .map(([client_name, stats]) => ({ client_name, ...stats }))
+          .sort((a, b) => b.hours - a.hours),
+        by_work_type,
+        by_date: Array.from(dateMap.entries())
+          .map(([date, d]) => ({
+            date,
+            hours: d.hours,
+            by_work_type: Object.fromEntries(d.by_work_type),
+          }))
+          .sort((a, b) => a.date.localeCompare(b.date)),
+        by_worker: Array.from(workerMap.entries())
+          .map(([worker_name, d]) => ({ worker_name, hours: d.hours, sessions: d.sessions.size }))
+          .sort((a, b) => b.hours - a.hours),
+        by_material: Array.from(materialMap.entries())
+          .map(([material_name, d]) => ({ material_name, ...d }))
+          .sort((a, b) => b.total_quantity - a.total_quantity),
+        session_rows: sessions,
       },
     };
   } catch (err) {

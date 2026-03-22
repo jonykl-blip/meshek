@@ -30,8 +30,8 @@
       "dashboardDesc": "צפייה ברשומות נוכחות יומיות",
       "review": "רשומות ממתינות לאישור",
       "reviewDesc": "סקירה ואישור רשומות ממתינות",
-      "contractorReports": "דוחות קבלן",
-      "contractorReportsDesc": "צפייה בדוחות עבודת קבלנות וייצוא"
+      "contractorReports": "Report",
+      "contractorReportsDesc": "Analytics, insights, and export"
     }
   },
   "auth": {
@@ -525,7 +525,7 @@
       }
     },
     "contractorReports": {
-      "title": "Contractor Reports",
+      "title": "Report",
       "fromDate": "From Date",
       "toDate": "To Date",
       "currentMonth": "Current Month",
@@ -534,11 +534,15 @@
       "exportCsv": "Export Invoice CSV",
       "exporting": "Exporting...",
       "exportError": "Export error",
-      "noData": "No contractor work in this period",
+      "noData": "No work in this period",
       "totalHours": "Total Hours",
       "totalDunam": "Total Dunam",
       "sessionCount": "Sessions",
       "activeClients": "Active Clients",
+      "laborIntensity": "Labor Intensity",
+      "avgCrewSize": "Avg Crew Size",
+      "hoursPerDunam": "hr/dunam",
+      "workersPerSession": "workers/session",
       "byClient": "By Client",
       "byWorkType": "By Work Type",
       "hours": "Hours",
@@ -548,7 +552,8 @@
       "client": "Client",
       "area": "Area",
       "workType": "Work Type",
-      "materials": "Materials",
+      "materials": "Material",
+      "materialQty": "Qty",
       "workers": "Workers",
       "workerCount": "Worker Count",
       "notes": "Notes",
@@ -556,7 +561,21 @@
       "workSummary": "Work details by client",
       "groupByClient": "By Client",
       "groupByDate": "By Date",
-      "workSummaryByDate": "Work details by date"
+      "workSummaryByDate": "Work details by date",
+      "loadData": "Show Data",
+      "loading": "Loading...",
+      "scopeAll": "All",
+      "scopeContractor": "Contractor",
+      "scopeOwnFarm": "Own Farm",
+      "allWorkTypes": "All Work Types",
+      "byClientHours": "Hours by Client",
+      "byClientDunam": "Dunam by Client",
+      "dailyActivity": "Daily Activity — Hours",
+      "workTypeByHours": "Work Type Distribution — Hours",
+      "materialUsage": "Material Usage",
+      "workerHours": "Hours by Worker",
+      "filterActive": "Filter",
+      "clearFilter": "Clear filter"
     },
     "payroll": {
       "title": "שכר",
@@ -604,7 +623,7 @@
       "review": "רשומות ממתינות לאישור",
       "health": "בริאות מערכת",
       "record": "รายงานการเข้างาน",
-      "contractorReports": "דוחות קבלנות"
+      "contractorReports": "Report"
     }
   },
   "sidebar": {

@@ -108,8 +108,8 @@ interface ReviewQueueProps {
   showAll: boolean;
   workers: { id: string; full_name: string }[];
   areas: { id: string; name: string; client_name: string | null }[];
-  workTypes: { id: string; name_he: string }[];
-  materials: { id: string; name_he: string }[];
+  workTypes: { id: string; name_he: string; category: string }[];
+  materials: { id: string; name_he: string; category: string }[];
   clients: { id: string; name: string }[];
   labels: ReviewQueueLabels;
 }
@@ -138,6 +138,12 @@ function getStatusBadgeClassName(status: string): string {
       return "";
   }
 }
+
+/** Maps work_type category → preferred material categories (shown first in dropdown) */
+const WORK_TYPE_MATERIAL_MAP: Record<string, string[]> = {
+  spraying: ["spray", "fertilizer"],
+  planting: ["seed"],
+};
 
 export function ReviewQueue({
   records,
@@ -661,7 +667,7 @@ export function ReviewQueue({
                         )}
                         {record.material_names && (
                           <Badge className="bg-green-50 text-green-700 border-green-200 dark:bg-green-950 dark:text-green-300">
-                            🧪 {record.material_quantity ? `${record.material_quantity} ${record.material_unit ?? ""} `.trim() : ""}{record.material_names}
+                            🧪 {record.material_quantity ? `${record.material_quantity} ${record.material_unit ?? ""} ` : ""}{record.material_names}
                           </Badge>
                         )}
                         {record.status === "imported" ? (
@@ -888,9 +894,20 @@ export function ReviewQueue({
                                 <Label className="text-xs">{labels.editMaterial}</Label>
                                 <select value={editMaterialId} onChange={(e) => setEditMaterialId(e.target.value)} className="mt-1 block w-full rounded-md border bg-background px-3 py-2 text-sm">
                                   <option value="">—</option>
-                                  {materials.map((m) => (
-                                    <option key={m.id} value={m.id}>{m.name_he}</option>
-                                  ))}
+                                  {(() => {
+                                    const selectedWt = workTypes.find((wt) => wt.id === editWorkTypeId);
+                                    const preferredCats = selectedWt ? WORK_TYPE_MATERIAL_MAP[selectedWt.category] : null;
+                                    if (!preferredCats) return materials.map((m) => <option key={m.id} value={m.id}>{m.name_he}</option>);
+                                    const preferred = materials.filter((m) => preferredCats.includes(m.category));
+                                    const rest = materials.filter((m) => !preferredCats.includes(m.category));
+                                    return (
+                                      <>
+                                        {preferred.map((m) => <option key={m.id} value={m.id}>{m.name_he}</option>)}
+                                        {preferred.length > 0 && rest.length > 0 && <option disabled>──────</option>}
+                                        {rest.map((m) => <option key={m.id} value={m.id}>{m.name_he}</option>)}
+                                      </>
+                                    );
+                                  })()}
                                 </select>
                                 <div className="flex gap-2 mt-1">
                                   <Input type="number" step="1" min="0" placeholder={labels.materialQty} value={editMaterialQty} onChange={(e) => setEditMaterialQty(e.target.value)} className="h-8 w-24" />
@@ -910,7 +927,7 @@ export function ReviewQueue({
                                   <Button variant="default" size="sm" disabled={!canApprove || pendingRecordId === record.id} onClick={() => handleApprove(record.id)} title={!canApprove ? labels.cannotApproveUnresolved : undefined}>{pendingRecordId === record.id ? labels.saving : labels.approve}</Button>
                                 );
                               })()}
-                              <Button variant="outline" size="sm" disabled={pendingRecordId === record.id} onClick={() => { resetEdit(); setEditingId(record.id); setEditHours(String(record.total_hours ?? "")); setEditAreaId(record.area_id ?? ""); setEditWorkTypeId(record.work_type_id ?? ""); setEditDunam(String(record.dunam_covered ?? "")); setEditMaterialQty(String(record.material_quantity ?? "")); setEditMaterialUnit(record.material_unit ?? ""); }}>{labels.edit}</Button>
+                              <Button variant="outline" size="sm" disabled={pendingRecordId === record.id} onClick={() => { resetEdit(); setEditingId(record.id); setEditHours(String(record.total_hours ?? "")); setEditAreaId(record.area_id ?? ""); setEditWorkTypeId(record.work_type_id ?? ""); setEditDunam(String(record.dunam_covered ?? "")); setEditMaterialId(record.material_id ?? ""); setEditMaterialQty(String(record.material_quantity ?? "")); setEditMaterialUnit(record.material_unit ?? ""); }}>{labels.edit}</Button>
                               <Button variant="destructive" size="sm" disabled={pendingRecordId === record.id} onClick={() => { resetReject(); setRejectingId(record.id); }}>{labels.reject}</Button>
                             </div>
                           )}

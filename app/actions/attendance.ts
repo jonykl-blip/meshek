@@ -44,6 +44,7 @@ export interface PendingRecord {
   work_type_id: string | null;
   work_type_name: string | null;
   client_name: string | null;
+  material_id: string | null;
   material_names: string | null;
   material_quantity: number | null;
   material_unit: string | null;
@@ -88,7 +89,7 @@ export async function getPendingRecords(): Promise<
       profiles!attendance_logs_profile_id_fkey ( full_name ),
       areas!attendance_logs_area_id_fkey ( name, clients(name, is_own_farm) ),
       work_types ( name_he ),
-      work_log_materials ( quantity, unit, materials ( name_he ) )
+      work_log_materials ( material_id, quantity, unit, materials ( name_he ) )
     `
     )
     .eq("status", "pending")
@@ -112,7 +113,7 @@ export async function getPendingRecords(): Promise<
       const profile = row.profiles as unknown as { full_name: string } | null;
       const area = row.areas as unknown as { name: string; clients: { name: string; is_own_farm: boolean } | null } | null;
       const workType = row.work_types as unknown as { name_he: string } | null;
-      const workLogMaterials = row.work_log_materials as unknown as { quantity: number | null; unit: string | null; materials: { name_he: string } | null }[] | null;
+      const workLogMaterials = row.work_log_materials as unknown as { material_id: string; quantity: number | null; unit: string | null; materials: { name_he: string } | null }[] | null;
       const firstMaterial = (workLogMaterials ?? [])[0] ?? null;
       const materialNames = (workLogMaterials ?? [])
         .map((wlm) => wlm.materials?.name_he)
@@ -136,6 +137,7 @@ export async function getPendingRecords(): Promise<
         work_type_id: row.work_type_id ?? null,
         work_type_name: workType?.name_he ?? null,
         client_name: area?.clients?.is_own_farm ? null : area?.clients?.name ?? null,
+        material_id: firstMaterial?.material_id ?? null,
         material_names: materialNames,
         material_quantity: firstMaterial?.quantity ?? null,
         material_unit: firstMaterial?.unit ?? null,
@@ -172,7 +174,7 @@ export async function getReviewRecords(
       profiles!attendance_logs_profile_id_fkey ( full_name ),
       areas!attendance_logs_area_id_fkey ( name, clients(name, is_own_farm) ),
       work_types ( name_he ),
-      work_log_materials ( quantity, unit, materials ( name_he ) )
+      work_log_materials ( material_id, quantity, unit, materials ( name_he ) )
     `
     )
     .order("work_date", { ascending: false })
@@ -201,7 +203,7 @@ export async function getReviewRecords(
     const profile = row.profiles as unknown as { full_name: string } | null;
     const area = row.areas as unknown as { name: string; clients: { name: string; is_own_farm: boolean } | null } | null;
     const workType = row.work_types as unknown as { name_he: string } | null;
-    const workLogMaterials = row.work_log_materials as unknown as { quantity: number | null; unit: string | null; materials: { name_he: string } | null }[] | null;
+    const workLogMaterials = row.work_log_materials as unknown as { material_id: string; quantity: number | null; unit: string | null; materials: { name_he: string } | null }[] | null;
     const firstMaterial = (workLogMaterials ?? [])[0] ?? null;
     const materialNames = (workLogMaterials ?? [])
       .map((wlm) => wlm.materials?.name_he)
@@ -225,6 +227,7 @@ export async function getReviewRecords(
       work_type_id: row.work_type_id ?? null,
       work_type_name: workType?.name_he ?? null,
       client_name: area?.clients?.is_own_farm ? null : area?.clients?.name ?? null,
+      material_id: firstMaterial?.material_id ?? null,
       material_names: materialNames,
       material_quantity: firstMaterial?.quantity ?? null,
       material_unit: firstMaterial?.unit ?? null,
@@ -372,7 +375,7 @@ export async function getActiveAreas(): Promise<
 }
 
 export async function getActiveWorkTypes(): Promise<
-  ActionResult<{ id: string; name_he: string }[]>
+  ActionResult<{ id: string; name_he: string; category: string }[]>
 > {
   const supabase = await createClient();
   const { user, error: authError } = await verifyDashboardCaller(supabase);
@@ -380,7 +383,7 @@ export async function getActiveWorkTypes(): Promise<
 
   const { data, error } = await supabase
     .from("work_types")
-    .select("id, name_he")
+    .select("id, name_he, category")
     .eq("is_active", true)
     .order("name_he");
 
@@ -390,7 +393,7 @@ export async function getActiveWorkTypes(): Promise<
 }
 
 export async function getActiveMaterials(): Promise<
-  ActionResult<{ id: string; name_he: string }[]>
+  ActionResult<{ id: string; name_he: string; category: string }[]>
 > {
   const supabase = await createClient();
   const { user, error: authError } = await verifyDashboardCaller(supabase);
@@ -398,7 +401,7 @@ export async function getActiveMaterials(): Promise<
 
   const { data, error } = await supabase
     .from("materials")
-    .select("id, name_he")
+    .select("id, name_he, category")
     .eq("is_active", true)
     .order("name_he");
 

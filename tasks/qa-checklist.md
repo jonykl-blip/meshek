@@ -318,16 +318,16 @@ Natural-sounding voice reports simulating real daily usage. These combine multip
 
 | Check | Result | Notes |
 |-------|--------|-------|
-| Telegram confirmation received | [ ] | |
-| Correct record count (3) | [ ] | |
-| עידן: 7.5h, שקדים, own farm, ריסוס, 35 דונם | [ ] | |
-| יוגב: 7.5h, שקדים, own farm, ריסוס, 35 דונם | [ ] | |
-| קאי: 8h, חלקה א, גדש העמק, עיבוד קרקע, 50 דונם, no material | [ ] | |
-| Material quantity = 200, unit = ליטר, name = קונפידור | [ ] | |
-| Confirmation shows "🧪200 ליטר קונפידור" | [ ] | |
-| Review badge shows quantity + unit + name | [ ] | |
-| Contractor report: separate row if different material | [ ] | |
-
+| Telegram confirmation received | [x] | |
+| Correct record count (3) | [x] | |
+| עידן: 7.5h, שקדים, own farm, ריסוס, 35 דונם | [!] |Wrong hours, rest is correct |
+| יוגב: 7.5h, שקדים, own farm, ריסוס, 35 דונם | [ ] |Wrong hours, rest is correct |
+| קאי: 8h, חלקה א, גדש העמק, עיבוד קרקע, 50 דונם, no material | [x] | |
+| Material quantity = 200, unit = ליטר, name = קונפידור | [x] | |
+| Confirmation shows "🧪200 ליטר קונפידור" | [x] | |
+| Review badge shows quantity + unit + name | [x] | |
+| Contractor report: separate row if different material | [x] | |
+Note for the future: I think that I like to add also our farm to the contractor report, because actually it's a report about works being done. It's nice that I can extract it for other clients, but they also want to review it for myself.
 ### Script 13 — Afternoon, material quantity in Hebrew words, area with number
 
 > "אחה״צ — אורי וקון השקו בגוש א של יפעת, שש שעות כל אחד. עידן גזם בזיתים שלנו ארבע וחצי שעות. ויוגב דישן 20 דונם בחיטה 3 עם שלושה שקים דשן 20-20-20, חמש שעות."
@@ -342,14 +342,14 @@ Natural-sounding voice reports simulating real daily usage. These combine multip
 
 | Check | Result | Notes |
 |-------|--------|-------|
-| Telegram confirmation received | [ ] | |
-| Correct record count (4) | [ ] | |
-| אורי: 6h, גוש א, יפעת, השקיה | [ ] | |
-| קון: 6h, גוש א, יפעת, השקיה | [ ] | |
-| עידן: 4.5h, זיתים, own farm, גיזום | [ ] | |
-| יוגב: 5h, חיטה 3, own farm, דישון, 20 דונם | [ ] | |
-| Material quantity = 3, unit = שק, name = דשן 20-20-20 | [ ] | |
-| חיטה 3 area name not confused with hours or quantity | [ ] | |
+| Telegram confirmation received | [x] | |
+| Correct record count (4) | [x] | |
+| אורי: 6h, גוש א, יפעת, השקיה | [x] | |
+| קון: 6h, גוש א, יפעת, השקיה | [!] |failed with the name, i got כהן instead of קון, the rest was correct |
+| עידן: 4.5h, זיתים, own farm, גיזום | [x] | |
+| יוגב: 5h, חיטה 3, own farm, דישון, 20 דונם | [x] | |
+| Material quantity = 3, unit = שק, name = דשן 20-20-20 | [!] |it didnt look good on the review dashboard, had a badge with quantity but it was all one word |
+| חיטה 3 area name not confused with hours or quantity | [x] | |
 
 ### Script 14 — Same worker, two jobs, different materials
 
@@ -363,12 +363,12 @@ Natural-sounding voice reports simulating real daily usage. These combine multip
 
 | Check | Result | Notes |
 |-------|--------|-------|
-| Telegram confirmation received | [ ] | |
-| Correct record count (2) — same worker, two entries | [ ] | |
-| קאי: 4h, חלקה א, גדש העמק, ריסוס, 30 דונם, 150 ליטר רנדאפ | [ ] | |
-| קאי: 4h, חלקה א, גדש העמק, עיבוד קרקע, 25 דונם, no material | [ ] | |
-| "אותו מקום" resolved to חלקה א | [ ] | |
-| Contractor report: 2 separate rows (different work type + material) | [ ] | |
+| Telegram confirmation received | [x] | |
+| Correct record count (2) — same worker, two entries | [x] | |
+| קאי: 4h, חלקה א, גדש העמק, ריסוס, 30 דונם, 150 ליטר רנדאפ | [x] | |
+| קאי: 4h, חלקה א, גדש העמק, עיבוד קרקע, 25 דונם, no material | [x] | |
+| "אותו מקום" resolved to חלקה א | [x] | |
+| Contractor report: 2 separate rows (different work type + material) | [x] |not relevant for this test |
 
 ### Script 15 — Big crew, 5 workers, material with quantity on one segment
 
@@ -385,14 +385,14 @@ Natural-sounding voice reports simulating real daily usage. These combine multip
 
 | Check | Result | Notes |
 |-------|--------|-------|
-| Telegram confirmation received | [ ] | |
-| Correct record count (5) | [ ] | |
-| עידן: 7h, שקדים, own farm, ריסוס, 40 דונם, 300 ליטר דלק | [ ] | |
-| אורי: 7h, שקדים, own farm, ריסוס, 40 דונם, 300 ליטר דלק | [ ] | |
-| יוגב: 8h, גוש א, יפעת, זריעה, 30 דונם | [ ] | |
-| קאי: 8.5h, חלקה א, גדש העמק, עיבוד קרקע, 60 דונם | [ ] | |
-| קון: 8.5h, חלקה א, גדש העמק, עיבוד קרקע, 60 דונם | [ ] | |
-| Material quantity=300, unit=ליטר on שקדים entries only | [ ] | |
+| Telegram confirmation received | [x] | |
+| Correct record count (5) | [x] | |
+| עידן: 7h, שקדים, own farm, ריסוס, 40 דונם, 300 ליטר דלק | [x] | |
+| אורי: 7h, שקדים, own farm, ריסוס, 40 דונם, 300 ליטר דלק | [x] | |
+| יוגב: 8h, גוש א, יפעת, זריעה, 30 דונם | [x] | |
+| קאי: 8.5h, חלקה א, גדש העמק, עיבוד קרקע, 60 דונם | [x] | |
+| קון: 8.5h, חלקה א, גדש העמק, עיבוד קרקע, 60 דונם | [x] | |
+| Material quantity=300, unit=ליטר on שקדים entries only | [x] | |
 
 ### Script 16 — Quick report, no materials, no dunams
 
@@ -406,12 +406,12 @@ Natural-sounding voice reports simulating real daily usage. These combine multip
 
 | Check | Result | Notes |
 |-------|--------|-------|
-| Telegram confirmation received | [ ] | |
-| Correct record count (2) | [ ] | |
-| קאי: 3h, חיטה 3, own farm, השקיה | [ ] | |
-| אורי: 6h, זיתים, own farm, גיזום | [ ] | |
-| חיטה 3 not confused with hours | [ ] | |
-| No material badge on review dashboard | [ ] | |
+| Telegram confirmation received | [x] | |
+| Correct record count (2) | [x] | |
+| קאי: 3h, חיטה 3, own farm, השקיה | [x] | |
+| אורי: 6h, זיתים, own farm, גיזום | [x] | |
+| חיטה 3 not confused with hours | [x] | |
+| No material badge on review dashboard | [x] | |
 
 ### Script 17 — End of week, two materials with quantities, 4 work types
 
@@ -427,17 +427,18 @@ Natural-sounding voice reports simulating real daily usage. These combine multip
 
 | Check | Result | Notes |
 |-------|--------|-------|
-| Telegram confirmation received | [ ] | |
-| Correct record count (4) | [ ] | |
-| עידן: 9h, חלקה א, גדש העמק, ריסוס, 45 דונם, 250 ליטר קונפידור | [ ] | |
-| אורי: 5h, גוש א, יפעת, השקיה | [ ] | |
-| קאי: 7h, גוש א, יפעת, עיבוד קרקע, 35 דונם | [ ] | |
-| קון: 6.5h, שקדים, own farm, דישון, 15 דונם, 2 שק אמוניום | [ ] | |
-| "שם" resolved to גוש א | [ ] | |
-| Both material quantities + units parsed correctly | [ ] | |
-| Contractor report: materials with quantities in materials column | [ ] | |
-| Quantity + unit editable in review form | [ ] | |
+| Telegram confirmation received | [x] | |
+| Correct record count (4) | [x] | |
+| עידן: 9h, חלקה א, גדש העמק, ריסוס, 45 דונם, 250 ליטר קונפידור | [x] | |
+| אורי: 5h, גוש א, יפעת, השקיה | [x] | |
+| קאי: 7h, גוש א, יפעת, עיבוד קרקע, 35 דונם | [x] | |
+| קון: 6.5h, שקדים, own farm, דישון, 15 דונם, 2 שק אמוניום | [x] | |
+| "שם" resolved to גוש א | [x] | |
+| Both material quantities + units parsed correctly | [x] | |
+| Contractor report: materials with quantities in materials column | [x] | | I think that on the contractor reports section it will be useful to put the unit count in a different column than the material.
+| Quantity + unit editable in review form | [x] | |
 
+General note: the telegram message is a bit heavy to read. One thing that we can remove is the date for every record. We have the date on the message, and I don't think we need the date on every record in the Telegram approval message. 
 ---
 
 ## Part 2: Desktop Flow Sanity Checks

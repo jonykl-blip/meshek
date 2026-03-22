@@ -30,8 +30,8 @@
       "dashboardDesc": "צפייה ברשומות נוכחות יומיות",
       "review": "רשומות ממתינות לאישור",
       "reviewDesc": "סקירה ואישור רשומות ממתינות",
-      "contractorReports": "דוחות קבלן",
-      "contractorReportsDesc": "צפייה בדוחות עבודת קבלנות וייצוא"
+      "contractorReports": "דוח",
+      "contractorReportsDesc": "ניתוח פעולות, תובנות וייצוא"
     }
   },
   "auth": {
@@ -525,7 +525,7 @@
       }
     },
     "contractorReports": {
-      "title": "דוחות קבלנות",
+      "title": "דוח",
       "fromDate": "מתאריך",
       "toDate": "עד תאריך",
       "currentMonth": "חודש נוכחי",
@@ -534,11 +534,15 @@
       "exportCsv": "ייצוא לחשבוניות",
       "exporting": "מייצא...",
       "exportError": "שגיאה בייצוא",
-      "noData": "אין עבודות קבלן בתקופה זו",
+      "noData": "אין עבודות בתקופה זו",
       "totalHours": "סה\"כ שעות",
       "totalDunam": "סה\"כ דונם",
       "sessionCount": "מספר עבודות",
       "activeClients": "לקוחות פעילים",
+      "laborIntensity": "עצימות עבודה",
+      "avgCrewSize": "גודל צוות ממוצע",
+      "hoursPerDunam": "שע'/דונם",
+      "workersPerSession": "עובדים/עבודה",
       "byClient": "לפי לקוח",
       "byWorkType": "לפי סוג עבודה",
       "hours": "שעות",
@@ -548,7 +552,8 @@
       "client": "לקוח",
       "area": "שטח",
       "workType": "סוג עבודה",
-      "materials": "חומרים",
+      "materials": "חומר",
+      "materialQty": "כמות",
       "workers": "עובדים",
       "workerCount": "מספר עובדים",
       "notes": "הערות",
@@ -556,7 +561,21 @@
       "workSummary": "פירוט עבודות לפי לקוח",
       "groupByClient": "לפי לקוח",
       "groupByDate": "לפי תאריך",
-      "workSummaryByDate": "פירוט עבודות לפי תאריך"
+      "workSummaryByDate": "פירוט עבודות לפי תאריך",
+      "loadData": "הצג נתונים",
+      "loading": "טוען...",
+      "scopeAll": "הכל",
+      "scopeContractor": "קבלנות",
+      "scopeOwnFarm": "משק",
+      "allWorkTypes": "כל סוגי העבודה",
+      "byClientHours": "שעות לפי לקוח",
+      "byClientDunam": "דונם לפי לקוח",
+      "dailyActivity": "פעילות יומית — שעות",
+      "workTypeByHours": "התפלגות סוגי עבודה — שעות",
+      "materialUsage": "שימוש בחומרים",
+      "workerHours": "שעות לפי עובד",
+      "filterActive": "סינון",
+      "clearFilter": "נקה סינון"
     },
     "payroll": {
       "title": "שכר",
@@ -604,7 +623,7 @@
       "review": "רשומות ממתינות לאישור",
       "health": "בריאות מערכת",
       "record": "דיווח נוכחות",
-      "contractorReports": "דוחות קבלנות"
+      "contractorReports": "דוח"
     }
   },
   "sidebar": {

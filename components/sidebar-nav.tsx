@@ -55,7 +55,7 @@ const navSections: NavSection[] = [
       { label: "ניהול מערכת", icon: Home, href: "/admin", roles: ["owner", "admin"], exact: true },
       { label: "נוכחות", icon: CalendarCheck, href: "/dashboard", roles: ["owner", "admin", "manager"] },
       { label: "רשומות ממתינות לאישור", icon: ClipboardList, href: "/admin/review", roles: ["owner", "admin"] },
-      { label: "דוחות קבלן", icon: FileBarChart, href: "/admin/contractor-reports", roles: ["owner", "admin"] },
+      { label: "דוח", icon: FileBarChart, href: "/admin/contractor-reports", roles: ["owner", "admin"] },
     ],
   },
   {

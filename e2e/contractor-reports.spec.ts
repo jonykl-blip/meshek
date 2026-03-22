@@ -14,7 +14,7 @@ async function login(page: Page) {
   });
 }
 
-test.describe("Admin Contractor Reports", () => {
+test.describe("Operations Dashboard (Report)", () => {
   test.beforeEach(async ({ page }) => {
     await login(page);
     await page.goto("/admin/contractor-reports");
@@ -24,7 +24,7 @@ test.describe("Admin Contractor Reports", () => {
   test("page loads with filters", async ({ page }) => {
     await expect(page).toHaveURL(/\/admin\/contractor-reports/);
     // Page heading
-    await expect(page.getByRole("heading", { name: "דוחות קבלנות" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "דוח" })).toBeVisible();
 
     // Date inputs should be visible
     const fromDateInput = page.locator('input[type="date"]').first();
@@ -32,10 +32,14 @@ test.describe("Admin Contractor Reports", () => {
     await expect(fromDateInput).toBeVisible();
     await expect(toDateInput).toBeVisible();
 
+    // Scope toggle should be visible (All / Contractor / Own Farm)
+    await expect(page.getByText("הכל")).toBeVisible();
+    await expect(page.getByText("קבלנות")).toBeVisible();
+    await expect(page.getByText("משק")).toBeVisible();
+
     // Client dropdown should be visible
-    const clientSelect = page.locator("select");
+    const clientSelect = page.locator("select").first();
     await expect(clientSelect).toBeVisible();
-    // "All clients" option should be the default
     await expect(clientSelect.locator("option", { hasText: "כל הלקוחות" })).toBeAttached();
   });
 
@@ -59,21 +63,18 @@ test.describe("Admin Contractor Reports", () => {
   });
 
   test("shows result state after loading stats", async ({ page }) => {
-    // Click the load stats button with current month dates (default)
-    await page.getByRole("button", { name: "עבודות" }).click();
+    // Click the load data button
+    await page.getByRole("button", { name: "הצג נתונים" }).click();
     await page.waitForLoadState("networkidle");
 
     // After loading, one of these states should appear:
-    // 1. No data message
-    // 2. Summary cards with data
-    // 3. Error message
-    const noDataMessage = page.getByText("אין עבודות קבלן בתקופה זו");
+    const noDataMessage = page.getByText("אין עבודות בתקופה זו");
     const summaryCards = page.getByText(/סה"כ שעות/);
     const errorMessage = page.locator(".text-red-600");
 
     // Wait for any result to appear
     await expect(
-      page.locator(':text("אין עבודות קבלן בתקופה זו"), :text("סה\\"כ שעות"), .text-red-600').first()
+      page.locator(':text("אין עבודות בתקופה זו"), :text("סה\\"כ שעות"), .text-red-600').first()
     ).toBeVisible({ timeout: 10_000 });
 
     const hasNoData = await noDataMessage.isVisible().catch(() => false);
@@ -83,59 +84,56 @@ test.describe("Admin Contractor Reports", () => {
   });
 
   test("export button is present", async ({ page }) => {
-    // The CSV export button should always be visible in the filter bar
     const exportButton = page.getByRole("button", { name: "ייצוא לחשבוניות" });
     await expect(exportButton).toBeVisible();
   });
 
-  // QA Check #33: Click "עבודות" → summary cards + charts + work summary table load
-  test("#33 — load stats shows summary cards, charts, and detail table", async ({ page }) => {
-    // Use current month (default dates)
-    await page.getByRole("button", { name: "עבודות" }).click();
+  // QA Check #33: Load data → KPI cards + charts + work summary
+  test("#33 — load stats shows KPI cards, charts, and work summary", async ({ page }) => {
+    await page.getByRole("button", { name: "הצג נתונים" }).click();
     await page.waitForLoadState("networkidle");
 
-    // Either we get data or no-data state
-    const noData = page.getByText("אין עבודות קבלן בתקופה זו");
+    const noData = page.getByText("אין עבודות בתקופה זו");
     const hasNoData = await noData.isVisible().catch(() => false);
 
     if (!hasNoData) {
-      // Summary cards should be visible
+      // KPI cards should be visible
       await expect(page.getByText("סה\"כ שעות").first()).toBeVisible();
 
-      // Charts section should be visible (recharts containers)
+      // Charts section should have Recharts containers
       const chartContainers = page.locator(".recharts-responsive-container");
       expect(await chartContainers.count()).toBeGreaterThanOrEqual(1);
 
-      // Work summary section should appear if there are sessions
+      // Work summary section should appear
       const workSummary = page.getByText("פירוט עבודות לפי לקוח");
-      // May or may not be visible depending on data
       if (await workSummary.isVisible()) {
         await expect(workSummary).toBeVisible();
       }
     }
   });
 
-  // QA Check #34: Summary cards show total hours, dunam, session count, active clients
-  test("#34 — summary cards present with correct labels", async ({ page }) => {
-    await page.getByRole("button", { name: "עבודות" }).click();
+  // QA Check #34: KPI cards show all expected metrics
+  test("#34 — KPI cards present with correct labels", async ({ page }) => {
+    await page.getByRole("button", { name: "הצג נתונים" }).click();
     await page.waitForLoadState("networkidle");
 
-    const noData = page.getByText("אין עבודות קבלן בתקופה זו");
+    const noData = page.getByText("אין עבודות בתקופה זו");
     const hasNoData = await noData.isVisible().catch(() => false);
     test.skip(hasNoData, "No data available for current month");
 
     await expect(page.getByText("סה\"כ שעות").first()).toBeVisible();
     await expect(page.getByText("סה\"כ דונם").first()).toBeVisible();
     await expect(page.getByText("מספר עבודות").first()).toBeVisible();
-    await expect(page.getByText("לקוחות פעילים").first()).toBeVisible();
+    await expect(page.getByText("עצימות עבודה").first()).toBeVisible();
+    await expect(page.getByText("גודל צוות ממוצע").first()).toBeVisible();
   });
 
-  // QA Check #35: "פירוט עבודות לפי לקוח" section appears
+  // QA Check #35: Work summary section appears with client groups
   test("#35 — work summary section appears with client groups", async ({ page }) => {
-    await page.getByRole("button", { name: "עבודות" }).click();
+    await page.getByRole("button", { name: "הצג נתונים" }).click();
     await page.waitForLoadState("networkidle");
 
-    const noData = page.getByText("אין עבודות קבלן בתקופה זו");
+    const noData = page.getByText("אין עבודות בתקופה זו");
     const hasNoData = await noData.isVisible().catch(() => false);
     test.skip(hasNoData, "No data available for current month");
 
@@ -146,9 +144,9 @@ test.describe("Admin Contractor Reports", () => {
     expect(await clientHeaders.count()).toBeGreaterThanOrEqual(1);
   });
 
-  // QA Check #37: Row columns: date, area, work type, hours, dunam, workers, materials
+  // QA Check #37: Detail table has correct column headers
   test("#37 — detail table has correct column headers", async ({ page }) => {
-    await page.getByRole("button", { name: "עבודות" }).click();
+    await page.getByRole("button", { name: "הצג נתונים" }).click();
     await page.waitForLoadState("networkidle");
 
     const workSummary = page.getByText("פירוט עבודות לפי לקוח");
@@ -164,7 +162,7 @@ test.describe("Admin Contractor Reports", () => {
       if (text) headerTexts.push(text.trim());
     }
 
-    const expectedHeaders = ["תאריך", "שטח", "סוג עבודה", "שעות", "דונם", "עובדים", "חומרים"];
+    const expectedHeaders = ["תאריך", "שטח", "סוג עבודה", "שעות", "דונם", "עובדים", "חומר"];
     for (const header of expectedHeaders) {
       expect(headerTexts, `Missing column header: ${header}`).toContainEqual(header);
     }
@@ -172,14 +170,13 @@ test.describe("Admin Contractor Reports", () => {
 
   // QA Check #38: Collapse/expand client sections works
   test("#38 — client sections collapse and expand", async ({ page }) => {
-    await page.getByRole("button", { name: "עבודות" }).click();
+    await page.getByRole("button", { name: "הצג נתונים" }).click();
     await page.waitForLoadState("networkidle");
 
     const workSummary = page.getByText("פירוט עבודות לפי לקוח");
     const isVisible = await workSummary.isVisible().catch(() => false);
     test.skip(!isVisible, "No work summary data");
 
-    // Client group sections are inside .rounded-lg.border.bg-card containers
     const clientSections = page.locator(".rounded-lg.border.bg-card.shadow-sm.overflow-hidden");
     const sectionCount = await clientSections.count();
     test.skip(sectionCount === 0, "No client group sections");
@@ -205,29 +202,27 @@ test.describe("Admin Contractor Reports", () => {
     await expect(firstSection.locator("table")).toBeVisible();
   });
 
-  // QA Check #39: Client header shows aggregated total hours + dunam
+  // QA Check #39: Client header shows aggregated total hours
   test("#39 — client header shows aggregated totals", async ({ page }) => {
-    await page.getByRole("button", { name: "עבודות" }).click();
+    await page.getByRole("button", { name: "הצג נתונים" }).click();
     await page.waitForLoadState("networkidle");
 
     const workSummary = page.getByText("פירוט עבודות לפי לקוח");
     const isVisible = await workSummary.isVisible().catch(() => false);
     test.skip(!isVisible, "No work summary data");
 
-    // Client headers should contain hours text
     const clientHeaders = page.locator(".cursor-pointer").filter({ has: page.locator(".font-semibold") });
     const headerCount = await clientHeaders.count();
     test.skip(headerCount === 0, "No client groups");
 
-    // The header right side should show "X.X שעות"
     const firstHeader = clientHeaders.first();
     const headerText = await firstHeader.textContent();
     expect(headerText).toMatch(/\d+\.?\d*\s*שעות/);
   });
 
-  // QA Check #40: Filter by specific client → only that client shown
+  // QA Check #40: Filter by client → only that client shown
   test("#40 — filter by client shows only that client", async ({ page }) => {
-    const clientSelect = page.locator("select");
+    const clientSelect = page.locator("select").first();
     const options = clientSelect.locator("option");
     const optionCount = await options.count();
     test.skip(optionCount <= 1, "No clients available to filter");
@@ -237,15 +232,14 @@ test.describe("Admin Contractor Reports", () => {
     const clientName = await secondOption.textContent();
     await clientSelect.selectOption({ index: 1 });
 
-    // Load stats
-    await page.getByRole("button", { name: "עבודות" }).click();
+    // Load data
+    await page.getByRole("button", { name: "הצג נתונים" }).click();
     await page.waitForLoadState("networkidle");
 
     const workSummary = page.getByText("פירוט עבודות לפי לקוח");
     const isVisible = await workSummary.isVisible().catch(() => false);
 
     if (isVisible && clientName) {
-      // Only the selected client should appear in the detail section
       const clientGroups = page.locator(".cursor-pointer .font-semibold");
       const groupCount = await clientGroups.count();
       for (let i = 0; i < groupCount; i++) {
@@ -257,55 +251,44 @@ test.describe("Admin Contractor Reports", () => {
 
   // QA Check #41: CSV export downloads file, no pricing columns
   test("#41 — CSV export downloads file with correct columns", async ({ page }) => {
-    // Load stats first
-    await page.getByRole("button", { name: "עבודות" }).click();
+    await page.getByRole("button", { name: "הצג נתונים" }).click();
     await page.waitForLoadState("networkidle");
 
-    // Set up download listener
     const downloadPromise = page.waitForEvent("download", { timeout: 15_000 });
-
     await page.getByRole("button", { name: "ייצוא לחשבוניות" }).click();
 
     const download = await downloadPromise;
     const filename = download.suggestedFilename();
     expect(filename).toMatch(/\.csv$/);
 
-    // Read the file content
     const path = await download.path();
     if (path) {
       const fs = await import("fs");
       const content = fs.readFileSync(path, "utf-8");
 
-      // Should NOT contain pricing columns
       expect(content).not.toContain("rate_per_hour");
       expect(content).not.toContain("rate_per_dunam");
       expect(content).not.toContain("מחיר");
       expect(content).not.toContain("תעריף");
-
-      // Should contain Hebrew text (BOM or Hebrew chars)
       expect(content).toMatch(/[\u0590-\u05FF]/);
     }
   });
 
-  // QA Check #42: CSV export with client filter → only filtered client's data
+  // QA Check #42: CSV export with client filter
   test("#42 — CSV export with client filter exports only that client", async ({ page }) => {
-    const clientSelect = page.locator("select");
+    const clientSelect = page.locator("select").first();
     const options = clientSelect.locator("option");
     const optionCount = await options.count();
     test.skip(optionCount <= 1, "No clients available to filter");
 
-    // Select a specific client
     const secondOption = options.nth(1);
     const clientName = (await secondOption.textContent())?.trim();
     await clientSelect.selectOption({ index: 1 });
 
-    // Load stats
-    await page.getByRole("button", { name: "עבודות" }).click();
+    await page.getByRole("button", { name: "הצג נתונים" }).click();
     await page.waitForLoadState("networkidle");
 
-    // Set up download listener
     const downloadPromise = page.waitForEvent("download", { timeout: 15_000 });
-
     await page.getByRole("button", { name: "ייצוא לחשבוניות" }).click();
 
     const download = await downloadPromise;
@@ -313,11 +296,42 @@ test.describe("Admin Contractor Reports", () => {
     if (path && clientName) {
       const fs = await import("fs");
       const content = fs.readFileSync(path, "utf-8");
-      const lines = content.split("\n").filter((l) => l.trim());
-
-      // All data rows (skip header) should reference the filtered client
-      // The CSV likely has a client column — verify the client name appears
       expect(content).toContain(clientName);
     }
+  });
+
+  // New: Scope toggle changes data
+  test("scope toggle switches between all/contractor/own-farm", async ({ page }) => {
+    // Click "Contractor" scope
+    await page.getByText("קבלנות").click();
+    await page.getByRole("button", { name: "הצג נתונים" }).click();
+    await page.waitForLoadState("networkidle");
+
+    // Click "Own Farm" scope — client dropdown should hide
+    await page.getByText("משק").click();
+    const clientSelect = page.locator("select").first();
+    // When scope is own_farm, the client dropdown is hidden
+    const clientOptions = clientSelect.locator("option", { hasText: "כל הלקוחות" });
+    const isClientVisible = await clientOptions.isVisible().catch(() => false);
+    // The first select may now be the work type filter
+    expect(isClientVisible).toBeFalsy();
+  });
+
+  // New: Split layout visible on desktop
+  test("split layout shows work summary and charts side by side", async ({ page }) => {
+    await page.getByRole("button", { name: "הצג נתונים" }).click();
+    await page.waitForLoadState("networkidle");
+
+    const noData = page.getByText("אין עבודות בתקופה זו");
+    const hasNoData = await noData.isVisible().catch(() => false);
+    test.skip(hasNoData, "No data available");
+
+    // Both panels should be visible
+    await expect(page.getByText("פירוט עבודות לפי לקוח")).toBeVisible();
+    await expect(page.getByText("סה\"כ שעות").first()).toBeVisible();
+
+    // Should have Recharts containers in the right panel
+    const charts = page.locator(".recharts-responsive-container");
+    expect(await charts.count()).toBeGreaterThanOrEqual(1);
   });
 });

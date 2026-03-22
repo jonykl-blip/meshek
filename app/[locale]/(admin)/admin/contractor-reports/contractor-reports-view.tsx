@@ -43,6 +43,7 @@ interface Labels {
   area: string;
   workType: string;
   materials: string;
+  materialQty: string;
   workers: string;
   workerCount: string;
   notes: string;
@@ -400,6 +401,7 @@ function GroupSection({
                   <th className="px-4 py-2 text-start font-medium">{labels.dunam}</th>
                   <th className="px-4 py-2 text-start font-medium">{labels.workers}</th>
                   <th className="px-4 py-2 text-start font-medium">{labels.materials}</th>
+                  <th className="px-4 py-2 text-start font-medium">{labels.materialQty}</th>
                 </tr>
               </thead>
               <tbody>
@@ -408,7 +410,7 @@ function GroupSection({
                     {groupMode === "client" ? (
                       <td className="px-4 py-2 whitespace-nowrap">{formatDisplayDate(row.date)}</td>
                     ) : (
-                      <td className="px-4 py-2">{row.client_name}</td>
+                      <td className="px-4 py-2">{row.is_own_farm ? <span className="text-muted-foreground italic">{row.client_name}</span> : row.client_name}</td>
                     )}
                     <td className="px-4 py-2">{row.area_name}</td>
                     <td className="px-4 py-2">{row.work_type ?? "—"}</td>
@@ -419,6 +421,9 @@ function GroupSection({
                     </td>
                     <td className="px-4 py-2">
                       <span className="text-xs text-muted-foreground">{row.materials || "—"}</span>
+                    </td>
+                    <td className="px-4 py-2">
+                      <span className="text-xs text-muted-foreground">{row.material_qty_label || "—"}</span>
                     </td>
                   </tr>
                 ))}
