@@ -17,18 +17,6 @@ import {
   type ContractorDashboardStats,
   type ContractorSessionRow,
 } from "@/app/actions/contractor-reports";
-import {
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  Tooltip as RechartsTooltip,
-  ResponsiveContainer,
-  PieChart,
-  Pie,
-  Cell,
-  Legend,
-} from "recharts";
 import { ChevronDown, ChevronLeft } from "lucide-react";
 
 interface Labels {
@@ -71,42 +59,12 @@ interface ClientOption {
 }
 
 const CHART_COLORS = [
-  "#3B82F6", "#F59E0B", "#10B981", "#8B5CF6", "#EF4444",
-  "#06B6D4", "#F97316", "#84CC16", "#EC4899", "#6366F1",
+  "hsl(var(--chart-1))",
+  "hsl(var(--chart-2))",
+  "hsl(var(--chart-3))",
+  "hsl(var(--chart-4))",
+  "hsl(var(--chart-5))",
 ];
-
-const RADIAN = Math.PI / 180;
-
-function renderOuterLabel(props: {
-  cx?: number;
-  cy?: number;
-  midAngle?: number;
-  outerRadius?: number;
-  name?: string;
-  value?: number;
-}) {
-  const cx = props.cx ?? 0;
-  const cy = props.cy ?? 0;
-  const midAngle = props.midAngle ?? 0;
-  const outerRadius = props.outerRadius ?? 0;
-  const radius = outerRadius + 28;
-  const x = cx + radius * Math.cos(-midAngle * RADIAN);
-  const y = cy + radius * Math.sin(-midAngle * RADIAN);
-  const label = `${props.name ?? ""} (${props.value ?? 0})`;
-  return (
-    <text
-      x={x}
-      y={y}
-      textAnchor={x > cx ? "start" : "end"}
-      dominantBaseline="central"
-      fontSize={13}
-      fontWeight={600}
-      fill="#374151"
-    >
-      {label}
-    </text>
-  );
-}
 
 function getMonthRange(offset: number): { from: string; to: string } {
   const now = new Date();
@@ -181,6 +139,9 @@ export function ContractorReportsView({
     });
   }
 
+  const hoursTitle = `${labels.byClient} — ${labels.hours}`;
+  const dunamTitle = `${labels.byClient} — ${labels.dunam}`;
+
   return (
     <div className="space-y-6">
       {/* Filters */}
@@ -236,56 +197,69 @@ export function ContractorReportsView({
             </div>
           ) : (
             <div className="grid gap-6 md:grid-cols-2">
-              {/* Bar chart: hours by client */}
-              <div className="rounded-lg border bg-card p-4 shadow-sm">
-                <h3 className="mb-4 text-sm font-semibold">{labels.byClient} — {labels.hours}</h3>
-                <ResponsiveContainer width="100%" height={Math.max(300, stats.by_client.slice(0, 10).length * 38)}>
-                  <BarChart data={stats.by_client.slice(0, 10)} layout="vertical">
-                    <XAxis type="number" tick={{ fontSize: 13, fontWeight: 600 }} />
-                    <YAxis type="category" dataKey="client_name" width={160} tick={{ fontSize: 13, fontWeight: 600 }} />
-                    <RechartsTooltip />
-                    <Bar dataKey="hours" fill="#3B82F6" radius={[0, 4, 4, 0]} />
-                  </BarChart>
-                </ResponsiveContainer>
+              {/* Hours by client */}
+              <div className="rounded-xl border bg-card p-5 shadow-sm">
+                <h3 className="mb-5 text-sm font-semibold text-muted-foreground">
+                  {hoursTitle}
+                </h3>
+                <div className="space-y-3">
+                  {stats.by_client.slice(0, 10).map((c) => (
+                    <DataBar
+                      key={c.client_name}
+                      label={c.client_name}
+                      value={c.hours}
+                      maxValue={stats.by_client[0]?.hours ?? 1}
+                      color={CHART_COLORS[0]}
+                      format={(v) => v.toFixed(1)}
+                    />
+                  ))}
+                </div>
               </div>
 
-              {/* Pie chart: work type distribution */}
-              <div className="rounded-lg border bg-card p-4 shadow-sm">
-                <h3 className="mb-4 text-sm font-semibold">{labels.byWorkType}</h3>
-                <ResponsiveContainer width="100%" height={360}>
-                  <PieChart>
-                    <Pie
-                      data={stats.by_work_type}
-                      dataKey="count"
-                      nameKey="work_type"
-                      cx="50%"
-                      cy="50%"
-                      outerRadius={80}
-                      label={renderOuterLabel}
-                      labelLine={{ stroke: "#9CA3AF", strokeWidth: 1 }}
-                    >
-                      {stats.by_work_type.map((_, i) => (
-                        <Cell key={i} fill={CHART_COLORS[i % CHART_COLORS.length]} />
-                      ))}
-                    </Pie>
-                    <Legend />
-                    <RechartsTooltip />
-                  </PieChart>
-                </ResponsiveContainer>
+              {/* Work type breakdown */}
+              <div className="rounded-xl border bg-card p-5 shadow-sm">
+                <h3 className="mb-5 text-sm font-semibold text-muted-foreground">
+                  {labels.byWorkType}
+                </h3>
+                <div className="space-y-3">
+                  {stats.by_work_type.map((wt, i) => {
+                    const total = stats.by_work_type.reduce((s, w) => s + w.count, 0);
+                    const pct = total > 0 ? Math.round((wt.count / total) * 100) : 0;
+                    return (
+                      <WorkTypeRow
+                        key={wt.work_type}
+                        name={wt.work_type}
+                        count={wt.count}
+                        percentage={pct}
+                        maxCount={stats.by_work_type[0]?.count ?? 1}
+                        color={CHART_COLORS[i % CHART_COLORS.length]}
+                      />
+                    );
+                  })}
+                </div>
               </div>
 
-              {/* Dunam by client bar chart */}
+              {/* Dunam by client */}
               {stats.total_dunam > 0 && (
-                <div className="rounded-lg border bg-card p-4 shadow-sm md:col-span-2">
-                  <h3 className="mb-4 text-sm font-semibold">{labels.byClient} — {labels.dunam}</h3>
-                  <ResponsiveContainer width="100%" height={320}>
-                    <BarChart data={stats.by_client.filter((c) => c.dunam > 0)}>
-                      <XAxis dataKey="client_name" tick={{ fontSize: 12, fontWeight: 600 }} angle={-35} textAnchor="end" height={70} interval={0} />
-                      <YAxis tick={{ fontSize: 13, fontWeight: 600 }} />
-                      <RechartsTooltip />
-                      <Bar dataKey="dunam" fill="#10B981" radius={[4, 4, 0, 0]} />
-                    </BarChart>
-                  </ResponsiveContainer>
+                <div className="rounded-xl border bg-card p-5 shadow-sm md:col-span-2">
+                  <h3 className="mb-5 text-sm font-semibold text-muted-foreground">
+                    {dunamTitle}
+                  </h3>
+                  <div className="space-y-3">
+                    {stats.by_client
+                      .filter((c) => c.dunam > 0)
+                      .sort((a, b) => b.dunam - a.dunam)
+                      .map((c) => (
+                        <DataBar
+                          key={c.client_name}
+                          label={c.client_name}
+                          value={c.dunam}
+                          maxValue={Math.max(...stats.by_client.map((x) => x.dunam))}
+                          color={CHART_COLORS[1]}
+                          format={(v) => v.toFixed(0)}
+                        />
+                      ))}
+                  </div>
                 </div>
               )}
             </div>
@@ -454,6 +428,75 @@ function GroupSection({
         </CollapsibleContent>
       </div>
     </Collapsible>
+  );
+}
+
+// ─── Pure CSS Data Visualization Components ─────────────────────────────────
+
+function DataBar({
+  label,
+  value,
+  maxValue,
+  color,
+  format,
+}: {
+  label: string;
+  value: number;
+  maxValue: number;
+  color: string;
+  format: (v: number) => string;
+}) {
+  const pct = maxValue > 0 ? Math.max((value / maxValue) * 100, 2) : 0;
+  const formatted = format(value);
+  return (
+    <div className="flex items-center gap-3">
+      <span className="w-28 shrink-0 truncate text-sm font-medium">{label}</span>
+      <div className="relative flex-1 h-4 rounded-full bg-muted/60 overflow-hidden">
+        <div
+          className="absolute inset-y-0 start-0 rounded-full transition-all duration-500 ease-out"
+          style={{ width: `${pct}%`, backgroundColor: color }}
+        />
+      </div>
+      <span className="w-14 shrink-0 text-end text-sm font-semibold tabular-nums">
+        {formatted}
+      </span>
+    </div>
+  );
+}
+
+function WorkTypeRow({
+  name,
+  count,
+  percentage,
+  maxCount,
+  color,
+}: {
+  name: string;
+  count: number;
+  percentage: number;
+  maxCount: number;
+  color: string;
+}) {
+  const pct = maxCount > 0 ? Math.max((count / maxCount) * 100, 2) : 0;
+  const pctLabel = `${percentage}%`;
+  return (
+    <div className="flex items-center gap-3">
+      <span
+        className="h-3 w-3 shrink-0 rounded-full"
+        style={{ backgroundColor: color }}
+      />
+      <span className="w-24 shrink-0 truncate text-sm font-medium">{name}</span>
+      <div className="relative flex-1 h-3 rounded-full bg-muted/60 overflow-hidden">
+        <div
+          className="absolute inset-y-0 start-0 rounded-full transition-all duration-500 ease-out"
+          style={{ width: `${pct}%`, backgroundColor: color, opacity: 0.7 }}
+        />
+      </div>
+      <span className="w-6 shrink-0 text-end text-sm font-semibold tabular-nums">{count}</span>
+      <span className="w-10 shrink-0 text-end text-xs text-muted-foreground tabular-nums">
+        {pctLabel}
+      </span>
+    </div>
   );
 }
 
