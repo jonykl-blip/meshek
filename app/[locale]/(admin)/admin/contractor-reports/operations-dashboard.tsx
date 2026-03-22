@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition, useCallback, useMemo } from "react";
+import { useState, useEffect, useTransition, useCallback, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -150,6 +150,10 @@ export function OperationsDashboard({
       }
     });
   }, [fromDate, toDate, scope, clientId, workTypeId]);
+
+  // Auto-load current month data on page open
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => { loadData(); }, []);
 
   function setMonth(offset: number) {
     const range = getMonthRange(offset);
