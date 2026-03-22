@@ -60,6 +60,9 @@ interface Labels {
   notes: string;
   previewCount: string;
   workSummary: string;
+  groupByClient: string;
+  groupByDate: string;
+  workSummaryByDate: string;
 }
 
 interface ClientOption {
@@ -71,6 +74,39 @@ const CHART_COLORS = [
   "#3B82F6", "#F59E0B", "#10B981", "#8B5CF6", "#EF4444",
   "#06B6D4", "#F97316", "#84CC16", "#EC4899", "#6366F1",
 ];
+
+const RADIAN = Math.PI / 180;
+
+function renderOuterLabel(props: {
+  cx?: number;
+  cy?: number;
+  midAngle?: number;
+  outerRadius?: number;
+  name?: string;
+  value?: number;
+}) {
+  const cx = props.cx ?? 0;
+  const cy = props.cy ?? 0;
+  const midAngle = props.midAngle ?? 0;
+  const outerRadius = props.outerRadius ?? 0;
+  const radius = outerRadius + 28;
+  const x = cx + radius * Math.cos(-midAngle * RADIAN);
+  const y = cy + radius * Math.sin(-midAngle * RADIAN);
+  const label = `${props.name ?? ""} (${props.value ?? 0})`;
+  return (
+    <text
+      x={x}
+      y={y}
+      textAnchor={x > cx ? "start" : "end"}
+      dominantBaseline="central"
+      fontSize={13}
+      fontWeight={600}
+      fill="#374151"
+    >
+      {label}
+    </text>
+  );
+}
 
 function getMonthRange(offset: number): { from: string; to: string } {
   const now = new Date();
@@ -203,10 +239,10 @@ export function ContractorReportsView({
               {/* Bar chart: hours by client */}
               <div className="rounded-lg border bg-card p-4 shadow-sm">
                 <h3 className="mb-4 text-sm font-semibold">{labels.byClient} — {labels.hours}</h3>
-                <ResponsiveContainer width="100%" height={300}>
+                <ResponsiveContainer width="100%" height={Math.max(300, stats.by_client.slice(0, 10).length * 38)}>
                   <BarChart data={stats.by_client.slice(0, 10)} layout="vertical">
-                    <XAxis type="number" />
-                    <YAxis type="category" dataKey="client_name" width={120} tick={{ fontSize: 12 }} />
+                    <XAxis type="number" tick={{ fontSize: 13, fontWeight: 600 }} />
+                    <YAxis type="category" dataKey="client_name" width={160} tick={{ fontSize: 13, fontWeight: 600 }} />
                     <RechartsTooltip />
                     <Bar dataKey="hours" fill="#3B82F6" radius={[0, 4, 4, 0]} />
                   </BarChart>
@@ -216,7 +252,7 @@ export function ContractorReportsView({
               {/* Pie chart: work type distribution */}
               <div className="rounded-lg border bg-card p-4 shadow-sm">
                 <h3 className="mb-4 text-sm font-semibold">{labels.byWorkType}</h3>
-                <ResponsiveContainer width="100%" height={300}>
+                <ResponsiveContainer width="100%" height={360}>
                   <PieChart>
                     <Pie
                       data={stats.by_work_type}
@@ -224,8 +260,9 @@ export function ContractorReportsView({
                       nameKey="work_type"
                       cx="50%"
                       cy="50%"
-                      outerRadius={100}
-                      label={({ name, value }: { name?: string; value?: number }) => `${name ?? ""} (${value ?? 0})`}
+                      outerRadius={80}
+                      label={renderOuterLabel}
+                      labelLine={{ stroke: "#9CA3AF", strokeWidth: 1 }}
                     >
                       {stats.by_work_type.map((_, i) => (
                         <Cell key={i} fill={CHART_COLORS[i % CHART_COLORS.length]} />
@@ -241,10 +278,10 @@ export function ContractorReportsView({
               {stats.total_dunam > 0 && (
                 <div className="rounded-lg border bg-card p-4 shadow-sm md:col-span-2">
                   <h3 className="mb-4 text-sm font-semibold">{labels.byClient} — {labels.dunam}</h3>
-                  <ResponsiveContainer width="100%" height={250}>
+                  <ResponsiveContainer width="100%" height={320}>
                     <BarChart data={stats.by_client.filter((c) => c.dunam > 0)}>
-                      <XAxis dataKey="client_name" tick={{ fontSize: 12 }} />
-                      <YAxis />
+                      <XAxis dataKey="client_name" tick={{ fontSize: 12, fontWeight: 600 }} angle={-35} textAnchor="end" height={70} interval={0} />
+                      <YAxis tick={{ fontSize: 13, fontWeight: 600 }} />
                       <RechartsTooltip />
                       <Bar dataKey="dunam" fill="#10B981" radius={[4, 4, 0, 0]} />
                     </BarChart>
@@ -264,10 +301,13 @@ export function ContractorReportsView({
   );
 }
 
-// ─── Client Work Summary (grouped detail table) ─────────────────────────────
+// ─── Work Summary (grouped detail table with client/date toggle) ─────────────
 
-interface ClientGroup {
-  client_name: string;
+type GroupMode = "client" | "date";
+
+interface RecordGroup {
+  key: string;
+  sortKey: string;
   rows: ContractorSessionRow[];
   total_hours: number;
   total_dunam: number;
@@ -280,40 +320,68 @@ function ClientWorkSummary({
   rows: ContractorSessionRow[];
   labels: Labels;
 }) {
+  const [groupMode, setGroupMode] = useState<GroupMode>("client");
+
   const groups = useMemo(() => {
     const map = new Map<string, ContractorSessionRow[]>();
     for (const row of rows) {
-      const existing = map.get(row.client_name) ?? [];
+      const groupKey = groupMode === "client" ? row.client_name : row.date;
+      const existing = map.get(groupKey) ?? [];
       existing.push(row);
-      map.set(row.client_name, existing);
+      map.set(groupKey, existing);
     }
-    const result: ClientGroup[] = [];
-    for (const [client_name, clientRows] of map) {
+    const result: RecordGroup[] = [];
+    for (const [rawKey, groupRows] of map) {
       result.push({
-        client_name,
-        rows: clientRows,
-        total_hours: clientRows.reduce((s, r) => s + r.total_hours, 0),
-        total_dunam: clientRows.reduce((s, r) => s + (r.dunam_covered ?? 0), 0),
+        key: groupMode === "date" ? formatDisplayDate(rawKey) : rawKey,
+        sortKey: rawKey,
+        rows: groupRows,
+        total_hours: groupRows.reduce((s, r) => s + r.total_hours, 0),
+        total_dunam: groupRows.reduce((s, r) => s + (r.dunam_covered ?? 0), 0),
       });
     }
-    return result.sort((a, b) => a.client_name.localeCompare(b.client_name, "he"));
-  }, [rows]);
+    return groupMode === "client"
+      ? result.sort((a, b) => a.sortKey.localeCompare(b.sortKey, "he"))
+      : result.sort((a, b) => a.sortKey.localeCompare(b.sortKey));
+  }, [rows, groupMode]);
 
   return (
     <div className="space-y-4 mt-6">
-      <h3 className="text-lg font-semibold">{labels.workSummary}</h3>
+      <div className="flex items-center justify-between">
+        <h3 className="text-lg font-semibold">
+          {groupMode === "client" ? labels.workSummary : labels.workSummaryByDate}
+        </h3>
+        <div className="flex gap-2">
+          <Button
+            size="sm"
+            variant={groupMode === "client" ? "default" : "outline"}
+            onClick={() => setGroupMode("client")}
+          >
+            {labels.groupByClient}
+          </Button>
+          <Button
+            size="sm"
+            variant={groupMode === "date" ? "default" : "outline"}
+            onClick={() => setGroupMode("date")}
+          >
+            {labels.groupByDate}
+          </Button>
+        </div>
+      </div>
       {groups.map((group) => (
-        <ClientGroupSection key={group.client_name} group={group} labels={labels} />
+        <GroupSection key={group.sortKey} group={group} groupMode={groupMode} labels={labels} />
       ))}
     </div>
   );
 }
 
-function ClientGroupSection({
+function GroupSection({
   group,
+  groupMode,
   labels,
 }: {
-  group: ClientGroup;
+  group: RecordGroup;
+  groupMode: GroupMode;
   labels: Labels;
 }) {
   const [isOpen, setIsOpen] = useState(true);
@@ -329,7 +397,7 @@ function ClientGroupSection({
               ) : (
                 <ChevronLeft className="h-4 w-4 text-muted-foreground" />
               )}
-              <span className="font-semibold">{group.client_name}</span>
+              <span className="font-semibold">{group.key}</span>
               <Badge variant="outline" className="text-xs">
                 {group.rows.length}
               </Badge>
@@ -347,7 +415,11 @@ function ClientGroupSection({
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b bg-muted/30">
-                  <th className="px-4 py-2 text-start font-medium">{labels.date}</th>
+                  {groupMode === "client" ? (
+                    <th className="px-4 py-2 text-start font-medium">{labels.date}</th>
+                  ) : (
+                    <th className="px-4 py-2 text-start font-medium">{labels.client}</th>
+                  )}
                   <th className="px-4 py-2 text-start font-medium">{labels.area}</th>
                   <th className="px-4 py-2 text-start font-medium">{labels.workType}</th>
                   <th className="px-4 py-2 text-start font-medium">{labels.hours}</th>
@@ -359,7 +431,11 @@ function ClientGroupSection({
               <tbody>
                 {group.rows.map((row, i) => (
                   <tr key={i} className="border-b last:border-b-0 hover:bg-muted/20 transition-colors">
-                    <td className="px-4 py-2 whitespace-nowrap">{formatDisplayDate(row.date)}</td>
+                    {groupMode === "client" ? (
+                      <td className="px-4 py-2 whitespace-nowrap">{formatDisplayDate(row.date)}</td>
+                    ) : (
+                      <td className="px-4 py-2">{row.client_name}</td>
+                    )}
                     <td className="px-4 py-2">{row.area_name}</td>
                     <td className="px-4 py-2">{row.work_type ?? "—"}</td>
                     <td className="px-4 py-2 whitespace-nowrap">{row.total_hours.toFixed(1)}</td>

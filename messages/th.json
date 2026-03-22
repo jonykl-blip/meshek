@@ -340,6 +340,8 @@
       "editDunam": "דונם",
       "editWorkType": "סוג עבודה",
       "editMaterial": "חומר",
+      "materialQty": "כמות",
+      "materialUnit": "יחידה (ליטר, קילו...)",
       "cannotApproveUnresolved": "לא ניתן לאשר — יש להתאים עובד ושטח קודם",
       "noChanges": "אין שינויים לשמירה",
       "showAll": "הצג הכל",
@@ -551,7 +553,10 @@
       "workerCount": "Worker Count",
       "notes": "Notes",
       "previewCount": "{count} sessions found",
-      "workSummary": "פירוט עבודות לפי לקוח"
+      "workSummary": "Work details by client",
+      "groupByClient": "By Client",
+      "groupByDate": "By Date",
+      "workSummaryByDate": "Work details by date"
     },
     "payroll": {
       "title": "שכר",
