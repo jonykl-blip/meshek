@@ -76,6 +76,7 @@ interface ReviewQueueLabels {
   edited: string;
   editHours: string;
   editArea: string;
+  editWorkType: string;
   cannotApproveUnresolved: string;
   noChanges: string;
   selectAll: string;
@@ -101,7 +102,8 @@ interface ReviewQueueProps {
   records: PendingRecord[];
   showAll: boolean;
   workers: { id: string; full_name: string }[];
-  areas: { id: string; name: string }[];
+  areas: { id: string; name: string; client_name: string | null }[];
+  workTypes: { id: string; name_he: string }[];
   clients: { id: string; name: string }[];
   labels: ReviewQueueLabels;
 }
@@ -136,6 +138,7 @@ export function ReviewQueue({
   showAll,
   workers,
   areas,
+  workTypes,
   clients,
   labels,
 }: ReviewQueueProps) {
@@ -188,6 +191,7 @@ export function ReviewQueue({
   const [editHours, setEditHours] = useState("");
   const [editAreaId, setEditAreaId] = useState("");
   const [editAreaFilter, setEditAreaFilter] = useState("");
+  const [editWorkTypeId, setEditWorkTypeId] = useState("");
 
   // Bulk selection state
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
@@ -260,6 +264,7 @@ export function ReviewQueue({
     setEditHours("");
     setEditAreaId("");
     setEditAreaFilter("");
+    setEditWorkTypeId("");
   }
 
   function handleToggle() {
@@ -366,7 +371,7 @@ export function ReviewQueue({
 
   function handleEdit(recordId: string) {
     const record = records.find((r) => r.id === recordId);
-    const updates: { total_hours?: number; area_id?: string } = {};
+    const updates: { total_hours?: number; area_id?: string; work_type_id?: string } = {};
     if (editHours !== "") {
       const parsed = Number(editHours);
       if (!isNaN(parsed) && parsed !== record?.total_hours) {
@@ -376,7 +381,10 @@ export function ReviewQueue({
     if (editAreaId !== "" && editAreaId !== record?.area_id) {
       updates.area_id = editAreaId;
     }
-    if (updates.total_hours === undefined && updates.area_id === undefined) {
+    if (editWorkTypeId !== "" && editWorkTypeId !== record?.work_type_id) {
+      updates.work_type_id = editWorkTypeId;
+    }
+    if (updates.total_hours === undefined && updates.area_id === undefined && updates.work_type_id === undefined) {
       setFeedback({ recordId, message: labels.noChanges, type: "error" });
       return;
     }
@@ -573,7 +581,9 @@ export function ReviewQueue({
             const isPending = record.status === "pending";
             const isSelected = selectedIds.has(record.id);
             const workerDisplay = record.worker_name ?? labels.unrecognized;
-            const areaDisplay = record.area_name ?? labels.unrecognized;
+            const areaDisplay = record.area_name
+              ? (record.client_name ? `${record.area_name} — ${record.client_name}` : record.area_name)
+              : labels.unrecognized;
             const transcriptPreview =
               record.raw_transcript && record.raw_transcript.length > 80
                 ? record.raw_transcript.slice(0, 80) + "…"
@@ -822,12 +832,21 @@ export function ReviewQueue({
                                 <Input placeholder={labels.searchArea} value={editAreaFilter} onChange={(e) => setEditAreaFilter(e.target.value)} className="h-8 mb-1" />
                                 <div className="max-h-36 overflow-y-auto rounded border">
                                   {areas.filter((a) => a.name.toLowerCase().includes(editAreaFilter.toLowerCase())).map((a) => (
-                                    <button key={a.id} type="button" className={`w-full px-3 py-1.5 text-sm text-start hover:bg-muted ${editAreaId === a.id ? "bg-muted" : ""}`} onClick={() => setEditAreaId(a.id)}>{a.name}</button>
+                                    <button key={a.id} type="button" className={`w-full px-3 py-1.5 text-sm text-start hover:bg-muted ${editAreaId === a.id ? "bg-muted" : ""}`} onClick={() => setEditAreaId(a.id)}>{a.client_name ? `${a.name} — ${a.client_name}` : a.name}</button>
                                   ))}
                                 </div>
                               </div>
+                              <div>
+                                <Label className="text-xs">{labels.editWorkType}</Label>
+                                <select value={editWorkTypeId} onChange={(e) => setEditWorkTypeId(e.target.value)} className="mt-1 block w-full rounded-md border bg-background px-3 py-2 text-sm">
+                                  <option value="">—</option>
+                                  {workTypes.map((wt) => (
+                                    <option key={wt.id} value={wt.id}>{wt.name_he}</option>
+                                  ))}
+                                </select>
+                              </div>
                               <div className="flex gap-2">
-                                <Button size="sm" disabled={(editHours === "" && editAreaId === "") || pendingRecordId === record.id} onClick={() => handleEdit(record.id)}>{pendingRecordId === record.id ? labels.saving : labels.confirm}</Button>
+                                <Button size="sm" disabled={(editHours === "" && editAreaId === "" && editWorkTypeId === "") || pendingRecordId === record.id} onClick={() => handleEdit(record.id)}>{pendingRecordId === record.id ? labels.saving : labels.confirm}</Button>
                                 <Button variant="ghost" size="sm" onClick={resetEdit}>{labels.cancel}</Button>
                               </div>
                             </div>
@@ -839,7 +858,7 @@ export function ReviewQueue({
                                   <Button variant="default" size="sm" disabled={!canApprove || pendingRecordId === record.id} onClick={() => handleApprove(record.id)} title={!canApprove ? labels.cannotApproveUnresolved : undefined}>{pendingRecordId === record.id ? labels.saving : labels.approve}</Button>
                                 );
                               })()}
-                              <Button variant="outline" size="sm" disabled={pendingRecordId === record.id} onClick={() => { resetEdit(); setEditingId(record.id); setEditHours(String(record.total_hours ?? "")); setEditAreaId(record.area_id ?? ""); }}>{labels.edit}</Button>
+                              <Button variant="outline" size="sm" disabled={pendingRecordId === record.id} onClick={() => { resetEdit(); setEditingId(record.id); setEditHours(String(record.total_hours ?? "")); setEditAreaId(record.area_id ?? ""); setEditWorkTypeId(record.work_type_id ?? ""); }}>{labels.edit}</Button>
                               <Button variant="destructive" size="sm" disabled={pendingRecordId === record.id} onClick={() => { resetReject(); setRejectingId(record.id); }}>{labels.reject}</Button>
                             </div>
                           )}

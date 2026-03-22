@@ -37,3 +37,31 @@ Recurring mistakes and corrective rules. Review during retrospectives.
 **Root cause:** `exportPayrollCsv` passed a date-range string as `recordId` to `logAudit()`, but `audit_log.record_id` is a UUID column. Unit tests mocked the audit insert and never hit a real DB, so the type mismatch was invisible.
 **Fix:** Use `crypto.randomUUID()` for audit events that don't reference an existing DB record. The contextual data (date range, worker count, etc.) goes in `after_json`.
 **Rule:** `logAudit({ recordId })` must always be a valid UUID. For events without a natural record ID (exports, bulk operations), generate one with `crypto.randomUUID()`.
+
+---
+
+## n8n Workflow V2 Debugging (2026-03-22)
+
+### n8n connections use node names, not IDs
+
+**Date:** 2026-03-22
+**Symptom:** `"Destination node not found"` at runtime (execution #304). Workflow saved without error.
+**Root cause:** Python script that generated V2 used node IDs (e.g., `v2-lookup-work-type-001`) in the `connections` object. n8n connections reference nodes by **name** (e.g., `"Lookup Work Type"`). n8n silently accepts invalid IDs on save but crashes at execution time.
+**Fix:** Rewrote all connection targets to use node names.
+**Rule:** When programmatically editing n8n workflow JSON, always use the node `name` field in connections, never the `id` field.
+
+### `$input.all()` is forbidden in `runOnceForEachItem` mode
+
+**Date:** 2026-03-22
+**Symptom:** `"Can't use .all() here [line 2, for item 0]"` in Lookup Work Type node (execution #305).
+**Root cause:** Code node set to `runOnceForEachItem` but code used `const items = $input.all()` which is only available in `runOnceForAllItems` mode.
+**Fix:** Changed to `const item = $input.item` and `return item`.
+**Rule:** In n8n Code nodes with `runOnceForEachItem`: use `$input.item` and `return item`. Reserve `$input.all()` and `return items` for `runOnceForAllItems` mode.
+
+### `$parent.json` doesn't work after Split Out node
+
+**Date:** 2026-03-22
+**Symptom:** `סוג_עבודה` and `לקוח` were null in Prepare Data despite being correctly extracted by GPT (execution #307 — silent data loss, no error).
+**Root cause:** Split Out splits `message.content['פועלים_ודיווחים']` array items. Sibling fields (`סוג_עבודה`, `לקוח`) at the same level are lost. The `$parent.json.סוג_עבודה` expression returns null because `$parent` doesn't preserve the pre-split context in n8n 2.9.3.
+**Fix:** Changed to direct node reference: `$('חילוץ פועלים ושטחים').first().json.message.content['סוג_עבודה']`.
+**Rule:** Never rely on `$parent.json` after a Split Out node. Use direct node references (`$('NodeName').first().json.path`) to access data from upstream nodes.

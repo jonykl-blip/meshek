@@ -6,6 +6,7 @@ import {
   getReviewRecords,
   getActiveWorkers,
   getActiveAreas,
+  getActiveWorkTypes,
 } from "@/app/actions/attendance";
 import { getClients } from "@/app/actions/clients";
 import { ReviewQueue } from "./review-queue";
@@ -58,11 +59,12 @@ export default async function ReviewPage({
     redirect(`/${locale}/dashboard`);
   }
 
-  const [result, workersResult, areasResult, clientsList] = await Promise.all([
+  const [result, workersResult, areasResult, clientsList, workTypesResult] = await Promise.all([
     getReviewRecords(showAll),
     getActiveWorkers(),
     getActiveAreas(),
     getClients(),
+    getActiveWorkTypes(),
   ]);
 
   return (
@@ -74,6 +76,7 @@ export default async function ReviewPage({
           showAll={showAll}
           workers={workersResult.success ? workersResult.data : []}
           areas={areasResult.success ? areasResult.data : []}
+          workTypes={workTypesResult.success ? workTypesResult.data : []}
           clients={clientsList.map((c) => ({ id: c.id, name: c.name }))}
           labels={{
             emptyState: t("emptyState"),
@@ -121,6 +124,7 @@ export default async function ReviewPage({
             edited: t("edited"),
             editHours: t("editHours"),
             editArea: t("editArea"),
+            editWorkType: t("editWorkType"),
             cannotApproveUnresolved: t("cannotApproveUnresolved"),
             noChanges: t("noChanges"),
             selectAll: t("selectAll"),

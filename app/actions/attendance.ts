@@ -41,6 +41,7 @@ export interface PendingRecord {
   area_name: string | null;
   dunam_covered: number | null;
   pending_client_name: string | null;
+  work_type_id: string | null;
   work_type_name: string | null;
   client_name: string | null;
 }
@@ -80,6 +81,7 @@ export async function getPendingRecords(): Promise<
       created_at,
       pending_client_name,
       dunam_covered,
+      work_type_id,
       profiles!attendance_logs_profile_id_fkey ( full_name ),
       areas!attendance_logs_area_id_fkey ( name, clients(name, is_own_farm) ),
       work_types ( name_he )
@@ -121,6 +123,7 @@ export async function getPendingRecords(): Promise<
         area_name: area?.name ?? null,
         dunam_covered: row.dunam_covered ?? null,
         pending_client_name: row.pending_client_name ?? null,
+        work_type_id: row.work_type_id ?? null,
         work_type_name: workType?.name_he ?? null,
         client_name: area?.clients?.is_own_farm ? null : area?.clients?.name ?? null,
       };
@@ -152,6 +155,7 @@ export async function getReviewRecords(
       created_at,
       pending_client_name,
       dunam_covered,
+      work_type_id,
       profiles!attendance_logs_profile_id_fkey ( full_name ),
       areas!attendance_logs_area_id_fkey ( name, clients(name, is_own_farm) ),
       work_types ( name_he )
@@ -198,6 +202,7 @@ export async function getReviewRecords(
       area_name: area?.name ?? null,
       dunam_covered: row.dunam_covered ?? null,
       pending_client_name: row.pending_client_name ?? null,
+      work_type_id: row.work_type_id ?? null,
       work_type_name: workType?.name_he ?? null,
       client_name: area?.clients?.is_own_farm ? null : area?.clients?.name ?? null,
     };
@@ -317,7 +322,7 @@ export async function getActiveWorkers(): Promise<
 }
 
 export async function getActiveAreas(): Promise<
-  ActionResult<{ id: string; name: string }[]>
+  ActionResult<{ id: string; name: string; client_name: string | null }[]>
 > {
   const supabase = await createClient();
   const { user, error: authError } = await verifyDashboardCaller(supabase);
@@ -325,9 +330,36 @@ export async function getActiveAreas(): Promise<
 
   const { data, error } = await supabase
     .from("areas")
-    .select("id, name")
+    .select("id, name, is_own_field, clients(name, is_own_farm)")
     .eq("is_active", true)
     .order("name");
+
+  if (error) return { success: false, error: error.message };
+
+  const mapped = (data ?? []).map((row) => {
+    const client = row.clients as unknown as { name: string; is_own_farm: boolean } | null;
+    return {
+      id: row.id,
+      name: row.name,
+      client_name: client && !client.is_own_farm ? client.name : null,
+    };
+  });
+
+  return { success: true, data: mapped };
+}
+
+export async function getActiveWorkTypes(): Promise<
+  ActionResult<{ id: string; name_he: string }[]>
+> {
+  const supabase = await createClient();
+  const { user, error: authError } = await verifyDashboardCaller(supabase);
+  if (!user) return { success: false, error: authError };
+
+  const { data, error } = await supabase
+    .from("work_types")
+    .select("id, name_he")
+    .eq("is_active", true)
+    .order("name_he");
 
   if (error) return { success: false, error: error.message };
 
@@ -1145,13 +1177,13 @@ export async function createManualAttendance(input: {
 
 export async function editRecord(
   recordId: string,
-  updates: { total_hours?: number; area_id?: string }
+  updates: { total_hours?: number; area_id?: string; work_type_id?: string }
 ): Promise<ActionResult<{ id: string }>> {
   const supabase = await createClient();
   const { user, error: authError } = await verifyAdminCaller(supabase);
   if (!user) return { success: false, error: authError };
 
-  if (updates.total_hours === undefined && updates.area_id === undefined) {
+  if (updates.total_hours === undefined && updates.area_id === undefined && updates.work_type_id === undefined) {
     return { success: false, error: "אין שדות לעדכון" };
   }
 
@@ -1164,7 +1196,7 @@ export async function editRecord(
 
   const { data: before } = await supabase
     .from("attendance_logs")
-    .select("id, total_hours, area_id, status")
+    .select("id, total_hours, area_id, work_type_id, status")
     .eq("id", recordId)
     .single();
 
@@ -1183,6 +1215,11 @@ export async function editRecord(
     updatePayload.area_id = updates.area_id;
     beforeDiff.area_id = before.area_id;
     afterDiff.area_id = updates.area_id;
+  }
+  if (updates.work_type_id !== undefined) {
+    updatePayload.work_type_id = updates.work_type_id;
+    beforeDiff.work_type_id = before.work_type_id;
+    afterDiff.work_type_id = updates.work_type_id;
   }
 
   const { error } = await supabase
