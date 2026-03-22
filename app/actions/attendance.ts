@@ -44,6 +44,7 @@ export interface PendingRecord {
   work_type_id: string | null;
   work_type_name: string | null;
   client_name: string | null;
+  material_names: string | null;
 }
 
 function extractVoiceStoragePath(voiceRefUrl: string): string | null {
@@ -84,7 +85,8 @@ export async function getPendingRecords(): Promise<
       work_type_id,
       profiles!attendance_logs_profile_id_fkey ( full_name ),
       areas!attendance_logs_area_id_fkey ( name, clients(name, is_own_farm) ),
-      work_types ( name_he )
+      work_types ( name_he ),
+      work_log_materials ( materials ( name_he ) )
     `
     )
     .eq("status", "pending")
@@ -108,6 +110,11 @@ export async function getPendingRecords(): Promise<
       const profile = row.profiles as unknown as { full_name: string } | null;
       const area = row.areas as unknown as { name: string; clients: { name: string; is_own_farm: boolean } | null } | null;
       const workType = row.work_types as unknown as { name_he: string } | null;
+      const workLogMaterials = row.work_log_materials as unknown as { materials: { name_he: string } | null }[] | null;
+      const materialNames = (workLogMaterials ?? [])
+        .map((wlm) => wlm.materials?.name_he)
+        .filter(Boolean)
+        .join(", ") || null;
 
       return {
         id: row.id,
@@ -126,6 +133,7 @@ export async function getPendingRecords(): Promise<
         work_type_id: row.work_type_id ?? null,
         work_type_name: workType?.name_he ?? null,
         client_name: area?.clients?.is_own_farm ? null : area?.clients?.name ?? null,
+        material_names: materialNames,
       };
     })
   );
@@ -158,7 +166,8 @@ export async function getReviewRecords(
       work_type_id,
       profiles!attendance_logs_profile_id_fkey ( full_name ),
       areas!attendance_logs_area_id_fkey ( name, clients(name, is_own_farm) ),
-      work_types ( name_he )
+      work_types ( name_he ),
+      work_log_materials ( materials ( name_he ) )
     `
     )
     .order("work_date", { ascending: false })
@@ -187,6 +196,11 @@ export async function getReviewRecords(
     const profile = row.profiles as unknown as { full_name: string } | null;
     const area = row.areas as unknown as { name: string; clients: { name: string; is_own_farm: boolean } | null } | null;
     const workType = row.work_types as unknown as { name_he: string } | null;
+    const workLogMaterials = row.work_log_materials as unknown as { materials: { name_he: string } | null }[] | null;
+    const materialNames = (workLogMaterials ?? [])
+      .map((wlm) => wlm.materials?.name_he)
+      .filter(Boolean)
+      .join(", ") || null;
 
     return {
       id: row.id,
@@ -205,6 +219,7 @@ export async function getReviewRecords(
       work_type_id: row.work_type_id ?? null,
       work_type_name: workType?.name_he ?? null,
       client_name: area?.clients?.is_own_farm ? null : area?.clients?.name ?? null,
+      material_names: materialNames,
     };
   });
 
@@ -364,6 +379,51 @@ export async function getActiveWorkTypes(): Promise<
   if (error) return { success: false, error: error.message };
 
   return { success: true, data: data ?? [] };
+}
+
+export async function getActiveMaterials(): Promise<
+  ActionResult<{ id: string; name_he: string }[]>
+> {
+  const supabase = await createClient();
+  const { user, error: authError } = await verifyDashboardCaller(supabase);
+  if (!user) return { success: false, error: authError };
+
+  const { data, error } = await supabase
+    .from("materials")
+    .select("id, name_he")
+    .eq("is_active", true)
+    .order("name_he");
+
+  if (error) return { success: false, error: error.message };
+
+  return { success: true, data: data ?? [] };
+}
+
+export async function setRecordMaterial(
+  recordId: string,
+  materialId: string | null
+): Promise<ActionResult<{ id: string }>> {
+  const supabase = await createClient();
+  const { user, error: authError } = await verifyAdminCaller(supabase);
+  if (!user) return { success: false, error: authError };
+
+  // Delete existing materials for this record
+  await supabase
+    .from("work_log_materials")
+    .delete()
+    .eq("attendance_log_id", recordId);
+
+  // Insert new material if provided
+  if (materialId) {
+    const { error } = await supabase
+      .from("work_log_materials")
+      .insert({ attendance_log_id: recordId, material_id: materialId });
+
+    if (error) return { success: false, error: error.message };
+  }
+
+  revalidateAdminReview();
+  return { success: true, data: { id: recordId } };
 }
 
 export async function createWorkerAndResolve(
@@ -1177,13 +1237,13 @@ export async function createManualAttendance(input: {
 
 export async function editRecord(
   recordId: string,
-  updates: { total_hours?: number; area_id?: string; work_type_id?: string }
+  updates: { total_hours?: number; area_id?: string; work_type_id?: string; dunam_covered?: number | null }
 ): Promise<ActionResult<{ id: string }>> {
   const supabase = await createClient();
   const { user, error: authError } = await verifyAdminCaller(supabase);
   if (!user) return { success: false, error: authError };
 
-  if (updates.total_hours === undefined && updates.area_id === undefined && updates.work_type_id === undefined) {
+  if (updates.total_hours === undefined && updates.area_id === undefined && updates.work_type_id === undefined && updates.dunam_covered === undefined) {
     return { success: false, error: "אין שדות לעדכון" };
   }
 
@@ -1196,7 +1256,7 @@ export async function editRecord(
 
   const { data: before } = await supabase
     .from("attendance_logs")
-    .select("id, total_hours, area_id, work_type_id, status")
+    .select("id, total_hours, area_id, work_type_id, dunam_covered, status")
     .eq("id", recordId)
     .single();
 
@@ -1220,6 +1280,11 @@ export async function editRecord(
     updatePayload.work_type_id = updates.work_type_id;
     beforeDiff.work_type_id = before.work_type_id;
     afterDiff.work_type_id = updates.work_type_id;
+  }
+  if (updates.dunam_covered !== undefined) {
+    updatePayload.dunam_covered = updates.dunam_covered;
+    beforeDiff.dunam_covered = before.dunam_covered;
+    afterDiff.dunam_covered = updates.dunam_covered;
   }
 
   const { error } = await supabase

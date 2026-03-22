@@ -24,6 +24,7 @@ import {
   approveRecord,
   rejectRecord,
   editRecord,
+  setRecordMaterial,
   bulkApproveRecords,
   bulkRejectRecords,
 } from "@/app/actions/attendance";
@@ -76,7 +77,9 @@ interface ReviewQueueLabels {
   edited: string;
   editHours: string;
   editArea: string;
+  editDunam: string;
   editWorkType: string;
+  editMaterial: string;
   cannotApproveUnresolved: string;
   noChanges: string;
   selectAll: string;
@@ -104,6 +107,7 @@ interface ReviewQueueProps {
   workers: { id: string; full_name: string }[];
   areas: { id: string; name: string; client_name: string | null }[];
   workTypes: { id: string; name_he: string }[];
+  materials: { id: string; name_he: string }[];
   clients: { id: string; name: string }[];
   labels: ReviewQueueLabels;
 }
@@ -139,6 +143,7 @@ export function ReviewQueue({
   workers,
   areas,
   workTypes,
+  materials,
   clients,
   labels,
 }: ReviewQueueProps) {
@@ -192,6 +197,8 @@ export function ReviewQueue({
   const [editAreaId, setEditAreaId] = useState("");
   const [editAreaFilter, setEditAreaFilter] = useState("");
   const [editWorkTypeId, setEditWorkTypeId] = useState("");
+  const [editDunam, setEditDunam] = useState("");
+  const [editMaterialId, setEditMaterialId] = useState("");
 
   // Bulk selection state
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
@@ -265,6 +272,8 @@ export function ReviewQueue({
     setEditAreaId("");
     setEditAreaFilter("");
     setEditWorkTypeId("");
+    setEditDunam("");
+    setEditMaterialId("");
   }
 
   function handleToggle() {
@@ -371,7 +380,7 @@ export function ReviewQueue({
 
   function handleEdit(recordId: string) {
     const record = records.find((r) => r.id === recordId);
-    const updates: { total_hours?: number; area_id?: string; work_type_id?: string } = {};
+    const updates: { total_hours?: number; area_id?: string; work_type_id?: string; dunam_covered?: number | null } = {};
     if (editHours !== "") {
       const parsed = Number(editHours);
       if (!isNaN(parsed) && parsed !== record?.total_hours) {
@@ -384,13 +393,28 @@ export function ReviewQueue({
     if (editWorkTypeId !== "" && editWorkTypeId !== record?.work_type_id) {
       updates.work_type_id = editWorkTypeId;
     }
-    if (updates.total_hours === undefined && updates.area_id === undefined && updates.work_type_id === undefined) {
+    if (editDunam !== "") {
+      const parsedDunam = Number(editDunam);
+      if (!isNaN(parsedDunam) && parsedDunam !== record?.dunam_covered) {
+        updates.dunam_covered = parsedDunam || null;
+      }
+    }
+    const materialChanged = editMaterialId !== "";
+    if (updates.total_hours === undefined && updates.area_id === undefined && updates.work_type_id === undefined && updates.dunam_covered === undefined && !materialChanged) {
       setFeedback({ recordId, message: labels.noChanges, type: "error" });
       return;
     }
     setPendingAction({ recordId, type: "edit" });
     startTransition(async () => {
-      const result = await editRecord(recordId, updates);
+      const results = await Promise.all([
+        (updates.total_hours !== undefined || updates.area_id !== undefined || updates.work_type_id !== undefined || updates.dunam_covered !== undefined)
+          ? editRecord(recordId, updates)
+          : { success: true as const, data: { id: recordId } },
+        materialChanged
+          ? setRecordMaterial(recordId, editMaterialId || null)
+          : { success: true as const, data: { id: recordId } },
+      ]);
+      const result = results.find((r) => !r.success) ?? results[0];
       setPendingAction(null);
       if (result.success) {
         setFeedback({ recordId, message: labels.edited, type: "success" });
@@ -629,6 +653,11 @@ export function ReviewQueue({
                             {record.work_type_name}
                           </Badge>
                         )}
+                        {record.material_names && (
+                          <Badge className="bg-green-50 text-green-700 border-green-200 dark:bg-green-950 dark:text-green-300">
+                            🧪 {record.material_names}
+                          </Badge>
+                        )}
                         {record.status === "imported" ? (
                           <Badge variant="secondary">
                             {labels[statusLabelMap[record.status] ?? "statusPending"]}
@@ -837,6 +866,10 @@ export function ReviewQueue({
                                 </div>
                               </div>
                               <div>
+                                <Label className="text-xs">{labels.editDunam}</Label>
+                                <Input type="number" step="1" min="0" value={editDunam} onChange={(e) => setEditDunam(e.target.value)} className="h-8" />
+                              </div>
+                              <div>
                                 <Label className="text-xs">{labels.editWorkType}</Label>
                                 <select value={editWorkTypeId} onChange={(e) => setEditWorkTypeId(e.target.value)} className="mt-1 block w-full rounded-md border bg-background px-3 py-2 text-sm">
                                   <option value="">—</option>
@@ -845,8 +878,17 @@ export function ReviewQueue({
                                   ))}
                                 </select>
                               </div>
+                              <div>
+                                <Label className="text-xs">{labels.editMaterial}</Label>
+                                <select value={editMaterialId} onChange={(e) => setEditMaterialId(e.target.value)} className="mt-1 block w-full rounded-md border bg-background px-3 py-2 text-sm">
+                                  <option value="">—</option>
+                                  {materials.map((m) => (
+                                    <option key={m.id} value={m.id}>{m.name_he}</option>
+                                  ))}
+                                </select>
+                              </div>
                               <div className="flex gap-2">
-                                <Button size="sm" disabled={(editHours === "" && editAreaId === "" && editWorkTypeId === "") || pendingRecordId === record.id} onClick={() => handleEdit(record.id)}>{pendingRecordId === record.id ? labels.saving : labels.confirm}</Button>
+                                <Button size="sm" disabled={(editHours === "" && editAreaId === "" && editWorkTypeId === "" && editDunam === "" && editMaterialId === "") || pendingRecordId === record.id} onClick={() => handleEdit(record.id)}>{pendingRecordId === record.id ? labels.saving : labels.confirm}</Button>
                                 <Button variant="ghost" size="sm" onClick={resetEdit}>{labels.cancel}</Button>
                               </div>
                             </div>
@@ -858,7 +900,7 @@ export function ReviewQueue({
                                   <Button variant="default" size="sm" disabled={!canApprove || pendingRecordId === record.id} onClick={() => handleApprove(record.id)} title={!canApprove ? labels.cannotApproveUnresolved : undefined}>{pendingRecordId === record.id ? labels.saving : labels.approve}</Button>
                                 );
                               })()}
-                              <Button variant="outline" size="sm" disabled={pendingRecordId === record.id} onClick={() => { resetEdit(); setEditingId(record.id); setEditHours(String(record.total_hours ?? "")); setEditAreaId(record.area_id ?? ""); setEditWorkTypeId(record.work_type_id ?? ""); }}>{labels.edit}</Button>
+                              <Button variant="outline" size="sm" disabled={pendingRecordId === record.id} onClick={() => { resetEdit(); setEditingId(record.id); setEditHours(String(record.total_hours ?? "")); setEditAreaId(record.area_id ?? ""); setEditWorkTypeId(record.work_type_id ?? ""); setEditDunam(String(record.dunam_covered ?? "")); }}>{labels.edit}</Button>
                               <Button variant="destructive" size="sm" disabled={pendingRecordId === record.id} onClick={() => { resetReject(); setRejectingId(record.id); }}>{labels.reject}</Button>
                             </div>
                           )}
