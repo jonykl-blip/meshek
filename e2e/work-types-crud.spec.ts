@@ -78,8 +78,10 @@ test.describe("Admin Work Types — CRUD", () => {
   });
 
   test("category badges are color-coded", async ({ page }) => {
-    // Category badges use rounded-full with specific color classes
-    const badges = page.locator("span.rounded-full");
+    // Category badges in the table use rounded-full with specific color classes
+    // Scope to the main content area to avoid matching sidebar role badges
+    const mainContent = page.locator("main");
+    const badges = mainContent.locator("span.rounded-full");
     const count = await badges.count();
     test.skip(count === 0, "No category badges visible");
 
