@@ -130,6 +130,8 @@ export default async function ReviewPage({
             editDunam: t("editDunam"),
             editWorkType: t("editWorkType"),
             editMaterial: t("editMaterial"),
+            materialQty: t("materialQty"),
+            materialUnit: t("materialUnit"),
             cannotApproveUnresolved: t("cannotApproveUnresolved"),
             noChanges: t("noChanges"),
             selectAll: t("selectAll"),

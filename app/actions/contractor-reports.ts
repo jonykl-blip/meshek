@@ -52,6 +52,7 @@ interface RawContractorRow {
     clients: { name: string } | null;
   } | null;
   work_types: { name_he: string } | null;
+  work_log_materials: { quantity: number | null; unit: string | null; materials: { name_he: string } | null }[] | null;
 }
 
 function validateDateRange(fromDate: string, toDate: string): string | null {
@@ -81,11 +82,23 @@ function formatDateDDMMYYYY(dateStr: string): string {
 
 type SessionKey = string;
 
+function getMaterialLabel(row: RawContractorRow): string {
+  const mats = (row.work_log_materials ?? [])
+    .map((wlm) => {
+      const name = wlm.materials?.name_he;
+      if (!name) return null;
+      return wlm.quantity ? `${name} ${wlm.quantity} ${wlm.unit ?? ""}`.trim() : name;
+    })
+    .filter(Boolean);
+  return mats.join("; ");
+}
+
 function buildSessionKey(row: RawContractorRow): SessionKey {
   const areaId = row.areas?.client_id ?? "unknown";
   const areaName = row.areas?.name ?? "unknown";
   const workType = row.work_types?.name_he ?? "unknown";
-  return `${row.work_date}|${areaId}|${areaName}|${workType}`;
+  const materials = getMaterialLabel(row);
+  return `${row.work_date}|${areaId}|${areaName}|${workType}|${materials}`;
 }
 
 interface SessionAccumulator {
@@ -94,6 +107,7 @@ interface SessionAccumulator {
   area_name: string;
   work_type: string | null;
   dunam_covered: number | null;
+  materials: string;
   workers: Set<string>;
   total_hours: number;
   raw_transcript: string | null;
@@ -125,6 +139,7 @@ function aggregateToSessions(
         area_name: row.areas?.name ?? "לא ידוע",
         work_type: row.work_types?.name_he ?? null,
         dunam_covered: row.dunam_covered,
+        materials: getMaterialLabel(row),
         workers: new Set([workerName]),
         total_hours: row.total_hours ?? 0,
         raw_transcript: row.raw_transcript,
@@ -140,7 +155,7 @@ function aggregateToSessions(
       area_name: s.area_name,
       dunam_covered: s.dunam_covered,
       work_type: s.work_type,
-      materials: "", // Populated separately
+      materials: s.materials,
       workers: Array.from(s.workers).join("; "),
       worker_count: s.workers.size,
       total_hours: s.total_hours,
@@ -156,7 +171,7 @@ async function fetchContractorData(
   let query = supabase
     .from("attendance_logs")
     .select(
-      "id, work_date, total_hours, dunam_covered, raw_transcript, profiles(full_name), areas!inner(name, client_id, clients!inner(name)), work_types(name_he)",
+      "id, work_date, total_hours, dunam_covered, raw_transcript, profiles(full_name), areas!inner(name, client_id, clients!inner(name)), work_types(name_he), work_log_materials(quantity, unit, materials(name_he))",
     )
     .eq("status", "approved")
     .gte("work_date", params.fromDate)
@@ -189,7 +204,7 @@ async function fetchMaterialsForLogs(
     if (!mat) continue;
 
     const label = row.quantity
-      ? `${mat.name_he} ${row.quantity}${row.unit ?? ""}`
+      ? `${mat.name_he} ${row.quantity} ${row.unit ?? ""}`.trim()
       : mat.name_he;
 
     const existing = materialsByLog.get(row.attendance_log_id) ?? [];
@@ -220,35 +235,6 @@ export async function getContractorInvoiceSummary(params: {
   try {
     const rawData = await fetchContractorData(supabase, params);
     const rows = aggregateToSessions(rawData);
-
-    // Fetch materials for all attendance_log_ids
-    const allLogIds = rawData.map((r) => r.id);
-    const materialsMap = await fetchMaterialsForLogs(supabase, allLogIds);
-
-    // Merge materials into session rows by matching dates/areas
-    // Since materials are per-log, collect unique materials per session
-    const sessionMaterials = new Map<number, Set<string>>();
-    for (const raw of rawData) {
-      const matStr = materialsMap.get(raw.id);
-      if (!matStr) continue;
-
-      // Find matching session row index
-      const matchIdx = rows.findIndex(
-        (r) =>
-          r.date === raw.work_date &&
-          r.area_name === (raw.areas?.name ?? "לא ידוע") &&
-          r.work_type === (raw.work_types?.name_he ?? null),
-      );
-      if (matchIdx >= 0) {
-        const existing = sessionMaterials.get(matchIdx) ?? new Set();
-        for (const m of matStr.split("; ")) existing.add(m);
-        sessionMaterials.set(matchIdx, existing);
-      }
-    }
-
-    for (const [idx, mats] of sessionMaterials) {
-      rows[idx].materials = [...mats].join("; ");
-    }
 
     const total_hours = rows.reduce((sum, r) => sum + r.total_hours, 0);
     const total_dunam = rows.reduce((sum, r) => sum + (r.dunam_covered ?? 0), 0);

@@ -45,6 +45,8 @@ export interface PendingRecord {
   work_type_name: string | null;
   client_name: string | null;
   material_names: string | null;
+  material_quantity: number | null;
+  material_unit: string | null;
 }
 
 function extractVoiceStoragePath(voiceRefUrl: string): string | null {
@@ -86,7 +88,7 @@ export async function getPendingRecords(): Promise<
       profiles!attendance_logs_profile_id_fkey ( full_name ),
       areas!attendance_logs_area_id_fkey ( name, clients(name, is_own_farm) ),
       work_types ( name_he ),
-      work_log_materials ( materials ( name_he ) )
+      work_log_materials ( quantity, unit, materials ( name_he ) )
     `
     )
     .eq("status", "pending")
@@ -110,7 +112,8 @@ export async function getPendingRecords(): Promise<
       const profile = row.profiles as unknown as { full_name: string } | null;
       const area = row.areas as unknown as { name: string; clients: { name: string; is_own_farm: boolean } | null } | null;
       const workType = row.work_types as unknown as { name_he: string } | null;
-      const workLogMaterials = row.work_log_materials as unknown as { materials: { name_he: string } | null }[] | null;
+      const workLogMaterials = row.work_log_materials as unknown as { quantity: number | null; unit: string | null; materials: { name_he: string } | null }[] | null;
+      const firstMaterial = (workLogMaterials ?? [])[0] ?? null;
       const materialNames = (workLogMaterials ?? [])
         .map((wlm) => wlm.materials?.name_he)
         .filter(Boolean)
@@ -134,6 +137,8 @@ export async function getPendingRecords(): Promise<
         work_type_name: workType?.name_he ?? null,
         client_name: area?.clients?.is_own_farm ? null : area?.clients?.name ?? null,
         material_names: materialNames,
+        material_quantity: firstMaterial?.quantity ?? null,
+        material_unit: firstMaterial?.unit ?? null,
       };
     })
   );
@@ -167,7 +172,7 @@ export async function getReviewRecords(
       profiles!attendance_logs_profile_id_fkey ( full_name ),
       areas!attendance_logs_area_id_fkey ( name, clients(name, is_own_farm) ),
       work_types ( name_he ),
-      work_log_materials ( materials ( name_he ) )
+      work_log_materials ( quantity, unit, materials ( name_he ) )
     `
     )
     .order("work_date", { ascending: false })
@@ -196,7 +201,8 @@ export async function getReviewRecords(
     const profile = row.profiles as unknown as { full_name: string } | null;
     const area = row.areas as unknown as { name: string; clients: { name: string; is_own_farm: boolean } | null } | null;
     const workType = row.work_types as unknown as { name_he: string } | null;
-    const workLogMaterials = row.work_log_materials as unknown as { materials: { name_he: string } | null }[] | null;
+    const workLogMaterials = row.work_log_materials as unknown as { quantity: number | null; unit: string | null; materials: { name_he: string } | null }[] | null;
+    const firstMaterial = (workLogMaterials ?? [])[0] ?? null;
     const materialNames = (workLogMaterials ?? [])
       .map((wlm) => wlm.materials?.name_he)
       .filter(Boolean)
@@ -220,6 +226,8 @@ export async function getReviewRecords(
       work_type_name: workType?.name_he ?? null,
       client_name: area?.clients?.is_own_farm ? null : area?.clients?.name ?? null,
       material_names: materialNames,
+      material_quantity: firstMaterial?.quantity ?? null,
+      material_unit: firstMaterial?.unit ?? null,
     };
   });
 
@@ -401,7 +409,9 @@ export async function getActiveMaterials(): Promise<
 
 export async function setRecordMaterial(
   recordId: string,
-  materialId: string | null
+  materialId: string | null,
+  quantity?: number | null,
+  unit?: string | null
 ): Promise<ActionResult<{ id: string }>> {
   const supabase = await createClient();
   const { user, error: authError } = await verifyAdminCaller(supabase);
@@ -415,9 +425,16 @@ export async function setRecordMaterial(
 
   // Insert new material if provided
   if (materialId) {
+    const payload: Record<string, unknown> = {
+      attendance_log_id: recordId,
+      material_id: materialId,
+    };
+    if (quantity != null && !isNaN(quantity)) payload.quantity = quantity;
+    if (unit) payload.unit = unit;
+
     const { error } = await supabase
       .from("work_log_materials")
-      .insert({ attendance_log_id: recordId, material_id: materialId });
+      .insert(payload);
 
     if (error) return { success: false, error: error.message };
   }
